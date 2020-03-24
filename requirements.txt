@@ -1,0 +1,8 @@
+pandas==1.0.3
+geopandas==0.6.1
+numpy==1.18.1
+shapely==1.7.0
+google-api-python-client==1.7.8
+google-auth==1.6.3
+google-auth-httplib2==0.0.3
+httplib2==0.13.0
