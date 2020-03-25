@@ -3,4 +3,4 @@ Welcome to the covid19 wiki! In lieu of the outbreak of COVID-19, the Purpose of
 2. URGENT - for need of basic necessities (food/medicines)
 3. OTHERS - for anything else
 
-The testing version can be visited here www.thebangaloreguy.com/covid19/test.html
+Check out the LIVE version here - thebangaloreguy.com/covid19/share_and_survive_v0_dark.html
