@@ -13082,11 +13082,11 @@ div#notebook {
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#Completed</span>
 <span class="c1"># Google API integration - extract data from spreadsheet</span>
 <span class="c1"># Map configuration &amp; icons</span>
+<span class="c1"># Push to website (hosted on BlueHost) automatically</span>
+<span class="c1"># Secure storage of file without exposure to blog</span>
 
 <span class="c1">#TODO:</span>
-<span class="c1"># Push to website (hosted on BlueHost) automatically</span>
 <span class="c1"># Run the script Online in a cron format</span>
-<span class="c1"># Secure storage of file without exposure to blog</span>
 <span class="c1"># Integrating code with matching algorithm &amp; writing matched entry into spreadsheet</span>
 </pre></div>
 
@@ -13100,19 +13100,33 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#Basic</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">geopandas</span> <span class="k">as</span> <span class="nn">gpd</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">shapely.geometry</span> <span class="kn">import</span> <span class="n">Point</span>
 
+<span class="c1">#Google Docs integration</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">from</span> <span class="nn">googleapiclient.discovery</span> <span class="kn">import</span> <span class="n">build</span>
 <span class="kn">from</span> <span class="nn">google_auth_oauthlib.flow</span> <span class="kn">import</span> <span class="n">InstalledAppFlow</span>
 <span class="kn">from</span> <span class="nn">google.auth.transport.requests</span> <span class="kn">import</span> <span class="n">Request</span>
 
+<span class="c1">#Map</span>
 <span class="kn">import</span> <span class="nn">keplergl</span>
+
+<span class="c1">#DB Connections</span>
+<span class="kn">import</span> <span class="nn">mysql.connector</span> <span class="k">as</span> <span class="nn">sql_con</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">create_engine</span>
+<span class="kn">import</span> <span class="nn">cred_config</span> <span class="k">as</span> <span class="nn">cc</span>
+
+<span class="c1">#File Transfer</span>
+<span class="kn">import</span> <span class="nn">ftplib</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
 </pre></div>
 
     </div>
@@ -13141,11 +13155,15 @@ div#notebook {
 <span class="n">Senior_citizen_sheet_ID</span> <span class="o">=</span> <span class="s1">&#39;1KrZCG_fYvImIy_-549VB0rzbbfKHkkbmJG0l6DH01zM&#39;</span>
 <span class="n">Range_name</span> <span class="o">=</span> <span class="s1">&#39;Form Responses 1!A1:K1000&#39;</span>
 
+<span class="n">output_file_name</span><span class="o">=</span> <span class="s1">&#39;output/COVID_SOS_v0.html&#39;</span>
+
 <span class="c1"># map_config=&#39;map_config/live_config_dark.py&#39;</span>
 <span class="n">map_config</span><span class="o">=</span><span class="s1">&#39;map_config/live_config_light.py&#39;</span>
 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">map_config</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">file</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
     <span class="n">exec</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file</span><span class="p">))</span>
+
+<span class="n">mask_numbers</span> <span class="o">=</span> <span class="kc">True</span>
 </pre></div>
 
     </div>
@@ -13156,6 +13174,29 @@ div#notebook {
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">connections</span><span class="p">(</span><span class="n">con_name</span><span class="p">):</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">con_name</span><span class="o">==</span><span class="s1">&#39;db_read&#39;</span><span class="p">):</span>
+        <span class="n">cred_r</span><span class="o">=</span><span class="n">cc</span><span class="o">.</span><span class="n">credentials</span><span class="p">[</span><span class="s1">&#39;covid_sos_read&#39;</span><span class="p">]</span>
+        <span class="n">server_con</span> <span class="o">=</span> <span class="n">sql_con</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">cred_r</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">],</span> <span class="n">password</span><span class="o">=</span><span class="n">cred_r</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">],</span> <span class="n">host</span><span class="o">=</span><span class="n">cred_r</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">],</span><span class="n">database</span><span class="o">=</span><span class="n">cred_r</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">])</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">con_name</span><span class="o">==</span><span class="s1">&#39;db_write&#39;</span><span class="p">):</span>
+        <span class="n">cred_w</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">credentials</span><span class="p">[</span><span class="s1">&#39;covid_sos_write&#39;</span><span class="p">]</span>
+        <span class="n">server_con</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="s2">&quot;mysql+pymysql://</span><span class="si">{user}</span><span class="s2">:</span><span class="si">{password}</span><span class="s2">@</span><span class="si">{host}</span><span class="s2">/</span><span class="si">{database}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">user</span> <span class="o">=</span> <span class="n">cred_w</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">],</span> <span class="n">password</span> <span class="o">=</span> <span class="n">cred_w</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">],</span> <span class="n">host</span> <span class="o">=</span> <span class="n">cred_w</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">],</span> <span class="n">database</span> <span class="o">=</span> <span class="n">cred_w</span><span class="p">[</span><span class="s1">&#39;database&#39;</span><span class="p">]),</span> <span class="n">pool_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">max_overflow</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">echo</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">con_name</span><span class="o">==</span><span class="s1">&#39;ftp&#39;</span><span class="p">):</span>
+        <span class="n">FTP_con</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">credentials</span><span class="p">[</span><span class="s1">&#39;ftp&#39;</span><span class="p">]</span>
+        <span class="n">server_con</span> <span class="o">=</span> <span class="n">ftplib</span><span class="o">.</span><span class="n">FTP</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">FTP_con</span><span class="p">[</span><span class="s1">&#39;host&#39;</span><span class="p">],</span> <span class="n">user</span><span class="o">=</span><span class="n">FTP_con</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">],</span> <span class="n">passwd</span><span class="o">=</span><span class="n">FTP_con</span><span class="p">[</span><span class="s1">&#39;password&#39;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">server_con</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">google_api_activation</span><span class="p">():</span>
@@ -13186,6 +13227,7 @@ div#notebook {
     <span class="n">result</span> <span class="o">=</span> <span class="n">sheet</span><span class="o">.</span><span class="n">values</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">spreadsheetId</span><span class="o">=</span><span class="n">sheet_id</span><span class="p">,</span><span class="nb">range</span><span class="o">=</span><span class="n">range_name</span><span class="p">)</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">result</span>
 
+
 <span class="k">def</span> <span class="nf">sheet_header</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
     <span class="n">input_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">])</span>
     <span class="n">new_header</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1">#grab the first row for the header</span>
@@ -13205,6 +13247,16 @@ div#notebook {
     <span class="n">crs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;init&#39;</span><span class="p">:</span> <span class="s1">&#39;epsg:4326&#39;</span><span class="p">}</span>
     <span class="n">f_df</span> <span class="o">=</span> <span class="n">gpd</span><span class="o">.</span><span class="n">GeoDataFrame</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">crs</span><span class="o">=</span><span class="n">crs</span><span class="p">,</span> <span class="n">geometry</span><span class="o">=</span><span class="n">geometry</span><span class="p">)</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GeoCodeLat&#39;</span><span class="p">,</span><span class="s1">&#39;GeoCodeLon&#39;</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">f_df</span>
+
+
+<span class="k">def</span> <span class="nf">html_file_changes</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">bs</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">bs</span><span class="p">,</span> <span class="s1">&#39;html.parser&#39;</span><span class="p">)</span>
+    <span class="n">soup</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">string</span><span class="o">=</span><span class="s1">&#39;COVID SOS Initiative - Connecting Volunteers with Requests&#39;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">soup</span><span class="p">))</span>
+    <span class="k">return</span> <span class="kc">None</span>
 </pre></div>
 
     </div>
@@ -13214,7 +13266,27 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">push_file_to_server</span><span class="p">(</span><span class="n">File2Send</span><span class="p">):</span>   
+    <span class="n">ftp</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;ftp&#39;</span><span class="p">)</span>
+    <span class="n">Output_Directory</span> <span class="o">=</span> <span class="s2">&quot;/public_html/covid19/&quot;</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">cwd</span><span class="p">(</span><span class="n">Output_Directory</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">File2Send</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">ftp</span><span class="o">.</span><span class="n">storbinary</span><span class="p">(</span><span class="s1">&#39;STOR &#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">File2Send</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span> 
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;File saved to server&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
@@ -13227,11 +13299,16 @@ div#notebook {
     <span class="n">r_df</span> <span class="o">=</span> <span class="n">sheet_clean_up</span><span class="p">(</span><span class="n">requests_df</span><span class="p">,</span><span class="n">default_r</span><span class="p">,</span><span class="n">buffer_radius</span><span class="p">)</span>
     <span class="n">r_df</span> <span class="o">=</span> <span class="n">r_df</span><span class="p">[</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Task Status&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Pending&#39;</span><span class="p">]</span>
     <span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;icon&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;home&#39;</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">mask_numbers</span><span class="p">):</span>
+        <span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;WhatsApp Contact Number&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">9582148040</span>
+        <span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Mobile Number&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">9582148040</span>
     <span class="n">map_1</span> <span class="o">=</span> <span class="n">keplergl</span><span class="o">.</span><span class="n">KeplerGl</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;volunteer_data&#39;</span><span class="p">:</span><span class="n">v_df</span><span class="p">[</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;requests_data&#39;</span><span class="p">:</span><span class="n">r_df</span><span class="p">[</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">]})</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The Map contains &#39;</span><span class="p">,</span> <span class="n">v_df</span><span class="p">[</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39; volunteers and &#39;</span><span class="p">,</span> <span class="n">r_df</span><span class="p">[</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39; pending requests&#39;</span><span class="p">)</span>
     <span class="c1">#variable live_config is defined when &quot;file&quot; is executed</span>
     <span class="n">map_1</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">live_config</span>
-    <span class="n">map_1</span><span class="o">.</span><span class="n">save_to_html</span><span class="p">(</span><span class="n">file_name</span><span class="o">=</span><span class="s1">&#39;output/share_and_survive_v0.html&#39;</span><span class="p">)</span>
+    <span class="n">map_1</span><span class="o">.</span><span class="n">save_to_html</span><span class="p">(</span><span class="n">file_name</span><span class="o">=</span><span class="n">output_file_name</span><span class="p">)</span>
+    <span class="n">html_file_changes</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">)</span>
+    <span class="n">push_file_to_server</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">)</span>
     <span class="c1">#Processing Data</span>
     <span class="k">return</span> <span class="n">v_df</span><span class="p">,</span> <span class="n">r_df</span><span class="p">,</span> <span class="n">map_1</span>
 </pre></div>
@@ -13243,7 +13320,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">v_df</span><span class="p">,</span> <span class="n">r_df</span><span class="p">,</span> <span class="n">map_1</span><span class="o">=</span><span class="n">main</span><span class="p">()</span>
@@ -13264,12 +13341,56 @@ div#notebook {
 
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>User Guide: https://github.com/keplergl/kepler.gl/blob/master/docs/keplergl-jupyter/user-guide.md
-The Map contains  20  volunteers and  7  pending requests
-Map saved to output/share_and_survive_v0.html!
+The Map contains  91  volunteers and  25  pending requests
+Map saved to output/COVID_SOS_v0.html!
+File saved to server
 </pre>
 </div>
 </div>
 
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#v_query = (&quot;&quot;&quot;Select * from volunteers&quot;&quot;&quot;)</span>
+<span class="c1">#v_data = pd.read_sql(v_query,server_con)</span>
+
+<span class="c1">#v_df.to_sql(name = &#39;volunteers&#39;, con = engine, schema=&#39;thebang7_COVID_SOS&#39;, if_exists=&#39;append&#39;, index = False,index_label=None)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#Delete command</span>
+<span class="c1">#ftp.delete(os.path.basename(File2Send))</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+    </div>
 </div>
 </div>
 
