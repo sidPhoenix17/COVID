@@ -24,6 +24,7 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 from shapely.geometry import Point
+import datetime as dt
 
 #Google Docs integration
 import pickle
@@ -179,7 +180,9 @@ def html_file_changes(output_file_name):
 def public_map(v_df,r_df,output_file_name):
     v_df['WhatsApp Contact Number']=9582148040
     r_df['Mobile Number']=9582148040
-    map_1 = keplergl.KeplerGl(height=800,data={'volunteer_data':v_df[v_df['Lat']!=0],'requests_data':r_df[r_df['Lat']!=0]})
+    map_1 = keplergl.KeplerGl(height=800,data={'volunteer_data':v_df.loc[v_df['Lat']!=0,['Timestamp', 'Full Name','geometry','Lat','Lon','radius','icon']],
+                                               'requests_data':r_df.loc[r_df['Lat']!=0,['Timestamp', 'Full Name', 'Mobile Number', 'Age'
+    ,'Would you like to give any special instructions to the volunteer aligned to you? Please share below.','Task Status','geometry','Lat','Lon','radius','icon']]})
     print('The public map contains ', v_df[v_df['Lat']!=0].shape[0],' volunteers and ', r_df[r_df['Lat']!=0].shape[0], ' pending requests')
     #variable live_config is defined when "file" is executed
     map_1.config = public_live_config
@@ -216,8 +219,8 @@ def push_file_to_server(File2Send,Url2Store):
 
 def main():
     #Fetching Data from sheets
+    print('Running script at',dt.datetime.utcnow()+dt.timedelta(minutes=330))
     service = google_api_activation()
-
     volunteer_df = extract_all_sheets(service,volunteer_sheet_data)
     requests_df = extract_all_sheets(service,senior_citizen_sheet_data)
     
@@ -239,7 +242,7 @@ def main():
 v_df, r_df, p1,p2=main()
 
 
-# In[ ]:
+# In[10]:
 
 
 # with open('map_config/map_config_public.py','w') as f:
@@ -248,7 +251,7 @@ v_df, r_df, p1,p2=main()
 #     print(f.read())
 
 
-# In[ ]:
+# In[11]:
 
 
 #v_query = ("""Select * from volunteers""")
@@ -257,7 +260,7 @@ v_df, r_df, p1,p2=main()
 #v_df.to_sql(name = 'volunteers', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
 
 
-# In[ ]:
+# In[12]:
 
 
 
@@ -271,7 +274,7 @@ v_df, r_df, p1,p2=main()
 
 
 
-# In[ ]:
+# In[13]:
 
 
 # from folium import Map, Marker, GeoJson
@@ -294,16 +297,4 @@ v_df, r_df, p1,p2=main()
 
 # m.save('folium_view.html')
 # m
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
 
