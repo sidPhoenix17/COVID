@@ -13084,9 +13084,9 @@ div#notebook {
 <span class="c1"># Map configuration &amp; icons</span>
 <span class="c1"># Push to website (hosted on BlueHost) automatically</span>
 <span class="c1"># Secure storage of file without exposure to blog</span>
+<span class="c1"># Run the script Online in a cron format</span>
 
 <span class="c1">#TODO:</span>
-<span class="c1"># Run the script Online in a cron format</span>
 <span class="c1"># Integrating code with matching algorithm &amp; writing matched entry into spreadsheet</span>
 </pre></div>
 
@@ -13151,19 +13151,15 @@ div#notebook {
 <span class="n">SCOPES</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;https://www.googleapis.com/auth/spreadsheets&#39;</span><span class="p">]</span>
 
 <span class="c1"># The ID and range of a sample spreadsheet.</span>
-<span class="n">Volunteer_Sheet_ID</span> <span class="o">=</span> <span class="s1">&#39;1e9H5yO1COGLNfA3lyZxRSgc2llDKRSFZX92Ov8VOzOs&#39;</span>
-<span class="n">Senior_citizen_sheet_ID</span> <span class="o">=</span> <span class="s1">&#39;1KrZCG_fYvImIy_-549VB0rzbbfKHkkbmJG0l6DH01zM&#39;</span>
-<span class="n">Range_name</span> <span class="o">=</span> <span class="s1">&#39;Form Responses 1!A1:K1000&#39;</span>
+<span class="n">volunteer_sheet_data</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span><span class="s1">&#39;GreenDream&#39;</span><span class="p">,</span><span class="s1">&#39;sheet_id&#39;</span><span class="p">:</span><span class="s1">&#39;1e9H5yO1COGLNfA3lyZxRSgc2llDKRSFZX92Ov8VOzOs&#39;</span><span class="p">,</span><span class="s1">&#39;range&#39;</span><span class="p">:</span><span class="s1">&#39;Form Responses 1!A1:K1000&#39;</span><span class="p">}]</span>
+<span class="n">senior_citizen_sheet_data</span> <span class="o">=</span> <span class="p">[{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span><span class="s1">&#39;GreenDream&#39;</span><span class="p">,</span><span class="s1">&#39;sheet_id&#39;</span><span class="p">:</span><span class="s1">&#39;1KrZCG_fYvImIy_-549VB0rzbbfKHkkbmJG0l6DH01zM&#39;</span><span class="p">,</span><span class="s1">&#39;range&#39;</span><span class="p">:</span><span class="s1">&#39;Form Responses 1!A1:K1000&#39;</span><span class="p">}]</span>
 
-<span class="n">output_file_name</span><span class="o">=</span> <span class="s1">&#39;output/COVID_SOS_v0.html&#39;</span>
+<span class="n">public_file_name</span><span class="o">=</span> <span class="s1">&#39;output/COVID_SOS_v0.html&#39;</span>
+<span class="n">private_file_name</span><span class="o">=</span> <span class="s1">&#39;output/private_COVID_SOS_v0.html&#39;</span>
 
-<span class="c1"># map_config=&#39;map_config/live_config_dark.py&#39;</span>
-<span class="n">map_config</span><span class="o">=</span><span class="s1">&#39;map_config/live_config_light.py&#39;</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">map_config</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-    <span class="n">file</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-    <span class="n">exec</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file</span><span class="p">))</span>
-
-<span class="n">mask_numbers</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="c1">#FORMAT: from map_config.filename import *</span>
+<span class="kn">from</span> <span class="nn">map_config.map_config_private</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">map_config.map_config_public</span> <span class="kn">import</span> <span class="o">*</span>
 </pre></div>
 
     </div>
@@ -13174,6 +13170,24 @@ div#notebook {
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">map_config_fn</span><span class="p">(</span><span class="n">map_config_file</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">map_config_file</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">config_file_reader</span><span class="p">:</span>
+        <span class="n">config_file</span> <span class="o">=</span> <span class="n">config_file_reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">exec</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">locals</span><span class="p">())</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">live_config</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">dx</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">connections</span><span class="p">(</span><span class="n">con_name</span><span class="p">):</span>
@@ -13196,7 +13210,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">google_api_activation</span><span class="p">():</span>
@@ -13205,8 +13219,8 @@ div#notebook {
     <span class="c1"># created automatically when the authorization flow completes for the first</span>
     <span class="c1"># time.</span>
     <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s1">&#39;support_files/token.pickle&#39;</span><span class="p">):</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;support_files/token.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">token</span><span class="p">:</span>
-            <span class="n">creds</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;support_files/token.pickle&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">token1</span><span class="p">:</span>
+            <span class="n">creds</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">token1</span><span class="p">)</span>
     <span class="c1"># If there are no (valid) credentials available, let the user log in.</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">creds</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">creds</span><span class="o">.</span><span class="n">valid</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">creds</span> <span class="ow">and</span> <span class="n">creds</span><span class="o">.</span><span class="n">expired</span> <span class="ow">and</span> <span class="n">creds</span><span class="o">.</span><span class="n">refresh_token</span><span class="p">:</span>
@@ -13220,6 +13234,15 @@ div#notebook {
     <span class="n">service</span> <span class="o">=</span> <span class="n">build</span><span class="p">(</span><span class="s1">&#39;sheets&#39;</span><span class="p">,</span> <span class="s1">&#39;v4&#39;</span><span class="p">,</span> <span class="n">credentials</span><span class="o">=</span><span class="n">creds</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">service</span>
 
+<span class="k">def</span> <span class="nf">extract_all_sheets</span><span class="p">(</span><span class="n">service</span><span class="p">,</span><span class="n">sheets_dict</span><span class="p">):</span>
+    <span class="n">sheets_df</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sheets_dict</span><span class="p">:</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span>
+        <span class="n">sheet_id</span><span class="o">=</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;sheet_id&#39;</span><span class="p">]</span>
+        <span class="n">range_name</span><span class="o">=</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;range&#39;</span><span class="p">]</span>
+        <span class="n">sheets_df_x</span> <span class="o">=</span> <span class="n">sheet_header</span><span class="p">(</span><span class="n">extract_sheet</span><span class="p">(</span><span class="n">service</span><span class="p">,</span><span class="n">sheet_id</span><span class="p">,</span><span class="n">range_name</span><span class="p">),</span><span class="n">source</span><span class="p">)</span>
+        <span class="n">sheets_df</span> <span class="o">=</span> <span class="n">sheets_df</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sheets_df_x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sheets_df</span>
 
 <span class="k">def</span> <span class="nf">extract_sheet</span><span class="p">(</span><span class="n">service</span><span class="p">,</span><span class="n">sheet_id</span><span class="p">,</span><span class="n">range_name</span><span class="p">):</span>
     <span class="c1"># Call the Sheets API</span>
@@ -13227,12 +13250,12 @@ div#notebook {
     <span class="n">result</span> <span class="o">=</span> <span class="n">sheet</span><span class="o">.</span><span class="n">values</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">spreadsheetId</span><span class="o">=</span><span class="n">sheet_id</span><span class="p">,</span><span class="nb">range</span><span class="o">=</span><span class="n">range_name</span><span class="p">)</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">result</span>
 
-
-<span class="k">def</span> <span class="nf">sheet_header</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">sheet_header</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="n">source</span><span class="p">):</span>
     <span class="n">input_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">])</span>
     <span class="n">new_header</span> <span class="o">=</span> <span class="n">input_data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="c1">#grab the first row for the header</span>
     <span class="n">input_data</span> <span class="o">=</span> <span class="n">input_data</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="c1">#take the data less the header row</span>
     <span class="n">input_data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">new_header</span> <span class="c1">#</span>
+    <span class="n">input_data</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">source</span>
     <span class="k">return</span> <span class="n">input_data</span>
 
 
@@ -13250,8 +13273,8 @@ div#notebook {
 
 
 <span class="k">def</span> <span class="nf">html_file_changes</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">):</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">bs</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output_file_reader</span><span class="p">:</span>
+        <span class="n">bs</span> <span class="o">=</span> <span class="n">output_file_reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
     <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">bs</span><span class="p">,</span> <span class="s1">&#39;html.parser&#39;</span><span class="p">)</span>
     <span class="n">soup</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">string</span><span class="o">=</span><span class="s1">&#39;COVID SOS Initiative - Connecting Volunteers with Requests&#39;</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
@@ -13266,51 +13289,42 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">push_file_to_server</span><span class="p">(</span><span class="n">File2Send</span><span class="p">):</span>   
-    <span class="n">ftp</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;ftp&#39;</span><span class="p">)</span>
-    <span class="n">Output_Directory</span> <span class="o">=</span> <span class="s2">&quot;/public_html/covid19/&quot;</span>
-    <span class="n">ftp</span><span class="o">.</span><span class="n">cwd</span><span class="p">(</span><span class="n">Output_Directory</span><span class="p">)</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">File2Send</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">ftp</span><span class="o">.</span><span class="n">storbinary</span><span class="p">(</span><span class="s1">&#39;STOR &#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">File2Send</span><span class="p">),</span> <span class="n">f</span><span class="p">)</span> 
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;File saved to server&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="kc">None</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
 <div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-    <span class="c1">#Fetching Data from sheets</span>
-    <span class="n">service</span> <span class="o">=</span> <span class="n">google_api_activation</span><span class="p">()</span>
-    <span class="n">volunteer_df</span> <span class="o">=</span> <span class="n">sheet_header</span><span class="p">(</span><span class="n">extract_sheet</span><span class="p">(</span><span class="n">service</span><span class="p">,</span><span class="n">Volunteer_Sheet_ID</span><span class="p">,</span><span class="n">Range_name</span><span class="p">))</span>
-    <span class="n">requests_df</span> <span class="o">=</span> <span class="n">sheet_header</span><span class="p">(</span><span class="n">extract_sheet</span><span class="p">(</span><span class="n">service</span><span class="p">,</span><span class="n">Senior_citizen_sheet_ID</span><span class="p">,</span><span class="n">Range_name</span><span class="p">))</span>
-    <span class="n">v_df</span> <span class="o">=</span> <span class="n">sheet_clean_up</span><span class="p">(</span><span class="n">volunteer_df</span><span class="p">,</span><span class="n">default_r</span><span class="p">,</span><span class="n">buffer_radius</span><span class="p">)</span>
-    <span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;icon&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;location&#39;</span>
-    <span class="n">r_df</span> <span class="o">=</span> <span class="n">sheet_clean_up</span><span class="p">(</span><span class="n">requests_df</span><span class="p">,</span><span class="n">default_r</span><span class="p">,</span><span class="n">buffer_radius</span><span class="p">)</span>
-    <span class="n">r_df</span> <span class="o">=</span> <span class="n">r_df</span><span class="p">[</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Task Status&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Pending&#39;</span><span class="p">]</span>
-    <span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;icon&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;home&#39;</span>
-    <span class="k">if</span><span class="p">(</span><span class="n">mask_numbers</span><span class="p">):</span>
-        <span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;WhatsApp Contact Number&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">9582148040</span>
-        <span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Mobile Number&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">9582148040</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">public_map</span><span class="p">(</span><span class="n">v_df</span><span class="p">,</span><span class="n">r_df</span><span class="p">,</span><span class="n">output_file_name</span><span class="p">):</span>
+    <span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;WhatsApp Contact Number&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">9582148040</span>
+    <span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Mobile Number&#39;</span><span class="p">]</span><span class="o">=</span><span class="mi">9582148040</span>
     <span class="n">map_1</span> <span class="o">=</span> <span class="n">keplergl</span><span class="o">.</span><span class="n">KeplerGl</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;volunteer_data&#39;</span><span class="p">:</span><span class="n">v_df</span><span class="p">[</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;requests_data&#39;</span><span class="p">:</span><span class="n">r_df</span><span class="p">[</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">]})</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The Map contains &#39;</span><span class="p">,</span> <span class="n">v_df</span><span class="p">[</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39; volunteers and &#39;</span><span class="p">,</span> <span class="n">r_df</span><span class="p">[</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39; pending requests&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The public map contains &#39;</span><span class="p">,</span> <span class="n">v_df</span><span class="p">[</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39; volunteers and &#39;</span><span class="p">,</span> <span class="n">r_df</span><span class="p">[</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39; pending requests&#39;</span><span class="p">)</span>
     <span class="c1">#variable live_config is defined when &quot;file&quot; is executed</span>
-    <span class="n">map_1</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">live_config</span>
+    <span class="n">map_1</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">public_live_config</span>
     <span class="n">map_1</span><span class="o">.</span><span class="n">save_to_html</span><span class="p">(</span><span class="n">file_name</span><span class="o">=</span><span class="n">output_file_name</span><span class="p">)</span>
     <span class="n">html_file_changes</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">)</span>
-    <span class="n">push_file_to_server</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">)</span>
-    <span class="c1">#Processing Data</span>
-    <span class="k">return</span> <span class="n">v_df</span><span class="p">,</span> <span class="n">r_df</span><span class="p">,</span> <span class="n">map_1</span>
+    <span class="n">push_file_to_server</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span><span class="n">output_file_name</span><span class="p">)</span>
+    <span class="n">push_file_to_server</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span><span class="s1">&#39;output/share_and_survive_v0_dark.html&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">map_1</span>
+
+<span class="k">def</span> <span class="nf">private_map</span><span class="p">(</span><span class="n">v_df</span><span class="p">,</span><span class="n">r_df</span><span class="p">,</span><span class="n">output_file_name</span><span class="p">):</span>
+    <span class="n">r_df</span> <span class="o">=</span> <span class="n">r_df</span><span class="p">[</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Task Status&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;Pending&#39;</span><span class="p">]</span>
+    <span class="n">map_1</span> <span class="o">=</span> <span class="n">keplergl</span><span class="o">.</span><span class="n">KeplerGl</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;volunteer_data&#39;</span><span class="p">:</span><span class="n">v_df</span><span class="p">[</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39;requests_data&#39;</span><span class="p">:</span><span class="n">r_df</span><span class="p">[</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">]})</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;The private Map contains &#39;</span><span class="p">,</span> <span class="n">v_df</span><span class="p">[</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="s1">&#39; volunteers and &#39;</span><span class="p">,</span> <span class="n">r_df</span><span class="p">[</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;Lat&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39; pending requests&#39;</span><span class="p">)</span>
+    <span class="c1">#variable live_config is defined when &quot;file&quot; is executed</span>
+    <span class="n">map_1</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">private_live_config</span>
+    <span class="n">map_1</span><span class="o">.</span><span class="n">save_to_html</span><span class="p">(</span><span class="n">file_name</span><span class="o">=</span><span class="n">output_file_name</span><span class="p">)</span>
+    <span class="n">html_file_changes</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">)</span>
+    <span class="n">push_file_to_server</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span><span class="n">output_file_name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">map_1</span>
+
+
+<span class="k">def</span> <span class="nf">push_file_to_server</span><span class="p">(</span><span class="n">File2Send</span><span class="p">,</span><span class="n">Url2Store</span><span class="p">):</span>
+    <span class="n">ftp</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;ftp&#39;</span><span class="p">)</span>
+    <span class="n">Output_Directory</span> <span class="o">=</span> <span class="s2">&quot;/public_html/covid19/&quot;</span>
+    <span class="n">ftp</span><span class="o">.</span><span class="n">cwd</span><span class="p">(</span><span class="n">Output_Directory</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">File2Send</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">server_f</span><span class="p">:</span>
+        <span class="n">ftp</span><span class="o">.</span><span class="n">storbinary</span><span class="p">(</span><span class="s1">&#39;STOR &#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">Url2Store</span><span class="p">),</span> <span class="n">server_f</span><span class="p">)</span> 
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;File saved to server at URL: www.thebangaloreguy.com/covid19/&#39;</span><span class="o">+</span><span class="p">(</span><span class="n">Url2Store</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="kc">None</span>
 </pre></div>
 
     </div>
@@ -13323,7 +13337,36 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">v_df</span><span class="p">,</span> <span class="n">r_df</span><span class="p">,</span> <span class="n">map_1</span><span class="o">=</span><span class="n">main</span><span class="p">()</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="c1">#Fetching Data from sheets</span>
+    <span class="n">service</span> <span class="o">=</span> <span class="n">google_api_activation</span><span class="p">()</span>
+
+    <span class="n">volunteer_df</span> <span class="o">=</span> <span class="n">extract_all_sheets</span><span class="p">(</span><span class="n">service</span><span class="p">,</span><span class="n">volunteer_sheet_data</span><span class="p">)</span>
+    <span class="n">requests_df</span> <span class="o">=</span> <span class="n">extract_all_sheets</span><span class="p">(</span><span class="n">service</span><span class="p">,</span><span class="n">senior_citizen_sheet_data</span><span class="p">)</span>
+    
+    <span class="n">v_df</span> <span class="o">=</span> <span class="n">sheet_clean_up</span><span class="p">(</span><span class="n">volunteer_df</span><span class="p">,</span><span class="n">default_r</span><span class="p">,</span><span class="n">buffer_radius</span><span class="p">)</span>
+    <span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;icon&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;location&#39;</span>
+    
+    <span class="n">r_df</span> <span class="o">=</span> <span class="n">sheet_clean_up</span><span class="p">(</span><span class="n">requests_df</span><span class="p">,</span><span class="n">default_r</span><span class="p">,</span><span class="n">buffer_radius</span><span class="p">)</span>
+    <span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;icon&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;home&#39;</span>
+    
+    <span class="n">private_map_v1</span> <span class="o">=</span> <span class="n">private_map</span><span class="p">(</span><span class="n">v_df</span><span class="p">,</span><span class="n">r_df</span><span class="p">,</span><span class="n">private_file_name</span><span class="p">)</span>
+    <span class="n">public_map_v1</span> <span class="o">=</span> <span class="n">public_map</span><span class="p">(</span><span class="n">v_df</span><span class="p">,</span><span class="n">r_df</span><span class="p">,</span><span class="n">public_file_name</span><span class="p">)</span>
+    <span class="c1">#Processing Data</span>
+    <span class="k">return</span> <span class="n">v_df</span><span class="p">,</span> <span class="n">r_df</span><span class="p">,</span> <span class="n">private_map_v1</span><span class="p">,</span><span class="n">public_map_v1</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">v_df</span><span class="p">,</span> <span class="n">r_df</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span><span class="n">p2</span><span class="o">=</span><span class="n">main</span><span class="p">()</span>
 </pre></div>
 
     </div>
@@ -13341,9 +13384,14 @@ div#notebook {
 
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>User Guide: https://github.com/keplergl/kepler.gl/blob/master/docs/keplergl-jupyter/user-guide.md
-The Map contains  91  volunteers and  25  pending requests
+The private Map contains  94  volunteers and  25  pending requests
+Map saved to output/private_COVID_SOS_v0.html!
+File saved to server at URL: www.thebangaloreguy.com/covid19/private_COVID_SOS_v0.html
+User Guide: https://github.com/keplergl/kepler.gl/blob/master/docs/keplergl-jupyter/user-guide.md
+The public map contains  94  volunteers and  27  pending requests
 Map saved to output/COVID_SOS_v0.html!
-File saved to server
+File saved to server at URL: www.thebangaloreguy.com/covid19/COVID_SOS_v0.html
+File saved to server at URL: www.thebangaloreguy.com/covid19/share_and_survive_v0_dark.html
 </pre>
 </div>
 </div>
@@ -13354,7 +13402,23 @@ File saved to server
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># with open(&#39;map_config/map_config_public.py&#39;,&#39;w&#39;) as f:</span>
+<span class="c1">#     f.write(&#39;public_live_config = {}&#39;.format(map_1.config))</span>
+<span class="c1"># with open(&#39;map_config/map_config_new.py&#39;,&#39;r&#39;) as f:</span>
+<span class="c1">#     print(f.read())</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#v_query = (&quot;&quot;&quot;Select * from volunteers&quot;&quot;&quot;)</span>
@@ -13370,11 +13434,56 @@ File saved to server
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#Delete command</span>
 <span class="c1">#ftp.delete(os.path.basename(File2Send))</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># from folium import Map, Marker, GeoJson</span>
+<span class="c1"># from folium.plugins import MarkerCluster</span>
+
+
+<span class="c1"># v_df</span>
+
+<span class="c1"># #quick visualization on map of raw data</span>
+
+<span class="c1"># m = Map(location= [12.97194, 77.59369], zoom_start= 12, tiles=&quot;cartodbpositron&quot;, </span>
+<span class="c1">#         attr= &#39;© &lt;a href=&quot;http://www.openstreetmap.org/copyright&quot;&gt;OpenStreetMap&lt;/a&gt; contributors © &lt;a href=&quot;http://cartodb.com/attributions#basemaps&quot;&gt;CartoDB&lt;/a&gt;&#39; </span>
+<span class="c1"># )</span>
+<span class="c1"># mc = MarkerCluster()</span>
+
+<span class="c1"># for i in v_df.index:</span>
+<span class="c1">#     mk = Marker(location=[v_df.loc[i,&#39;Lat&#39;],v_df.loc[i,&#39;Lon&#39;]])</span>
+<span class="c1">#     mk.add_to(mc)</span>
+<span class="c1"># mc.add_to(m)</span>
+
+<span class="c1"># m.save(&#39;folium_view.html&#39;)</span>
+<span class="c1"># m</span>
 </pre></div>
 
     </div>
