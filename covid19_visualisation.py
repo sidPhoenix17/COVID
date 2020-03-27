@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 #Completed
@@ -15,7 +15,7 @@
 # Integrating code with matching algorithm & writing matched entry into spreadsheet
 
 
-# In[2]:
+# In[1]:
 
 
 #Basic
@@ -48,7 +48,7 @@ import os
 from bs4 import BeautifulSoup
 
 
-# In[3]:
+# In[2]:
 
 
 
@@ -75,7 +75,7 @@ from map_config.map_config_private import *
 from map_config.map_config_public import *
 
 
-# In[4]:
+# In[3]:
 
 
 def map_config_fn(map_config_file):
@@ -86,7 +86,7 @@ def map_config_fn(map_config_file):
     return dx
 
 
-# In[5]:
+# In[4]:
 
 
 def connections(con_name):
@@ -102,7 +102,7 @@ def connections(con_name):
     return server_con
 
 
-# In[6]:
+# In[5]:
 
 
 def google_api_activation():
@@ -174,15 +174,15 @@ def html_file_changes(output_file_name):
     return None
 
 
-# In[7]:
+# In[6]:
 
 
 def public_map(v_df,r_df,output_file_name):
     v_df['WhatsApp Contact Number']=9582148040
     r_df['Mobile Number']=9582148040
-    map_1 = keplergl.KeplerGl(height=800,data={'volunteer_data':v_df.loc[v_df['Lat']!=0,['Timestamp', 'Full Name','geometry','Lat','Lon','radius','icon']],
+    map_1 = keplergl.KeplerGl(height=800,data={'volunteer_data':v_df.loc[v_df['Lat']!=0,['Timestamp', 'Full Name','geometry','Lat','Lon','radius','icon','TYPE']],
                                                'requests_data':r_df.loc[r_df['Lat']!=0,['Timestamp', 'Full Name', 'Mobile Number', 'Age'
-    ,'Would you like to give any special instructions to the volunteer aligned to you? Please share below.','Task Status','geometry','Lat','Lon','radius','icon']]})
+    ,'Would you like to give any special instructions to the volunteer aligned to you? Please share below.','Task Status','geometry','Lat','Lon','radius','icon','TYPE']]})
     print('The public map contains ', v_df[v_df['Lat']!=0].shape[0],' volunteers and ', r_df[r_df['Lat']!=0].shape[0], ' pending requests')
     #variable live_config is defined when "file" is executed
     map_1.config = public_live_config
@@ -214,7 +214,7 @@ def push_file_to_server(File2Send,Url2Store):
     return None
 
 
-# In[8]:
+# In[7]:
 
 
 def main():
@@ -222,7 +222,9 @@ def main():
     print('Running script at',dt.datetime.utcnow()+dt.timedelta(minutes=330))
     service = google_api_activation()
     volunteer_df = extract_all_sheets(service,volunteer_sheet_data)
+    volunteer_df['TYPE']='VOLUNTEER'
     requests_df = extract_all_sheets(service,senior_citizen_sheet_data)
+    requests_df['TYPE']='REQUEST'
     
     v_df = sheet_clean_up(volunteer_df,default_r,buffer_radius)
     v_df['icon']='location'
@@ -236,13 +238,13 @@ def main():
     return v_df, r_df, private_map_v1,public_map_v1
 
 
-# In[9]:
+# In[8]:
 
 
 v_df, r_df, p1,p2=main()
 
 
-# In[10]:
+# In[ ]:
 
 
 # with open('map_config/map_config_public.py','w') as f:
@@ -251,7 +253,7 @@ v_df, r_df, p1,p2=main()
 #     print(f.read())
 
 
-# In[11]:
+# In[ ]:
 
 
 #v_query = ("""Select * from volunteers""")
@@ -260,7 +262,7 @@ v_df, r_df, p1,p2=main()
 #v_df.to_sql(name = 'volunteers', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
 
 
-# In[12]:
+# In[ ]:
 
 
 
@@ -274,7 +276,7 @@ v_df, r_df, p1,p2=main()
 
 
 
-# In[13]:
+# In[ ]:
 
 
 # from folium import Map, Marker, GeoJson
