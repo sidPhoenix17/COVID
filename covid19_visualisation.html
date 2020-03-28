@@ -13274,10 +13274,17 @@ div#notebook {
 
 
 <span class="k">def</span> <span class="nf">html_file_changes</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">filedata</span> <span class="o">=</span> <span class="n">file</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">filedata</span> <span class="o">=</span> <span class="n">filedata</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;keplergl-jupyter-html&#39;</span><span class="p">,</span><span class="s1">&#39;covid-sos-page&#39;</span><span class="p">)</span>
+        <span class="n">filedata</span> <span class="o">=</span> <span class="n">filedata</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;UA-64694404-19&#39;</span><span class="p">,</span><span class="s1">&#39;UA-143016880-1&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+        <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">filedata</span><span class="p">)</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">output_file_reader</span><span class="p">:</span>
         <span class="n">bs</span> <span class="o">=</span> <span class="n">output_file_reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
     <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">bs</span><span class="p">,</span> <span class="s1">&#39;html.parser&#39;</span><span class="p">)</span>
     <span class="n">soup</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">string</span><span class="o">=</span><span class="s1">&#39;COVID SOS Initiative - Connecting Volunteers with Requests&#39;</span>
+    <span class="c1">#Enabling GA</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output_file_name</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
         <span class="n">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">soup</span><span class="p">))</span>
     <span class="k">return</span> <span class="kc">None</span>
@@ -13325,7 +13332,7 @@ div#notebook {
     <span class="n">Output_Directory</span> <span class="o">=</span> <span class="s2">&quot;/public_html/covid19/&quot;</span>
     <span class="n">ftp</span><span class="o">.</span><span class="n">cwd</span><span class="p">(</span><span class="n">Output_Directory</span><span class="p">)</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">File2Send</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">server_f</span><span class="p">:</span>
-        <span class="n">ftp</span><span class="o">.</span><span class="n">storbinary</span><span class="p">(</span><span class="s1">&#39;STOR &#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">Url2Store</span><span class="p">),</span> <span class="n">server_f</span><span class="p">)</span> 
+        <span class="n">ftp</span><span class="o">.</span><span class="n">storbinary</span><span class="p">(</span><span class="s1">&#39;STOR &#39;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">Url2Store</span><span class="p">),</span> <span class="n">server_f</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;File saved to server at URL: www.thebangaloreguy.com/covid19/&#39;</span><span class="o">+</span><span class="p">(</span><span class="n">Url2Store</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
     <span class="k">return</span> <span class="kc">None</span>
 </pre></div>
@@ -13388,13 +13395,13 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>Running script at 2020-03-28 01:30:48.639470
+<pre>Running script at 2020-03-28 16:53:47.531824
 User Guide: https://github.com/keplergl/kepler.gl/blob/master/docs/keplergl-jupyter/user-guide.md
-The private Map contains  97  volunteers and  25  pending requests
+The private Map contains  104  volunteers and  25  pending requests
 Map saved to output/private_COVID_SOS_v0.html!
 File saved to server at URL: www.thebangaloreguy.com/covid19/private_COVID_SOS_v0.html
 User Guide: https://github.com/keplergl/kepler.gl/blob/master/docs/keplergl-jupyter/user-guide.md
-The public map contains  97  volunteers and  27  pending requests
+The public map contains  104  volunteers and  27  pending requests
 Map saved to output/COVID_SOS_v0.html!
 File saved to server at URL: www.thebangaloreguy.com/covid19/COVID_SOS_v0.html
 File saved to server at URL: www.thebangaloreguy.com/covid19/share_and_survive_v0_dark.html
@@ -13402,6 +13409,19 @@ File saved to server at URL: www.thebangaloreguy.com/covid19/share_and_survive_v
 </div>
 </div>
 
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+    </div>
 </div>
 </div>
 
