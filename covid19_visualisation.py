@@ -165,10 +165,17 @@ def sheet_clean_up(df,default_r,buffer_radius):
 
 
 def html_file_changes(output_file_name):
+    with open(output_file_name,'r') as file:
+        filedata = file.read()
+        filedata = filedata.replace('keplergl-jupyter-html','covid-sos-page')
+        filedata = filedata.replace('UA-64694404-19','UA-143016880-1')
+    with open(output_file_name,'w') as file:
+        file.write(filedata)
     with open(output_file_name,'r') as output_file_reader:
         bs = output_file_reader.read()
     soup = BeautifulSoup(bs, 'html.parser')
     soup.title.string='COVID SOS Initiative - Connecting Volunteers with Requests'
+    #Enabling GA
     with open(output_file_name, "w") as file:
         file.write(str(soup))
     return None
@@ -209,7 +216,7 @@ def push_file_to_server(File2Send,Url2Store):
     Output_Directory = "/public_html/covid19/"
     ftp.cwd(Output_Directory)
     with open(File2Send, "rb") as server_f:
-        ftp.storbinary('STOR ' + os.path.basename(Url2Store), server_f) 
+        ftp.storbinary('STOR ' + os.path.basename(Url2Store), server_f)
     print('File saved to server at URL: www.thebangaloreguy.com/covid19/'+(Url2Store).split('/')[-1])
     return None
 
@@ -242,6 +249,12 @@ def main():
 
 
 v_df, r_df, p1,p2=main()
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
