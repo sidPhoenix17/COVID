@@ -6,3 +6,5 @@
 support_files/
 output/
 map_config/
+local_settings.py
+cred_config.py

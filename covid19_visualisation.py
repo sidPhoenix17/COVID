@@ -33,76 +33,36 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-#Map
-import keplergl
-
-#DB Connections
-import mysql.connector as sql_con
-from sqlalchemy import create_engine
-import cred_config as cc
-
 #File Transfer
 import ftplib
 import os
 
-from bs4 import BeautifulSoup
+from connections import connections
+from map_generator import public_map,private_map
+from settings import *
+
+from database_entry import add_volunteers_to_db
+from connections import connections
 
 
 # In[2]:
 
 
-
-default_r=0.5
-
-#Approximation
-lat_deg_to_km = 95.0
-lon_deg_to_km = 110.0
-buffer_radius = 1/np.sqrt(95*95+110*110)
-
-
-# If modifying these scopes, delete the file token.pickle.
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-
 # The ID and range of a sample spreadsheet.
-volunteer_sheet_data = [{'source':'GreenDream','sheet_id':'1e9H5yO1COGLNfA3lyZxRSgc2llDKRSFZX92Ov8VOzOs','range':'Form Responses 1!A1:K1000'}]
-senior_citizen_sheet_data = [{'source':'GreenDream','sheet_id':'1KrZCG_fYvImIy_-549VB0rzbbfKHkkbmJG0l6DH01zM','range':'Form Responses 1!A1:K1000'}]
+volunteer_sheet_data = [{'source':'GreenDream','sheet_id':'1e9H5yO1COGLNfA3lyZxRSgc2llDKRSFZX92Ov8VOzOs','range':'Form Responses 1!A1:K1000','columns': {'Timestamp':'timestamp', 'Full Name':'name', 'WhatsApp Contact Number':'mob_number', 'Email Address':'email_id',
+       'Your Location (Prefer mentioning nearest Google Maps Landmark - that you specify on mobile apps like Ola, Uber and Swiggy)':'address',
+       'Do you have a grocery and medical store within walking distance of 500 meters?':'grocery_store',
+       'GeoStamp':'geostamp', 'GeoAddress':'geoaddress', 'GeoCodeLat':'latitude', 'GeoCodeLon':'longitude'}}]
+senior_citizen_sheet_data = [{'source':'GreenDream','sheet_id':'1KrZCG_fYvImIy_-549VB0rzbbfKHkkbmJG0l6DH01zM','range':'Form Responses 1!A1:K1000','columns':{'Timestamp':'timestamp', 'Full Name':'name', 'Mobile Number':'mob_number', 'Age':'age',
+       'Your Location (be as precise as possible)':'address',
+       'Would you like to give any special instructions to the volunteer aligned to you? Please share below.':'request',
+       'Task Status':'status', 'GeoStamp':'geostamp', 'GeoAddress':'geoaddress','GeoCodeLat':'latitude', 'GeoCodeLon':'longitude'}}]
 
 public_file_name= 'output/COVID_SOS_v0.html'
 private_file_name= 'output/private_COVID_SOS_v0.html'
 
-#FORMAT: from map_config.filename import *
-from map_config.map_config_private import *
-from map_config.map_config_public import *
-
 
 # In[3]:
-
-
-def map_config_fn(map_config_file):
-    with open(map_config_file,'r') as config_file_reader:
-        config_file = config_file_reader.read()
-        exec(config_file, None, locals())
-    dx = live_config.copy()
-    return dx
-
-
-# In[4]:
-
-
-def connections(con_name):
-    if(con_name=='db_read'):
-        cred_r=cc.credentials['covid_sos_read']
-        server_con = sql_con.connect(user=cred_r['user'], password=cred_r['password'], host=cred_r['host'],database=cred_r['database'])
-    if(con_name=='db_write'):
-        cred_w = cc.credentials['covid_sos_write']
-        server_con = create_engine("mysql+pymysql://{user}:{password}@{host}/{database}".format(user = cred_w['user'], password = cred_w['password'], host = cred_w['host'], database = cred_w['database']), pool_size=10, max_overflow=20, echo=False)
-    if(con_name=='ftp'):
-        FTP_con = cc.credentials['ftp']
-        server_con = ftplib.FTP(host=FTP_con['host'], user=FTP_con['user'], passwd=FTP_con['password'])
-    return server_con
-
-
-# In[5]:
 
 
 def google_api_activation():
@@ -132,7 +92,9 @@ def extract_all_sheets(service,sheets_dict):
         source = i['source']
         sheet_id=i['sheet_id']
         range_name=i['range']
+        column_rename=i['columns']
         sheets_df_x = sheet_header(extract_sheet(service,sheet_id,range_name),source)
+        sheets_df_x = sheets_df_x.rename(columns=column_rename)
         sheets_df = sheets_df.append(sheets_df_x)
     return sheets_df
 
@@ -148,67 +110,54 @@ def sheet_header(df,source):
     input_data = input_data[1:] #take the data less the header row
     input_data.columns = new_header #
     input_data['source']=source
+    input_data = input_data.reset_index(drop=True)
     return input_data
 
 
-def sheet_clean_up(df,default_r,buffer_radius):
-    
+def sheet_clean_up(df,default_r,buffer_radius,user_type='volunteer'):
     # Sample Data
     df = gpd.GeoDataFrame(df)
-    df['Lat']=df['GeoCodeLat'].astype(float).fillna(0)
-    df['Lon']=df['GeoCodeLon'].astype(float).fillna(0)
+    print('Received ', df.shape[0], ' responses')
+    d = mob_number_clean_up(df[['mob_number']])
+    df['mob_number']=d['mob_number']
+    df = df[d['mob_number_correct']]
+    print('Received ', d[d['mob_number_correct']==False].shape[0], ' responses with incorrect mobile numbers')
+    df['latitude']=df['latitude'].astype(float).fillna(0)
+    df['longitude']=df['longitude'].astype(float).fillna(0)
+    print('Received ', df[(df['latitude']==0)|(df['longitude']==0)].shape[0], ' responses with no location')
     df['radius']=default_r
-    geometry = df.apply(lambda x: Point(x['Lon'],x['Lat']).buffer(buffer_radius*x.radius),axis=1)
+    geometry = df.apply(lambda x: Point(x['latitude'],x['longitude']).buffer(buffer_radius*x.radius),axis=1)
     crs = {'init': 'epsg:4326'}
-    f_df = gpd.GeoDataFrame(df, crs=crs, geometry=geometry).drop(columns=['GeoCodeLat','GeoCodeLon'])
+    f_df = gpd.GeoDataFrame(df, crs=crs, geometry=geometry)
+    if(user_type=='volunteer'):
+#         f_df['timestamp'] = pd.to_datetime(f_df['timestamp'])
+        f_df['icon']='location'
+        f_df['country']='India'
+    if(user_type=='requests'):
+        f_df['icon']='home'
+        f_df['country']='India'
+        f_df['email_id']=''
     return f_df
 
 
-def html_file_changes(output_file_name):
-    with open(output_file_name,'r') as file:
-        filedata = file.read()
-        filedata = filedata.replace('keplergl-jupyter-html','covid-sos-page')
-        filedata = filedata.replace('UA-64694404-19','UA-143016880-1')
-    with open(output_file_name,'w') as file:
-        file.write(filedata)
-    with open(output_file_name,'r') as output_file_reader:
-        bs = output_file_reader.read()
-    soup = BeautifulSoup(bs, 'html.parser')
-    soup.title.string='COVID SOS Initiative - Connecting Volunteers with Requests'
-    #Enabling GA
-    with open(output_file_name, "w") as file:
-        file.write(str(soup))
-    return None
+def mob_number_clean_up(df):
+    #Has space
+    df['mob_number']=df['mob_number'].str.replace(" ",'')
+    df['mob_number']=df['mob_number'].str.replace(",",'')
+    df['mob_number']=df['mob_number'].str.replace("\+91",'')
+    df['mob_number']=df['mob_number'].apply(lambda x: str(int(x)))
+    #Has zero
+    df['mob_number_correct']=df['mob_number'].apply(lambda x: len(str(int(x)))==10)    
+    return df
 
 
-# In[6]:
+# In[ ]:
 
 
-def public_map(v_df,r_df,output_file_name):
-    v_df['WhatsApp Contact Number']=9582148040
-    r_df['Mobile Number']=9582148040
-    map_1 = keplergl.KeplerGl(height=800,data={'volunteer_data':v_df.loc[v_df['Lat']!=0,['Timestamp', 'Full Name','geometry','Lat','Lon','radius','icon','TYPE']],
-                                               'requests_data':r_df.loc[r_df['Lat']!=0,['Timestamp', 'Full Name', 'Mobile Number', 'Age'
-    ,'Would you like to give any special instructions to the volunteer aligned to you? Please share below.','Task Status','geometry','Lat','Lon','radius','icon','TYPE']]})
-    print('The public map contains ', v_df[v_df['Lat']!=0].shape[0],' volunteers and ', r_df[r_df['Lat']!=0].shape[0], ' pending requests')
-    #variable live_config is defined when "file" is executed
-    map_1.config = public_live_config
-    map_1.save_to_html(file_name=output_file_name)
-    html_file_changes(output_file_name)
-    push_file_to_server(output_file_name,output_file_name)
-    push_file_to_server(output_file_name,'output/share_and_survive_v0_dark.html')
-    return map_1
 
-def private_map(v_df,r_df,output_file_name):
-    r_df = r_df[r_df['Task Status']=='Pending']
-    map_1 = keplergl.KeplerGl(height=800,data={'volunteer_data':v_df[v_df['Lat']!=0],'requests_data':r_df[r_df['Lat']!=0]})
-    print('The private Map contains ', v_df[v_df['Lat']!=0].shape[0],' volunteers and ', r_df[r_df['Lat']!=0].shape[0], ' pending requests')
-    #variable live_config is defined when "file" is executed
-    map_1.config = private_live_config
-    map_1.save_to_html(file_name=output_file_name)
-    html_file_changes(output_file_name)
-    push_file_to_server(output_file_name,output_file_name)
-    return map_1
+
+
+# In[4]:
 
 
 def push_file_to_server(File2Send,Url2Store):
@@ -221,31 +170,35 @@ def push_file_to_server(File2Send,Url2Store):
     return None
 
 
-# In[7]:
+# In[5]:
 
 
 def main():
     #Fetching Data from sheets
     print('Running script at',dt.datetime.utcnow()+dt.timedelta(minutes=330))
     service = google_api_activation()
+    print('Google Authentication completed')
     volunteer_df = extract_all_sheets(service,volunteer_sheet_data)
     volunteer_df['TYPE']='VOLUNTEER'
     requests_df = extract_all_sheets(service,senior_citizen_sheet_data)
     requests_df['TYPE']='REQUEST'
     
-    v_df = sheet_clean_up(volunteer_df,default_r,buffer_radius)
-    v_df['icon']='location'
-    
-    r_df = sheet_clean_up(requests_df,default_r,buffer_radius)
-    r_df['icon']='home'
-    
-    private_map_v1 = private_map(v_df,r_df,private_file_name)
-    public_map_v1 = public_map(v_df,r_df,public_file_name)
+    v_df = sheet_clean_up(volunteer_df,default_r,buffer_radius,'volunteer')
+    v_db_status, response = add_volunteers_to_db(v_df)
+    print('DB Update Status: ', v_db_status)
+    print('Message:', response)
+    r_df = sheet_clean_up(requests_df,default_r,buffer_radius,'requests')
+    #add_requests(r_df.rename(columns={'email_d':'email_id'})[['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age']])
+    private_map_v1 = private_map(v_df,r_df,private_file_name,map_pkg='kepler')
+    push_file_to_server(private_file_name,private_file_name)
+    push_file_to_server(private_file_name,'output/share_and_survive_v0_dark.html')
+    public_map_v1 = public_map(v_df,r_df,public_file_name,map_pkg='kepler')
+    push_file_to_server(public_file_name,public_file_name)
     #Processing Data
     return v_df, r_df, private_map_v1,public_map_v1
 
 
-# In[8]:
+# In[6]:
 
 
 v_df, r_df, p1,p2=main()
@@ -254,7 +207,9 @@ v_df, r_df, p1,p2=main()
 # In[ ]:
 
 
+#v_df[['Lat','Lon','Full Name','TYPE']].rename(columns={'Full Name':'name','Lat':'lat','Lon':'lon','TYPE':'type'}).to_json(orient='table',index=False)
 
+#r_df[['Lat','Lon','Full Name','TYPE']].rename(columns={'Full Name':'name','Lat':'lat','Lon':'lon','TYPE':'type'}).to_json(orient='table',index=False)
 
 
 # In[ ]:
@@ -281,12 +236,6 @@ v_df, r_df, p1,p2=main()
 
 #Delete command
 #ftp.delete(os.path.basename(File2Send))
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:
