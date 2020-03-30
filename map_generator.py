@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
+# In[ ]:
 
 
 #Kepler
@@ -9,7 +9,7 @@
 #Mapbox
 
 
-# In[4]:
+# In[ ]:
 
 
 import numpy as np
@@ -48,14 +48,15 @@ def html_file_changes(output_file_name):
 # In[ ]:
 
 
-def public_map(v_df,r_df,output_file_name,map_pkg='kepler'):
+def public_map(v_df_c,r_df_c,output_file_name,map_pkg='kepler'):
     if(map_pkg=='kepler'):
-        v_df['WhatsApp Contact Number']=9582148040
-        r_df['Mobile Number']=9582148040
-        map_1 = keplergl.KeplerGl(height=800,data={'volunteer_data':v_df.loc[v_df['Lat']!=0,['Timestamp', 'Full Name','geometry','Lat','Lon','radius','icon','TYPE']],
-                                                   'requests_data':r_df.loc[r_df['Lat']!=0,['Timestamp', 'Full Name', 'Mobile Number', 'Age'
-        ,'Would you like to give any special instructions to the volunteer aligned to you? Please share below.','Task Status','geometry','Lat','Lon','radius','icon','TYPE']]})
-        print('The public map contains ', v_df[v_df['Lat']!=0].shape[0],' volunteers and ', r_df[r_df['Lat']!=0].shape[0], ' pending requests')
+        v_df = v_df_c.copy()
+        r_df = r_df_c.copy()
+        v_df['mob_number']=9582148040
+        r_df['mob_number']=9582148040
+        map_1 = keplergl.KeplerGl(height=800,data={'volunteer_data':v_df.loc[v_df['latitude']!=0,['timestamp', 'name','geometry','latitude','longitude','radius','icon','TYPE']],
+                                                   'requests_data':r_df.loc[r_df['latitude']!=0,['timestamp', 'name', 'mob_number', 'age','request','status','geometry','latitude','longitude','radius','icon','TYPE']]})
+        print('The public map contains ', v_df[v_df['latitude']!=0].shape[0],' volunteers and ', r_df[r_df['latitude']!=0].shape[0], ' pending requests')
         #variable live_config is defined when "file" is executed
         if(public_live_config):
             map_1.config = public_live_config
@@ -63,11 +64,13 @@ def public_map(v_df,r_df,output_file_name,map_pkg='kepler'):
         html_file_changes(output_file_name)
     return map_1
 
-def private_map(v_df,r_df,output_file_name,map_pkg='kepler'):
+def private_map(v_df_c,r_df_c,output_file_name,map_pkg='kepler'):
     if(map_pkg=='kepler'):
-        r_df = r_df[r_df['Task Status']=='Pending']
-        map_1 = keplergl.KeplerGl(height=800,data={'volunteer_data':v_df[v_df['Lat']!=0],'requests_data':r_df[r_df['Lat']!=0]})
-        print('The private Map contains ', v_df[v_df['Lat']!=0].shape[0],' volunteers and ', r_df[r_df['Lat']!=0].shape[0], ' pending requests')
+        v_df = v_df_c.copy()
+        r_df = r_df_c.copy()
+        r_df = r_df[r_df['status']=='Pending']
+        map_1 = keplergl.KeplerGl(height=800,data={'volunteer_data':v_df[v_df['latitude']!=0],'requests_data':r_df[r_df['latitude']!=0]})
+        print('The private Map contains ', v_df[v_df['latitude']!=0].shape[0],' volunteers and ', r_df[r_df['latitude']!=0].shape[0], ' pending requests')
         #variable live_config is defined when "file" is executed
         if(private_live_config):
             map_1.config = private_live_config
