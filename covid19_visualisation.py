@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 #Completed
@@ -15,7 +15,7 @@
 # Integrating code with matching algorithm & writing matched entry into spreadsheet
 
 
-# In[1]:
+# In[2]:
 
 
 #Basic
@@ -45,7 +45,7 @@ from database_entry import add_volunteers_to_db
 from connections import connections
 
 
-# In[2]:
+# In[3]:
 
 
 # The ID and range of a sample spreadsheet.
@@ -62,7 +62,7 @@ public_file_name= 'output/COVID_SOS_v0.html'
 private_file_name= 'output/private_COVID_SOS_v0.html'
 
 
-# In[3]:
+# In[4]:
 
 
 def google_api_activation():
@@ -157,7 +157,7 @@ def mob_number_clean_up(df):
 
 
 
-# In[4]:
+# In[5]:
 
 
 def push_file_to_server(File2Send,Url2Store):
@@ -170,7 +170,7 @@ def push_file_to_server(File2Send,Url2Store):
     return None
 
 
-# In[5]:
+# In[6]:
 
 
 def main():
@@ -198,13 +198,13 @@ def main():
     return v_df, r_df, private_map_v1,public_map_v1
 
 
-# In[6]:
+# In[7]:
 
 
 v_df, r_df, p1,p2=main()
 
 
-# In[ ]:
+# In[8]:
 
 
 #v_df[['Lat','Lon','Full Name','TYPE']].rename(columns={'Full Name':'name','Lat':'lat','Lon':'lon','TYPE':'type'}).to_json(orient='table',index=False)
@@ -212,7 +212,7 @@ v_df, r_df, p1,p2=main()
 #r_df[['Lat','Lon','Full Name','TYPE']].rename(columns={'Full Name':'name','Lat':'lat','Lon':'lon','TYPE':'type'}).to_json(orient='table',index=False)
 
 
-# In[ ]:
+# In[9]:
 
 
 # with open('map_config/map_config_public.py','w') as f:
@@ -221,7 +221,7 @@ v_df, r_df, p1,p2=main()
 #     print(f.read())
 
 
-# In[ ]:
+# In[10]:
 
 
 #v_query = ("""Select * from volunteers""")
@@ -230,7 +230,7 @@ v_df, r_df, p1,p2=main()
 #v_df.to_sql(name = 'volunteers', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
 
 
-# In[ ]:
+# In[11]:
 
 
 
@@ -238,7 +238,7 @@ v_df, r_df, p1,p2=main()
 #ftp.delete(os.path.basename(File2Send))
 
 
-# In[ ]:
+# In[12]:
 
 
 # from folium import Map, Marker, GeoJson
