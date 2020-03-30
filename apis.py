@@ -13,6 +13,7 @@ from flask_cors import CORS
 from connections import connections
 from database_entry import add_requests,add_volunteers_to_db,contact_us_form_add,verify_user,add_user
 
+from data_fetching import get_ticker_counts
 from settings import *
 
 
@@ -57,7 +58,7 @@ def create_request():
     expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age']
     x,y = add_requests(df)
     response = {'status':x,'string_response':y}
-    return jsonify(Response=response)
+    return json.dumps({'Response':response})
 
 
 # In[ ]:
@@ -79,7 +80,7 @@ def add_volunteer():
     expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source']
     x,y = add_volunteers_to_db(df)
     response = {'status':x,'string_response':y}
-    return jsonify(Response = response)
+    return json.dumps({'Response':response})
 
 
 # In[ ]:
@@ -92,7 +93,7 @@ def login_request():
 #     req_dict = {'username':name,'password':password}
 #     df = pd.DataFrame(req_dict)
     response = verify_user(name,password)
-    return jsonify(Response = response)
+    return json.dumps({'Response':response})
 
 
 # In[ ]:
@@ -125,7 +126,7 @@ def new_user():
         response = add_user(df)
     else:
         response = {'status':False,'string_response':'User does not have permission to create new users'}
-    return jsonify(Response = response)
+    return json.dumps({'Response':response})
 
 
 # In[ ]:
@@ -145,7 +146,16 @@ def add_org_request():
     expected_columns=['timestamp', 'name','organisation','mob_number','email_id', 'source','comments']
     x,y = contact_us_form_add(df)
     response = {'status':x,'string_response':y}
-    return jsonify(Response = response)
+    return json.dumps({'Response':response})
+
+
+# In[ ]:
+
+
+@app.route('/top_ticker',methods=['POST'])
+def ticker_counts():
+    response = get_ticker_counts()
+    return json.dumps({'Response':response})
 
 
 # In[ ]:
@@ -158,12 +168,6 @@ if(server_type=='local'):
 if(server_type=='server'):
     if __name__ =='__main__':
         app.run()
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:
