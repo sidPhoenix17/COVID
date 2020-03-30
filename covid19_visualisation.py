@@ -126,7 +126,7 @@ def sheet_clean_up(df,default_r,buffer_radius,user_type='volunteer'):
     df['longitude']=df['longitude'].astype(float).fillna(0)
     print('Received ', df[(df['latitude']==0)|(df['longitude']==0)].shape[0], ' responses with no location')
     df['radius']=default_r
-    geometry = df.apply(lambda x: Point(x['latitude'],x['longitude']).buffer(buffer_radius*x.radius),axis=1)
+    geometry = df.apply(lambda x: Point(x['longitude'],x['latitude']).buffer(buffer_radius*x.radius),axis=1)
     crs = {'init': 'epsg:4326'}
     f_df = gpd.GeoDataFrame(df, crs=crs, geometry=geometry)
     if(user_type=='volunteer'):

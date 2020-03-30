@@ -33,6 +33,11 @@ def last_entry_timestamp(source):
     max_timestamp['source']=source
     return max_timestamp
 
+
+# In[ ]:
+
+
+
 def add_volunteers_to_db(df_full):
     df = remove_existing_volunteers(df_full)
     df['timestamp']=pd.to_datetime(df['timestamp'])
@@ -64,8 +69,20 @@ def add_requests(df):
         return_str = 'Data Format not matching'
         return False,return_str
 
+def contact_us_form_add(df):
+    expected_columns=['timestamp', 'name','organisation', 'mob_number', 'email_id', 'comments','source']
+    if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
+        engine = connections('db_write')
+        df.to_sql(name = 'org_requests', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
+        return_str = 'Request submitted successfully'
+        return True,return_str
+    else:
+        return_str = 'Data Format not matching'
+        return False,return_str
+
 
 # In[ ]:
+
 
 
 def geocoding(address_str,country_str,key):
