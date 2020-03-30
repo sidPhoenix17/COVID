@@ -37,19 +37,19 @@ def add_volunteers_to_db(df_full):
     df = remove_existing_volunteers(df_full)
     df['timestamp']=pd.to_datetime(df['timestamp'])
     if(df.shape[0]>0):
-        print('New volunteers to be added')
+        print(df.shape[0], ' New volunteers to be added')
     else:
-        return_str = 'No New Volunteers to be added'
+        return_str = 'Volunteer already exists. No New Volunteers to be added'
         return True, return_str
     #df with columns [timestamp, name, mob_number, email_id, country, address, geoaddress,latitude, longitude, source]
     expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('db_write')
         df.to_sql(name = 'volunteers', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
-        return_str = 'Data uploaded successfully'
+        return_str = 'Volunteer Data Submitted'
         return True,return_str
     else:
-        return_str = 'Column names not matching'
+        return_str = 'Data format not matching'
         return False,return_str
 
 def add_requests(df):
@@ -58,10 +58,10 @@ def add_requests(df):
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('db_write')
         df.to_sql(name = 'requests', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
-        return_str = 'Data uploaded successfully'
+        return_str = 'Request submitted successfully'
         return True,return_str
     else:
-        return_str = 'Column names not matching'
+        return_str = 'Data Format not matching'
         return False,return_str
 
 
