@@ -12,7 +12,9 @@ import requests
 # In[ ]:
 
 
-
+#todo - AddUser
+#Check if User Exists
+#password encryption
 
 
 # In[ ]:
@@ -104,35 +106,38 @@ def geocoding(address_str,country_str,key):
 # In[ ]:
 
 
+
+
+
+# In[ ]:
+
+
+
+def verify_user(username,password):
+    server_con = connections('db_read')
+    query = """Select mob_number,email_id,password,type from users left join user_access on users.access_type=user_access.id"""
+    user_list = pd.read_sql(query,server_con)
+    for i in user_list.index:
+        if(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']==password)):
+            return {'string_response': 'Login successful','access_level': user_list.loc[i,'type'],'status':True}
+        elif(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']!=password)):
+            return {'string_response': 'Incorrect Password','access_level': '','status':False}
+        else:
+            return {'string_response': 'Incorrect Username','access_level':'','status':False}
+
+
+# In[ ]:
+
+
 def add_user(df):
-    expected_columns=['creation_date', 'name', 'mob_number', 'email_id', 'password', 'access_type']
-    if(df.columns==expected_columns):
+    expected_columns=['creation_date', 'name', 'mob_number', 'email_id', 'organisation', 'password', 'access_type']
+    if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('db_write')
         df.to_sql(name = 'users', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
-        return_str = 'Data uploaded successfully'
-        return True,return_str
+        return  {'string_response': 'User Added Successfully','status':True}
     else:
-        return_str = 'Column names not matching'
-        return False,return_str
+        return  {'string_response': 'User addition failed due to incorrect data format' ,'status':False}
     
-def check_user(username,password):
-    server_con = connections('db_read')
-    query = """Select mob_number,email_id,password,access_type from users"""
-    volunteer_list = pd.read_sql(query,server_con)
-    for i in volunteer_list.index:
-        if(((volunteer_list.loc[i,'mob_number'].str==username) or (volunteer_list.loc[i,'email_id']==username)) and (volunteer_list.loc[i,'password'].str==password)):
-            return_str = 'Login successful'
-            return True,return_str
-        elif(((volunteer_list.loc[i,'mob_number'].str==username) or (volunteer_list.loc[i,'email_id']==username)) and (volunteer_list.loc[i,'password'].str!=password)):
-            return_str = 'Incorrect Password!'
-        else:
-            return_str = 'Incorrect username!'
-        return False, return_str
-
-
-#todo
-#password encryption
-#User info updation
 
 
 # In[ ]:

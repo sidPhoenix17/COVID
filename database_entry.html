@@ -13094,7 +13094,9 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span> 
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#todo - AddUser</span>
+<span class="c1">#Check if User Exists</span>
+<span class="c1">#password encryption</span>
 </pre></div>
 
     </div>
@@ -13212,35 +13214,51 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">verify_user</span><span class="p">(</span><span class="n">username</span><span class="p">,</span><span class="n">password</span><span class="p">):</span>
+    <span class="n">server_con</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;db_read&#39;</span><span class="p">)</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select mob_number,email_id,password,type from users left join user_access on users.access_type=user_access.id&quot;&quot;&quot;</span>
+    <span class="n">user_list</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">server_con</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">user_list</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+        <span class="k">if</span><span class="p">(((</span><span class="nb">str</span><span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span><span class="o">==</span><span class="n">username</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;email_id&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">username</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;password&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">password</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Login successful&#39;</span><span class="p">,</span><span class="s1">&#39;access_level&#39;</span><span class="p">:</span> <span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;type&#39;</span><span class="p">],</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
+        <span class="k">elif</span><span class="p">(((</span><span class="nb">str</span><span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span><span class="o">==</span><span class="n">username</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;email_id&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">username</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;password&#39;</span><span class="p">]</span><span class="o">!=</span><span class="n">password</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Incorrect Password&#39;</span><span class="p">,</span><span class="s1">&#39;access_level&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Incorrect Username&#39;</span><span class="p">,</span><span class="s1">&#39;access_level&#39;</span><span class="p">:</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">}</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">add_user</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-    <span class="n">expected_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;creation_date&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;mob_number&#39;</span><span class="p">,</span> <span class="s1">&#39;email_id&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="s1">&#39;access_type&#39;</span><span class="p">]</span>
-    <span class="k">if</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">==</span><span class="n">expected_columns</span><span class="p">):</span>
+    <span class="n">expected_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;creation_date&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;mob_number&#39;</span><span class="p">,</span> <span class="s1">&#39;email_id&#39;</span><span class="p">,</span> <span class="s1">&#39;organisation&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="s1">&#39;access_type&#39;</span><span class="p">]</span>
+    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">expected_columns</span><span class="p">))</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">expected_columns</span><span class="p">)):</span>
         <span class="n">engine</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;db_write&#39;</span><span class="p">)</span>
         <span class="n">df</span><span class="o">.</span><span class="n">to_sql</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;users&#39;</span><span class="p">,</span> <span class="n">con</span> <span class="o">=</span> <span class="n">engine</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="s1">&#39;thebang7_COVID_SOS&#39;</span><span class="p">,</span> <span class="n">if_exists</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span><span class="n">index_label</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="n">return_str</span> <span class="o">=</span> <span class="s1">&#39;Data uploaded successfully&#39;</span>
-        <span class="k">return</span> <span class="kc">True</span><span class="p">,</span><span class="n">return_str</span>
+        <span class="k">return</span>  <span class="p">{</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;User Added Successfully&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">return_str</span> <span class="o">=</span> <span class="s1">&#39;Column names not matching&#39;</span>
-        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span><span class="n">return_str</span>
+        <span class="k">return</span>  <span class="p">{</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;User addition failed due to incorrect data format&#39;</span> <span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">}</span>
     
-<span class="k">def</span> <span class="nf">check_user</span><span class="p">(</span><span class="n">username</span><span class="p">,</span><span class="n">password</span><span class="p">):</span>
-    <span class="n">server_con</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;db_read&#39;</span><span class="p">)</span>
-    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select mob_number,email_id,password,access_type from users&quot;&quot;&quot;</span>
-    <span class="n">volunteer_list</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">server_con</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">volunteer_list</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-        <span class="k">if</span><span class="p">(((</span><span class="n">volunteer_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">==</span><span class="n">username</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">volunteer_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;email_id&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">username</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">volunteer_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;password&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">==</span><span class="n">password</span><span class="p">)):</span>
-            <span class="n">return_str</span> <span class="o">=</span> <span class="s1">&#39;Login successful&#39;</span>
-            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span><span class="n">return_str</span>
-        <span class="k">elif</span><span class="p">(((</span><span class="n">volunteer_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">==</span><span class="n">username</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">volunteer_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;email_id&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">username</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">volunteer_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;password&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">!=</span><span class="n">password</span><span class="p">)):</span>
-            <span class="n">return_str</span> <span class="o">=</span> <span class="s1">&#39;Incorrect Password!&#39;</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">return_str</span> <span class="o">=</span> <span class="s1">&#39;Incorrect username!&#39;</span>
-        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="n">return_str</span>
-
-
-<span class="c1">#todo</span>
-<span class="c1">#password encryption</span>
-<span class="c1">#User info updation</span>
 </pre></div>
 
     </div>
