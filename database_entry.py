@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 
 import pandas as pd
@@ -9,7 +9,7 @@ from connections import connections,keys
 import requests
 
 
-# In[ ]:
+# In[3]:
 
 
 #todo - AddUser
@@ -17,7 +17,7 @@ import requests
 #password encryption
 
 
-# In[ ]:
+# In[4]:
 
 
 def remove_existing_volunteers(df):
@@ -36,7 +36,7 @@ def last_entry_timestamp(source):
     return max_timestamp
 
 
-# In[ ]:
+# In[5]:
 
 
 
@@ -83,7 +83,7 @@ def contact_us_form_add(df):
         return False,return_str
 
 
-# In[ ]:
+# In[6]:
 
 
 
@@ -109,13 +109,13 @@ def geocoding(address_str,country_str,key):
 
 
 
-# In[ ]:
+# In[7]:
 
 
 
 def verify_user(username,password):
     server_con = connections('db_read')
-    query = """Select user.id as id, mob_number,email_id,password,user_access.type as type from users left join user_access on users.access_type=user_access.id"""
+    query = """Select users.id as id, mob_number,email_id,password,user_access.type as type from users left join user_access on users.access_type=user_access.id"""
     user_list = pd.read_sql(query,server_con)
     for i in user_list.index:
         if(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']==password)):
@@ -126,12 +126,12 @@ def verify_user(username,password):
             return {'string_response': 'Incorrect Username','access_level':'','status':False,'username':username}
 
 
-# In[ ]:
+# In[8]:
 
 
 
 def add_user(df):
-    expected_columns=['creation_date', 'name', 'mob_number', 'email_id', 'organisation', 'password', 'access_type']
+    expected_columns=['creation_date', 'name', 'mob_number', 'email_id', 'organisation', 'password', 'access_type','created_by']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('db_write')
         df.to_sql(name = 'users', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)

@@ -13,7 +13,7 @@ from flask_cors import CORS
 from connections import connections
 from database_entry import add_requests,add_volunteers_to_db,contact_us_form_add,verify_user,add_user
 
-from data_fetching import get_ticker_counts
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data
 from settings import *
 
 
@@ -108,6 +108,7 @@ def new_user():
     organisation = request.form.get('organisation')
     creator_access_type = request.form.get('creator_access_type')
     user_access_type = request.form.get('user_access_type')
+    creator_user_id = request.form.get('creator_user_id')
     print(user_access_type)
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     if(user_access_type=='moderator'):
@@ -120,7 +121,7 @@ def new_user():
     else:
         response = {'status':False,'string_response':'Invalid access type'}
         return jsonify(Response=response)
-    req_dict = {'creation_date':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],'organisation':[organisation],'password':[password],'access_type':[user_access_type]}
+    req_dict = {'creation_date':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],'organisation':[organisation],'password':[password],'access_type':[user_access_type],'created_by':creator_user_id}
     df = pd.DataFrame(req_dict)
     if(creator_access_type=='superuser'):
         response = add_user(df)
@@ -155,6 +156,30 @@ def add_org_request():
 @app.route('/top_ticker',methods=['POST'])
 def ticker_counts():
     response = get_ticker_counts()
+    return json.dumps({'Response':response})
+
+
+# In[ ]:
+
+
+@app.route('/private_map_data',methods=['POST'])
+def private_map_data():
+    name = request.form.get('username')
+    password = request.form.get('password')
+#     req_dict = {'username':name,'password':password}
+#     df = pd.DataFrame(req_dict)
+    response = verify_user(name,password)    
+    if(response['status']):
+        response = get_private_map_data()
+    return json.dumps({'Response':response})
+
+
+# In[ ]:
+
+
+@app.route('/public_map_data',methods=['POST'])
+def public_map_data():
+    response = get_public_map_data()
     return json.dumps({'Response':response})
 
 

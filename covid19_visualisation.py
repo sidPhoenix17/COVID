@@ -204,6 +204,12 @@ def main():
 v_df, r_df, p1,p2=main()
 
 
+# In[21]:
+
+
+pd.DataFrame(v_df[['timestamp', 'name','latitude','longitude','radius','icon','TYPE']]).to_dict('records')
+
+
 # In[8]:
 
 
