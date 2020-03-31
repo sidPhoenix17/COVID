@@ -14,16 +14,19 @@ import requests
 
 
 def get_ticker_counts():
-    server_con = connections('db_read')
-    v_q = """Select * from volunteers"""
-    v_df = pd.read_sql(v_q,server_con)
-    r_q = """Select * from requests"""
-    r_df = pd.read_sql(r_q,server_con)
-    
-    volunteer_count = v_df['mob_number'].nunique()
-    request_count = r_df.shape[0]
-    pending_request_count = r_df[r_df['status']=='pending'].shape[0]
-    return {'volunteer_count':volunteer_count,'request_count':request_count,'pending_request_count':pending_request_count}
+    try:
+        server_con = connections('db_read')
+        v_q = """Select * from volunteers"""
+        v_df = pd.read_sql(v_q,server_con)
+        r_q = """Select * from requests"""
+        r_df = pd.read_sql(r_q,server_con)
+
+        volunteer_count = v_df['mob_number'].nunique()
+        request_count = r_df.shape[0]
+        pending_request_count = r_df[r_df['status']=='pending'].shape[0]
+        return {'status':True,'string_response':'Metrics computed','volunteer_count':volunteer_count,'request_count':request_count,'pending_request_count':pending_request_count}
+    except:
+        return {'status':False,'string_response':'Connection to DB failed'}
 
 
 # In[ ]:
