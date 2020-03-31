@@ -7,6 +7,8 @@
 import pandas as pd
 from connections import connections,keys
 import requests
+from sqlalchemy.sql import text
+import datetime as dt
 
 
 # In[ ]:
@@ -115,11 +117,11 @@ def geocoding(address_str,country_str,key):
 
 def verify_user(username,password):
     server_con = connections('db_read')
-    query = """Select users.id as id, mob_number,email_id,password,user_access.type as type from users left join user_access on users.access_type=user_access.id"""
+    query = """Select users.id as id,name as full_name, mob_number,email_id,password,user_access.type as type from users left join user_access on users.access_type=user_access.id"""
     user_list = pd.read_sql(query,server_con)
     for i in user_list.index:
         if(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']==password)):
-            return {'string_response': 'Login successful','access_level': user_list.loc[i,'type'],'status':True,'username':username,'user_id':str(user_list.loc[i,'id'])}
+            return {'string_response': 'Login successful','access_level': user_list.loc[i,'type'],'status':True,'username':username,'user_id':str(user_list.loc[i,'id']),'full_name':user_list.loc[i,'full_name']}
         elif(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']!=password)):
             return {'string_response': 'Incorrect Password','access_level': '','status':False,'username':username}
         else:
@@ -139,6 +141,64 @@ def add_user(df):
     else:
         return  {'string_response': 'User addition failed due to incorrect data format' ,'status':False}
     
+
+
+# In[ ]:
+
+
+
+def request_matching(df):
+    expected_columns=['request_id','volunteer_id','matching_by','timestamp']
+    if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
+        engine = connections('db_write')
+        df.to_sql(name = 'request_matching', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
+        return  {'string_response': 'Volunteer Assigned','status':True}
+    else:
+        return  {'string_response': 'Volunteer assignment failed due to incorrect data format' ,'status':False}
+        
+
+
+# In[ ]:
+
+
+def request_updation(r_id,column,new_value,timestamp):
+    engine = connections('db_write')
+    try:
+        with engine.connect() as con:
+            query = text("""update requests set {column_name}='{new_value}',last_updated='{timestamp}' 
+            where id={r_id};""".format(column_name=column,new_value=new_value, timestamp =dt.datetime.strftime(timestamp,'%Y-%m-%d %H:%M:%S'),r_id=r_id))
+            con.execute(query)
+            return {'string_response': 'Request Updated','status':True}
+    except e:
+        return  {'string_response': 'Volunteer updation failed' ,'status':False}
+
+
+# In[ ]:
+
+
+def volunteer_updation(v_id,column,new_value,timestamp):
+    engine = connections('db_write')
+    try:
+        with engine.connect() as con:
+            query = text("""update volunteers set {column_name}='{new_value}',last_updated='{timestamp}' 
+            where id={v_id};""".format(column_name=column,new_value=new_value, timestamp =dt.datetime.strftime(timestamp,'%Y-%m-%d %H:%M:%S'),v_id=v_id))
+            con.execute(query)
+            return {'string_response': 'Volunteer Data Updated','status':True}
+    except:
+        return  {'string_response': 'Volunteer updation failed' ,'status':False}
+
+
+# In[ ]:
+
+
+def check_user(table_name,user_id):
+    server_con = connections('db_read')
+    query = """Select id from {table_name} where id={user_id}""".format(table_name=table_name,user_id=user_id)
+    data = pd.read_sql(query,server_con)
+    if (data.shape[0]>0):
+        return {'string_response': 'User Existence validated','status':True}
+    else:
+        return {'string_response': 'ID does not exist in database','status':False}
 
 
 # In[ ]:
