@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 
 import pandas as pd
@@ -9,7 +9,7 @@ from connections import connections,keys
 import requests
 
 
-# In[3]:
+# In[ ]:
 
 
 #todo - AddUser
@@ -17,7 +17,7 @@ import requests
 #password encryption
 
 
-# In[4]:
+# In[ ]:
 
 
 def remove_existing_volunteers(df):
@@ -36,7 +36,7 @@ def last_entry_timestamp(source):
     return max_timestamp
 
 
-# In[5]:
+# In[ ]:
 
 
 
@@ -83,7 +83,7 @@ def contact_us_form_add(df):
         return False,return_str
 
 
-# In[6]:
+# In[ ]:
 
 
 
@@ -109,7 +109,7 @@ def geocoding(address_str,country_str,key):
 
 
 
-# In[7]:
+# In[ ]:
 
 
 
@@ -119,14 +119,14 @@ def verify_user(username,password):
     user_list = pd.read_sql(query,server_con)
     for i in user_list.index:
         if(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']==password)):
-            return {'string_response': 'Login successful','access_level': user_list.loc[i,'type'],'status':True,'username':username,'user_id':user_list.loc[i,'id']}
+            return {'string_response': 'Login successful','access_level': user_list.loc[i,'type'],'status':True,'username':username,'user_id':str(user_list.loc[i,'id'])}
         elif(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']!=password)):
             return {'string_response': 'Incorrect Password','access_level': '','status':False,'username':username}
         else:
             return {'string_response': 'Incorrect Username','access_level':'','status':False,'username':username}
 
 
-# In[8]:
+# In[ ]:
 
 
 
