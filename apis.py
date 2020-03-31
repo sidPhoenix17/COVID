@@ -6,12 +6,11 @@
 
 import pandas as pd
 import datetime as dt
-# import json
 from flask import Flask,request,jsonify,json
 from flask_cors import CORS
 
 from connections import connections
-from database_entry import add_requests,add_volunteers_to_db,contact_us_form_add,verify_user,add_user
+from database_entry import add_requests,add_volunteers_to_db,contact_us_form_add,verify_user,add_user,request_matching,request_updation,volunteer_updation,check_user
 
 from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data
 from settings import *
@@ -164,11 +163,10 @@ def ticker_counts():
 
 @app.route('/private_map_data',methods=['POST'])
 def private_map_data():
-    name = request.form.get('username')
-    password = request.form.get('password')
+    user_id = request.form.get('user_id')
 #     req_dict = {'username':name,'password':password}
 #     df = pd.DataFrame(req_dict)
-    response = verify_user(name,password)    
+    response = check_user('users',user_id)    
     if(response['status']):
         response = get_private_map_data()
     return json.dumps({'Response':response})
@@ -181,6 +179,74 @@ def private_map_data():
 def public_map_data():
     response = get_public_map_data()
     return json.dumps({'Response':response})
+
+
+# In[ ]:
+
+
+@app.route('/assign_volunteer',methods=['POST'])
+def assign_volunteer():
+    v_id = request.form.get('volunteer_id')
+    r_id = request.form.get('request_id')
+    matching_by = request.form.get('matched_by')
+    current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
+    req_dict = {'volunteer_id':[v_id],'request_id':[r_id],'matching_by':[matching_by],'timestamp':[current_time]}
+    df = pd.DataFrame(req_dict)
+    response = request_matching(df)
+    response_2 = request_updation(r_id,'status','matched',current_time)
+    return json.dumps({'Response':response})
+
+
+# In[ ]:
+
+
+@app.route('/update_request',methods=['POST'])
+def update_request():
+    r_id = request.form.get('request_id')
+    column_name = request.form.get('column_name')
+    new_value = request.form.get('new_value')
+    current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
+    response = request_updation(r_id,column_name,new_value,current_time)
+    return response
+
+
+# In[ ]:
+
+
+@app.route('/inactivate_volunteer',methods=['POST'])
+def volunteer_activation():
+    v_id = request.form.get('volunteer_id')
+    column_name = request.form.get('column_name')
+    new_value = request.form.get('new_value')
+    current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
+    response = volunteer_updation(v_id,column_name,new_value,current_time)
+    return response
+
+
+# In[ ]:
+
+
+# from folium import Map, Marker, GeoJson
+# from folium.plugins import MarkerCluster
+
+
+# @app.route('/folium_test',methods=['POST'])
+# def folium_test_fn():
+#     v_df, r_df = folium_data_request()
+#     m = Map(location= [12.97194, 77.59369], zoom_start= 12, tiles="cartodbpositron", 
+#             attr= '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="http://cartodb.com/attributions#basemaps">CartoDB</a>')
+#     volunteer_cluster = MarkerCluster()
+#     for i in v_df.index:
+#         mk = Marker(location=[v_df.loc[i,'latitude'],v_df.loc[i,'longitude']])
+#         mk.add_to(volunteer_cluster)
+#     volunteer_cluster.add_to(m)
+#     requests_cluster = MarkerCluster()
+#     for i in r_df.index:
+#         mk = Marker(location=[r_df.loc[i,'latitude'],r_df.loc[i,'longitude']])
+#         mk.add_to(requests_cluster)
+#     requests_cluster.add_to(m)
+#     m.save('output/folium_test.html')
+#     return m._repr_html_()
 
 
 # In[ ]:

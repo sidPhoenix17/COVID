@@ -13081,12 +13081,11 @@ div#notebook {
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
-<span class="c1"># import json</span>
 <span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span><span class="n">request</span><span class="p">,</span><span class="n">jsonify</span><span class="p">,</span><span class="n">json</span>
 <span class="kn">from</span> <span class="nn">flask_cors</span> <span class="kn">import</span> <span class="n">CORS</span>
 
 <span class="kn">from</span> <span class="nn">connections</span> <span class="kn">import</span> <span class="n">connections</span>
-<span class="kn">from</span> <span class="nn">database_entry</span> <span class="kn">import</span> <span class="n">add_requests</span><span class="p">,</span><span class="n">add_volunteers_to_db</span><span class="p">,</span><span class="n">contact_us_form_add</span><span class="p">,</span><span class="n">verify_user</span><span class="p">,</span><span class="n">add_user</span>
+<span class="kn">from</span> <span class="nn">database_entry</span> <span class="kn">import</span> <span class="n">add_requests</span><span class="p">,</span><span class="n">add_volunteers_to_db</span><span class="p">,</span><span class="n">contact_us_form_add</span><span class="p">,</span><span class="n">verify_user</span><span class="p">,</span><span class="n">add_user</span><span class="p">,</span><span class="n">request_matching</span><span class="p">,</span><span class="n">request_updation</span><span class="p">,</span><span class="n">volunteer_updation</span><span class="p">,</span><span class="n">check_user</span>
 
 <span class="kn">from</span> <span class="nn">data_fetching</span> <span class="kn">import</span> <span class="n">get_ticker_counts</span><span class="p">,</span><span class="n">get_private_map_data</span><span class="p">,</span><span class="n">get_public_map_data</span>
 <span class="kn">from</span> <span class="nn">settings</span> <span class="kn">import</span> <span class="o">*</span>
@@ -13302,11 +13301,10 @@ div#notebook {
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/private_map_data&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
 <span class="k">def</span> <span class="nf">private_map_data</span><span class="p">():</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span>
-    <span class="n">password</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span>
+    <span class="n">user_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;user_id&#39;</span><span class="p">)</span>
 <span class="c1">#     req_dict = {&#39;username&#39;:name,&#39;password&#39;:password}</span>
 <span class="c1">#     df = pd.DataFrame(req_dict)</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">verify_user</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">password</span><span class="p">)</span>    
+    <span class="n">response</span> <span class="o">=</span> <span class="n">check_user</span><span class="p">(</span><span class="s1">&#39;users&#39;</span><span class="p">,</span><span class="n">user_id</span><span class="p">)</span>    
     <span class="k">if</span><span class="p">(</span><span class="n">response</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]):</span>
         <span class="n">response</span> <span class="o">=</span> <span class="n">get_private_map_data</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">response</span><span class="p">})</span>
@@ -13326,6 +13324,102 @@ div#notebook {
 <span class="k">def</span> <span class="nf">public_map_data</span><span class="p">():</span>
     <span class="n">response</span> <span class="o">=</span> <span class="n">get_public_map_data</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">response</span><span class="p">})</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/assign_volunteer&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">assign_volunteer</span><span class="p">():</span>
+    <span class="n">v_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;volunteer_id&#39;</span><span class="p">)</span>
+    <span class="n">r_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;request_id&#39;</span><span class="p">)</span>
+    <span class="n">matching_by</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;matched_by&#39;</span><span class="p">)</span>
+    <span class="n">current_time</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">+</span><span class="n">dt</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">330</span><span class="p">)</span>
+    <span class="n">req_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;volunteer_id&#39;</span><span class="p">:[</span><span class="n">v_id</span><span class="p">],</span><span class="s1">&#39;request_id&#39;</span><span class="p">:[</span><span class="n">r_id</span><span class="p">],</span><span class="s1">&#39;matching_by&#39;</span><span class="p">:[</span><span class="n">matching_by</span><span class="p">],</span><span class="s1">&#39;timestamp&#39;</span><span class="p">:[</span><span class="n">current_time</span><span class="p">]}</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">req_dict</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">request_matching</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">response_2</span> <span class="o">=</span> <span class="n">request_updation</span><span class="p">(</span><span class="n">r_id</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">,</span><span class="s1">&#39;matched&#39;</span><span class="p">,</span><span class="n">current_time</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">response</span><span class="p">})</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/update_request&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">update_request</span><span class="p">():</span>
+    <span class="n">r_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;request_id&#39;</span><span class="p">)</span>
+    <span class="n">column_name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;column_name&#39;</span><span class="p">)</span>
+    <span class="n">new_value</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_value&#39;</span><span class="p">)</span>
+    <span class="n">current_time</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">+</span><span class="n">dt</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">330</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">request_updation</span><span class="p">(</span><span class="n">r_id</span><span class="p">,</span><span class="n">column_name</span><span class="p">,</span><span class="n">new_value</span><span class="p">,</span><span class="n">current_time</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/inactivate_volunteer&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">volunteer_activation</span><span class="p">():</span>
+    <span class="n">v_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;volunteer_id&#39;</span><span class="p">)</span>
+    <span class="n">column_name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;column_name&#39;</span><span class="p">)</span>
+    <span class="n">new_value</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;new_value&#39;</span><span class="p">)</span>
+    <span class="n">current_time</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">+</span><span class="n">dt</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">330</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">volunteer_updation</span><span class="p">(</span><span class="n">v_id</span><span class="p">,</span><span class="n">column_name</span><span class="p">,</span><span class="n">new_value</span><span class="p">,</span><span class="n">current_time</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># from folium import Map, Marker, GeoJson</span>
+<span class="c1"># from folium.plugins import MarkerCluster</span>
+
+
+<span class="c1"># @app.route(&#39;/folium_test&#39;,methods=[&#39;POST&#39;])</span>
+<span class="c1"># def folium_test_fn():</span>
+<span class="c1">#     v_df, r_df = folium_data_request()</span>
+<span class="c1">#     m = Map(location= [12.97194, 77.59369], zoom_start= 12, tiles=&quot;cartodbpositron&quot;, </span>
+<span class="c1">#             attr= &#39;© &lt;a href=&quot;http://www.openstreetmap.org/copyright&quot;&gt;OpenStreetMap&lt;/a&gt; contributors © &lt;a href=&quot;http://cartodb.com/attributions#basemaps&quot;&gt;CartoDB&lt;/a&gt;&#39;)</span>
+<span class="c1">#     volunteer_cluster = MarkerCluster()</span>
+<span class="c1">#     for i in v_df.index:</span>
+<span class="c1">#         mk = Marker(location=[v_df.loc[i,&#39;latitude&#39;],v_df.loc[i,&#39;longitude&#39;]])</span>
+<span class="c1">#         mk.add_to(volunteer_cluster)</span>
+<span class="c1">#     volunteer_cluster.add_to(m)</span>
+<span class="c1">#     requests_cluster = MarkerCluster()</span>
+<span class="c1">#     for i in r_df.index:</span>
+<span class="c1">#         mk = Marker(location=[r_df.loc[i,&#39;latitude&#39;],r_df.loc[i,&#39;longitude&#39;]])</span>
+<span class="c1">#         mk.add_to(requests_cluster)</span>
+<span class="c1">#     requests_cluster.add_to(m)</span>
+<span class="c1">#     m.save(&#39;output/folium_test.html&#39;)</span>
+<span class="c1">#     return m._repr_html_()</span>
 </pre></div>
 
     </div>

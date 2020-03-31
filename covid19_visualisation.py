@@ -204,13 +204,7 @@ def main():
 v_df, r_df, p1,p2=main()
 
 
-# In[21]:
-
-
-pd.DataFrame(v_df[['timestamp', 'name','latitude','longitude','radius','icon','TYPE']]).to_dict('records')
-
-
-# In[8]:
+# In[9]:
 
 
 #v_df[['Lat','Lon','Full Name','TYPE']].rename(columns={'Full Name':'name','Lat':'lat','Lon':'lon','TYPE':'type'}).to_json(orient='table',index=False)
@@ -218,7 +212,7 @@ pd.DataFrame(v_df[['timestamp', 'name','latitude','longitude','radius','icon','T
 #r_df[['Lat','Lon','Full Name','TYPE']].rename(columns={'Full Name':'name','Lat':'lat','Lon':'lon','TYPE':'type'}).to_json(orient='table',index=False)
 
 
-# In[9]:
+# In[10]:
 
 
 # with open('map_config/map_config_public.py','w') as f:
@@ -227,7 +221,7 @@ pd.DataFrame(v_df[['timestamp', 'name','latitude','longitude','radius','icon','T
 #     print(f.read())
 
 
-# In[10]:
+# In[11]:
 
 
 #v_query = ("""Select * from volunteers""")
@@ -236,7 +230,7 @@ pd.DataFrame(v_df[['timestamp', 'name','latitude','longitude','radius','icon','T
 #v_df.to_sql(name = 'volunteers', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
 
 
-# In[11]:
+# In[12]:
 
 
 
@@ -244,7 +238,7 @@ pd.DataFrame(v_df[['timestamp', 'name','latitude','longitude','radius','icon','T
 #ftp.delete(os.path.basename(File2Send))
 
 
-# In[12]:
+# In[13]:
 
 
 # from folium import Map, Marker, GeoJson
