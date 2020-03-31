@@ -51,8 +51,7 @@ def get_private_map_data():
 def get_public_map_data():
     server_con = connections('db_read')
     v_q = """Select name,source,latitude,longitude from volunteers"""
-    v_df = pd.read_sql(v_q,server_con)    v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)]
-
+    v_df = pd.read_sql(v_q,server_con)    
     v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)]
     v_df['type']='Volunteer'
 #     v_df['radius']=0.5
@@ -61,7 +60,7 @@ def get_public_map_data():
 #     v_df = gpd.GeoDataFrame(v_df, crs=crs, geometry=geometry)
     r_q = """Select name,source,latitude,longitude,request,status from requests"""
     r_df = pd.read_sql(r_q,server_con)
-    r_df['type']='Request'
     r_df = r_df[(r_df['latitude']!=0.0)&(r_df['longitude']!=0.0)]
+    r_df['type']='Request'
     return {'Volunteers': v_df.to_dict('records'), 'Requests':r_df.to_dict('records')}
 
