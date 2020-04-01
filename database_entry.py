@@ -23,7 +23,7 @@ import datetime as dt
 
 
 def remove_existing_volunteers(df):
-    server_con = connections('db_read')
+    server_con = connections('prod_db_read')
     query = """Select mob_number from volunteers"""
     volunteer_list = pd.read_sql(query,server_con)
     df['mob_number']=df['mob_number'].apply(lambda x: int(x))
@@ -31,7 +31,7 @@ def remove_existing_volunteers(df):
     return df_new
     
 def last_entry_timestamp(source):
-    server_con = connections('db_read')
+    server_con = connections('prod_db_read')
     query = """Select max(timestamp) as timestamp from requests where source='{source}'""".format(source=source)
     max_timestamp = pd.read_sql(query,server_con,parse_dates=['timestamp'])    
     max_timestamp['source']=source
@@ -51,10 +51,10 @@ def add_volunteers_to_db(df_full):
         return_str = 'Volunteer already exists. No New Volunteers to be added'
         return True, return_str
     #df with columns [timestamp, name, mob_number, email_id, country, address, geoaddress,latitude, longitude, source]
-    expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source']
+    expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
-        engine = connections('db_write')
-        df.to_sql(name = 'volunteers', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
+        engine = connections('prod_db_write')
+        df.to_sql(name = 'volunteers', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
         return_str = 'Volunteer Data Submitted'
         return True,return_str
     else:
@@ -63,10 +63,10 @@ def add_volunteers_to_db(df_full):
 
 def add_requests(df):
     #df with columns [timestamp, name,mob_number, email_id, country, address, geoaddress, latitude, longitude, source, request,age]
-    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age']
+    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age','status']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
-        engine = connections('db_write')
-        df.to_sql(name = 'requests', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
+        engine = connections('prod_db_write')
+        df.to_sql(name = 'requests', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
         return_str = 'Request submitted successfully'
         return True,return_str
     else:
@@ -76,8 +76,8 @@ def add_requests(df):
 def contact_us_form_add(df):
     expected_columns=['timestamp', 'name','organisation', 'mob_number', 'email_id', 'comments','source']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
-        engine = connections('db_write')
-        df.to_sql(name = 'org_requests', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
+        engine = connections('prod_db_write')
+        df.to_sql(name = 'org_requests', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
         return_str = 'Request submitted successfully'
         return True,return_str
     else:
@@ -116,7 +116,7 @@ def geocoding(address_str,country_str,key):
 
 
 def verify_user(username,password):
-    server_con = connections('db_read')
+    server_con = connections('prod_db_read')
     query = """Select users.id as id,name as full_name, mob_number,email_id,password,user_access.type as type from users left join user_access on users.access_type=user_access.id"""
     user_list = pd.read_sql(query,server_con)
     for i in user_list.index:
@@ -139,8 +139,8 @@ def verify_user(username,password):
 def add_user(df):
     expected_columns=['creation_date', 'name', 'mob_number', 'email_id', 'organisation', 'password', 'access_type','created_by']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
-        engine = connections('db_write')
-        df.to_sql(name = 'users', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
+        engine = connections('prod_db_write')
+        df.to_sql(name = 'users', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
         return  {'string_response': 'User Added Successfully','status':True}
     else:
         return  {'string_response': 'User addition failed due to incorrect data format' ,'status':False}
@@ -154,8 +154,8 @@ def add_user(df):
 def request_matching(df):
     expected_columns=['request_id','volunteer_id','matching_by','timestamp']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
-        engine = connections('db_write')
-        df.to_sql(name = 'request_matching', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
+        engine = connections('prod_db_write')
+        df.to_sql(name = 'request_matching', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
         return  {'string_response': 'Volunteer Assigned','status':True}
     else:
         return  {'string_response': 'Volunteer assignment failed due to incorrect data format' ,'status':False}
@@ -166,7 +166,7 @@ def request_matching(df):
 
 
 def request_updation(r_id,column,new_value,timestamp):
-    engine = connections('db_write')
+    engine = connections('prod_db_write')
     try:
         with engine.connect() as con:
             query = text("""update requests set {column_name}='{new_value}',last_updated='{timestamp}' 
@@ -181,7 +181,7 @@ def request_updation(r_id,column,new_value,timestamp):
 
 
 def volunteer_updation(v_id,column,new_value,timestamp):
-    engine = connections('db_write')
+    engine = connections('prod_db_write')
     try:
         with engine.connect() as con:
             query = text("""update volunteers set {column_name}='{new_value}',last_updated='{timestamp}' 
@@ -196,7 +196,7 @@ def volunteer_updation(v_id,column,new_value,timestamp):
 
 
 def check_user(table_name,user_id):
-    server_con = connections('db_read')
+    server_con = connections('prod_db_read')
     query = """Select id from {table_name} where id={user_id}""".format(table_name=table_name,user_id=user_id)
     data = pd.read_sql(query,server_con)
     if (data.shape[0]>0):

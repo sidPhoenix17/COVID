@@ -44,17 +44,25 @@ CORS(app)
 def create_request():
     name = request.form.get('name')
     mob_number = request.form.get('mob_number')
+    email_id = request.form.get('email_id')
     age = request.form.get('age')
     address = request.form.get('address')
     user_request = request.form.get('request')
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
+    source = request.form.get('source')
+    status = request.form.get('status')
+    country = request.form.get('country')
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
-    req_dict = {'timestamp':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[''],
-                'country':['India'],'address':[address],'geoaddress':[address],'latitude':[latitude], 'longitude':[longitude],
-                'source':['website'],'age':[age],'request':[user_request]}
+    req_dict = {'timestamp':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],
+                'country':[country],'address':[address],'geoaddress':[address],'latitude':[latitude], 'longitude':[longitude],
+                'source':[source],'age':[age],'request':[user_request],'status':[status]}
     df = pd.DataFrame(req_dict)
-    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age']
+    df['source'] = df['source'].fillna('covidsos')
+    df['status'] = df['status'].fillna('pending')
+    df['email_id'] = df['email_id'].fillna('')
+    df['country'] = df['country'].fillna('India')
+    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age','status']
     x,y = add_requests(df)
     response = {'status':x,'string_response':y}
     return json.dumps({'Response':response})
@@ -71,12 +79,17 @@ def add_volunteer():
     address = request.form.get('address')
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
+    source = request.form.get('source')
+    status = request.form.get('status')
+    country = request.form.get('country')
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
-    req_dict = {'timestamp':[current_time],'name':[name],'mob_number':[mob_number],'email_id':email_id,
-                'country':['India'],'address':[address],'geoaddress':[address],'latitude':[latitude], 'longitude':[longitude],
-                'source':['website']}
+    req_dict = {'timestamp':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],
+                'country':[country],'address':[address],'geoaddress':[address],'latitude':[latitude], 'longitude':[longitude],
+                'source':[source],'status':[status]}
     df = pd.DataFrame(req_dict)
-    expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source']
+    df['status'] = df['status'].fillna('pending')
+    df['country'] = df['country'].fillna('India')
+    expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status']
     x,y = add_volunteers_to_db(df)
     response = {'status':x,'string_response':y}
     return json.dumps({'Response':response})
@@ -89,8 +102,6 @@ def add_volunteer():
 def login_request():
     name = request.form.get('username')
     password = request.form.get('password')
-#     req_dict = {'username':name,'password':password}
-#     df = pd.DataFrame(req_dict)
     response = verify_user(name,password)
     return json.dumps({'Response':response})
 
@@ -120,7 +131,7 @@ def new_user():
     else:
         response = {'status':False,'string_response':'Invalid access type'}
         return jsonify(Response=response)
-    req_dict = {'creation_date':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],'organisation':[organisation],'password':[password],'access_type':[user_access_type],'created_by':creator_user_id}
+    req_dict = {'creation_date':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],'organisation':[organisation],'password':[password],'access_type':[access_type],'created_by':creator_user_id}
     df = pd.DataFrame(req_dict)
     if(creator_access_type=='superuser'):
         response = add_user(df)
