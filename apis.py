@@ -169,7 +169,7 @@ def private_map_data():
     response = check_user('users',user_id)    
     if(response['status']):
         response = get_private_map_data()
-    return json.dumps({'Response':response})
+    return json.dumps({'Response':response,'status':True,'string_status':'Full data sent'})
 
 
 # In[ ]:
@@ -178,7 +178,7 @@ def private_map_data():
 @app.route('/public_map_data',methods=['POST'])
 def public_map_data():
     response = get_public_map_data()
-    return json.dumps({'Response':response})
+    return json.dumps({'Response':response,'status':True,'string_status':'Public data sent'})
 
 
 # In[ ]:
@@ -221,6 +221,12 @@ def volunteer_activation():
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     response = volunteer_updation(v_id,column_name,new_value,current_time)
     return response
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
