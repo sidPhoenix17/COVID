@@ -120,12 +120,16 @@ def verify_user(username,password):
     query = """Select users.id as id,name as full_name, mob_number,email_id,password,user_access.type as type from users left join user_access on users.access_type=user_access.id"""
     user_list = pd.read_sql(query,server_con)
     for i in user_list.index:
+        print(user_list.loc[i])
         if(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']==password)):
-            return {'string_response': 'Login successful','access_level': user_list.loc[i,'type'],'status':True,'username':username,'user_id':str(user_list.loc[i,'id']),'full_name':user_list.loc[i,'full_name']}
+            output = {'string_response': 'Login successful','access_level': user_list.loc[i,'type'],'status':True,'username':username,'user_id':str(user_list.loc[i,'id']),'full_name':user_list.loc[i,'full_name']}
+            break
         elif(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']!=password)):
-            return {'string_response': 'Incorrect Password','access_level': '','status':False,'username':username}
+            output = {'string_response': 'Incorrect Password','access_level': '','status':False,'username':username}
+            break
         else:
-            return {'string_response': 'Incorrect Username','access_level':'','status':False,'username':username}
+            output = {'string_response': 'Incorrect Username','access_level':'','status':False,'username':username}
+    return output
 
 
 # In[ ]:
