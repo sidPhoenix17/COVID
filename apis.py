@@ -87,7 +87,7 @@ def add_volunteer():
                 'country':[country],'address':[address],'geoaddress':[address],'latitude':[latitude], 'longitude':[longitude],
                 'source':[source],'status':[status]}
     df = pd.DataFrame(req_dict)
-    df['status'] = df['status'].fillna('pending')
+    df['status'] = df['status'].fillna(1)
     df['country'] = df['country'].fillna('India')
     expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status']
     x,y = add_volunteers_to_db(df)
