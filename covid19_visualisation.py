@@ -184,9 +184,9 @@ def main():
     requests_df['TYPE']='REQUEST'
     
     v_df = sheet_clean_up(volunteer_df,default_r,buffer_radius,'volunteer')
-    v_db_status, response = add_volunteers_to_db(v_df)
-    print('DB Update Status: ', v_db_status)
-    print('Message:', response)
+#     v_db_status, response = add_volunteers_to_db(v_df)
+#     print('DB Update Status: ', v_db_status)
+#     print('Message:', response)
     r_df = sheet_clean_up(requests_df,default_r,buffer_radius,'requests')
     #add_requests(r_df.rename(columns={'email_d':'email_id'})[['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age']])
     private_map_v1 = private_map(v_df,r_df,private_file_name,map_pkg='kepler')
@@ -204,7 +204,7 @@ def main():
 v_df, r_df, p1,p2=main()
 
 
-# In[9]:
+# In[8]:
 
 
 #v_df[['Lat','Lon','Full Name','TYPE']].rename(columns={'Full Name':'name','Lat':'lat','Lon':'lon','TYPE':'type'}).to_json(orient='table',index=False)
@@ -212,7 +212,7 @@ v_df, r_df, p1,p2=main()
 #r_df[['Lat','Lon','Full Name','TYPE']].rename(columns={'Full Name':'name','Lat':'lat','Lon':'lon','TYPE':'type'}).to_json(orient='table',index=False)
 
 
-# In[10]:
+# In[9]:
 
 
 # with open('map_config/map_config_public.py','w') as f:
@@ -221,7 +221,7 @@ v_df, r_df, p1,p2=main()
 #     print(f.read())
 
 
-# In[11]:
+# In[10]:
 
 
 #v_query = ("""Select * from volunteers""")
@@ -230,7 +230,7 @@ v_df, r_df, p1,p2=main()
 #v_df.to_sql(name = 'volunteers', con = engine, schema='thebang7_COVID_SOS', if_exists='append', index = False,index_label=None)
 
 
-# In[12]:
+# In[11]:
 
 
 
@@ -238,7 +238,7 @@ v_df, r_df, p1,p2=main()
 #ftp.delete(os.path.basename(File2Send))
 
 
-# In[13]:
+# In[12]:
 
 
 # from folium import Map, Marker, GeoJson

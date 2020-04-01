@@ -15,7 +15,7 @@ import requests
 
 def get_ticker_counts():
     try:
-        server_con = connections('db_read')
+        server_con = connections('prod_db_read')
         v_q = """Select * from volunteers"""
         v_df = pd.read_sql(v_q,server_con)
         r_q = """Select * from requests"""
@@ -33,7 +33,7 @@ def get_ticker_counts():
 
 
 def get_private_map_data():
-    server_con = connections('db_read')
+    server_con = connections('prod_db_read')
     v_q = """Select id as v_id, name,source,latitude,longitude,address,mob_number,email_id,status from volunteers"""
     v_df = pd.read_sql(v_q,server_con)
     v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)&(v_df['status']==1)]
@@ -52,7 +52,7 @@ def get_private_map_data():
 
 
 def get_public_map_data():
-    server_con = connections('db_read')
+    server_con = connections('prod_db_read')
     v_q = """Select name,latitude,longitude from volunteers"""
     v_df = pd.read_sql(v_q,server_con)    
     v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)]
@@ -78,7 +78,7 @@ def get_public_map_data():
 
 
 def folium_data_request():
-    server_con = connections('db_read')
+    server_con = connections('prod_db_read')
     v_q = """Select id as v_id, name,source,latitude,longitude from volunteers"""
     v_df = pd.read_sql(v_q,server_con)    
     v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)]
