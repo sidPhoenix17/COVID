@@ -169,7 +169,7 @@ def private_map_data():
     response = check_user('users',user_id)    
     if(response['status']):
         response = get_private_map_data()
-    return json.dumps({'Response':response,'status':True,'string_status':'Full data sent'})
+    return json.dumps({'Response':response,'status':True,'string_response':'Full data sent'})
 
 
 # In[ ]:
@@ -178,7 +178,7 @@ def private_map_data():
 @app.route('/public_map_data',methods=['POST'])
 def public_map_data():
     response = get_public_map_data()
-    return json.dumps({'Response':response,'status':True,'string_status':'Public data sent'})
+    return json.dumps({'Response':response,'status':True,'string_response':'Public data sent'})
 
 
 # In[ ]:
