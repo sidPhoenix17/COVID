@@ -122,13 +122,13 @@ def verify_user(username,password):
     for i in user_list.index:
         print(user_list.loc[i])
         if(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']==password)):
-            output = {'string_response': 'Login successful','access_level': user_list.loc[i,'type'],'status':True,'username':username,'user_id':str(user_list.loc[i,'id']),'full_name':user_list.loc[i,'full_name']}
+            output = {'Response':{},'string_response': 'Login successful','access_level': user_list.loc[i,'type'],'status':True,'username':username,'user_id':str(user_list.loc[i,'id']),'full_name':user_list.loc[i,'full_name']}
             break
         elif(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']!=password)):
-            output = {'string_response': 'Incorrect Password','access_level': '','status':False,'username':username}
+            output = {'Response':{},'string_response': 'Incorrect Password','access_level': '','status':False,'username':username}
             break
         else:
-            output = {'string_response': 'Incorrect Username','access_level':'','status':False,'username':username}
+            output = {'Response':{},'string_response': 'Incorrect Username','access_level':'','status':False,'username':username}
     return output
 
 
@@ -141,9 +141,9 @@ def add_user(df):
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('prod_db_write')
         df.to_sql(name = 'users', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
-        return  {'string_response': 'User Added Successfully','status':True}
+        return  {'Response':{},'string_response': 'User Added Successfully','status':True}
     else:
-        return  {'string_response': 'User addition failed due to incorrect data format' ,'status':False}
+        return  {'Response':{},'string_response': 'User addition failed due to incorrect data format' ,'status':False}
     
 
 
@@ -156,9 +156,9 @@ def request_matching(df):
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('prod_db_write')
         df.to_sql(name = 'request_matching', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
-        return  {'string_response': 'Volunteer Assigned','status':True}
+        return  {'Response':{},'string_response': 'Volunteer Assigned','status':True}
     else:
-        return  {'string_response': 'Volunteer assignment failed due to incorrect data format' ,'status':False}
+        return  {'Response':{},'string_response': 'Volunteer assignment failed due to incorrect data format' ,'status':False}
         
 
 
@@ -172,9 +172,9 @@ def request_updation(r_id,column,new_value,timestamp):
             query = text("""update requests set {column_name}='{new_value}',last_updated='{timestamp}' 
             where id={r_id};""".format(column_name=column,new_value=new_value, timestamp =dt.datetime.strftime(timestamp,'%Y-%m-%d %H:%M:%S'),r_id=r_id))
             con.execute(query)
-            return {'string_response': 'Request Updated','status':True}
+            return {'Response':{},'string_response': 'Request Updated','status':True}
     except e:
-        return  {'string_response': 'Volunteer updation failed' ,'status':False}
+        return  {'Response':{},'string_response': 'Volunteer updation failed' ,'status':False}
 
 
 # In[ ]:
@@ -187,9 +187,9 @@ def volunteer_updation(v_id,column,new_value,timestamp):
             query = text("""update volunteers set {column_name}='{new_value}',last_updated='{timestamp}' 
             where id={v_id};""".format(column_name=column,new_value=new_value, timestamp =dt.datetime.strftime(timestamp,'%Y-%m-%d %H:%M:%S'),v_id=v_id))
             con.execute(query)
-            return {'string_response': 'Volunteer Data Updated','status':True}
+            return {'Response':{},'string_response': 'Volunteer Data Updated','status':True}
     except:
-        return  {'string_response': 'Volunteer updation failed' ,'status':False}
+        return  {'Response':{},'string_response': 'Volunteer updation failed' ,'status':False}
 
 
 # In[ ]:
@@ -200,9 +200,9 @@ def check_user(table_name,user_id):
     query = """Select id from {table_name} where id={user_id}""".format(table_name=table_name,user_id=user_id)
     data = pd.read_sql(query,server_con)
     if (data.shape[0]>0):
-        return {'string_response': 'User Existence validated','status':True}
+        return {'Response':{},'string_response': 'User Existence validated','status':True}
     else:
-        return {'string_response': 'ID does not exist in database','status':False}
+        return {'Response':{},'string_response': 'ID does not exist in database','status':False}
 
 
 # In[ ]:

@@ -64,8 +64,8 @@ def create_request():
     df['country'] = df['country'].fillna('India')
     expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age','status']
     x,y = add_requests(df)
-    response = {'status':x,'string_response':y}
-    return json.dumps({'Response':response})
+    response = {'Response':{},'status':x,'string_response':y}
+    return json.dumps(response)
 
 
 # In[ ]:
@@ -91,8 +91,8 @@ def add_volunteer():
     df['country'] = df['country'].fillna('India')
     expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status']
     x,y = add_volunteers_to_db(df)
-    response = {'status':x,'string_response':y}
-    return json.dumps({'Response':response})
+    response = {'Response':{},'status':x,'string_response':y}
+    return json.dumps(response)
 
 
 # In[ ]:
@@ -103,7 +103,7 @@ def login_request():
     name = request.form.get('username')
     password = request.form.get('password')
     response = verify_user(name,password)
-    return json.dumps({'Response':response})
+    return json.dumps(response)
 
 
 # In[ ]:
@@ -126,18 +126,18 @@ def new_user():
     elif(user_access_type=='viewer'):
         access_type=3    
     elif(user_access_type=='superuser'):
-        response = {'status':False,'string_response':'You cannot create superuser'}
-        return jsonify(Response=response)
+        response = {'Response':{},'status':False,'string_response':'You cannot create superuser'}
+        return json.dumps(response)
     else:
-        response = {'status':False,'string_response':'Invalid access type'}
-        return jsonify(Response=response)
+        response = {'Response':{},'status':False,'string_response':'Invalid access type'}
+        return json.dumps(response)
     req_dict = {'creation_date':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],'organisation':[organisation],'password':[password],'access_type':[access_type],'created_by':creator_user_id}
     df = pd.DataFrame(req_dict)
     if(creator_access_type=='superuser'):
         response = add_user(df)
     else:
-        response = {'status':False,'string_response':'User does not have permission to create new users'}
-    return json.dumps({'Response':response})
+        response = {'Response':{},'status':False,'string_response':'User does not have permission to create new users'}
+    return json.dumps(response)
 
 
 # In[ ]:
@@ -156,8 +156,8 @@ def add_org_request():
     df = pd.DataFrame(req_dict)
     expected_columns=['timestamp', 'name','organisation','mob_number','email_id', 'source','comments']
     x,y = contact_us_form_add(df)
-    response = {'status':x,'string_response':y}
-    return json.dumps({'Response':response})
+    response = {'Response':{},'status':x,'string_response':y}
+    return json.dumps(response)
 
 
 # In[ ]:
@@ -166,7 +166,7 @@ def add_org_request():
 @app.route('/top_ticker',methods=['POST'])
 def ticker_counts():
     response = get_ticker_counts()
-    return json.dumps({'Response':response})
+    return json.dumps(response)
 
 
 # In[ ]:
@@ -177,9 +177,11 @@ def private_map_data():
     user_id = request.form.get('user_id')
 #     req_dict = {'username':name,'password':password}
 #     df = pd.DataFrame(req_dict)
-    response = check_user('users',user_id)    
-    if(response['status']):
+    response_check = check_user('users',user_id)    
+    if(response_check['status']):
         response = get_private_map_data()
+    else:
+        response = {}
     return json.dumps({'Response':response,'status':True,'string_response':'Full data sent'})
 
 
@@ -205,7 +207,7 @@ def assign_volunteer():
     df = pd.DataFrame(req_dict)
     response = request_matching(df)
     response_2 = request_updation(r_id,'status','matched',current_time)
-    return json.dumps({'Response':response})
+    return json.dumps(response)
 
 
 # In[ ]:
@@ -218,7 +220,7 @@ def update_request():
     new_value = request.form.get('new_value')
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     response = request_updation(r_id,column_name,new_value,current_time)
-    return response
+    return json.dumps(response)
 
 
 # In[ ]:
@@ -231,7 +233,7 @@ def volunteer_activation():
     new_value = request.form.get('new_value')
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     response = volunteer_updation(v_id,column_name,new_value,current_time)
-    return response
+    return json.dumps(response)
 
 
 # In[ ]:
@@ -276,6 +278,18 @@ if(server_type=='local'):
 if(server_type=='server'):
     if __name__ =='__main__':
         app.run()
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
