@@ -24,9 +24,9 @@ def get_ticker_counts():
         volunteer_count = v_df['mob_number'].nunique()
         request_count = r_df.shape[0]
         pending_request_count = r_df[r_df['status']=='pending'].shape[0]
-        return {'status':True,'string_response':'Metrics computed','volunteer_count':volunteer_count,'request_count':request_count,'pending_request_count':pending_request_count}
+        return {'Response':{},'status':True,'string_response':'Metrics computed','volunteer_count':volunteer_count,'request_count':request_count,'pending_request_count':pending_request_count}
     except:
-        return {'status':False,'string_response':'Connection to DB failed'}
+        return {'Response':{},'status':False,'string_response':'Connection to DB failed'}
 
 
 # In[ ]:
