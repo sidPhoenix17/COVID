@@ -122,13 +122,13 @@ def verify_user(username,password):
     for i in user_list.index:
         print(user_list.loc[i])
         if(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']==password)):
-            output = {'Response':{},'string_response': 'Login successful','access_level': user_list.loc[i,'type'],'status':True,'username':username,'user_id':str(user_list.loc[i,'id']),'full_name':user_list.loc[i,'full_name']}
+            output = {'Response':{'access_level': user_list.loc[i,'type'],'username':username,'user_id':str(user_list.loc[i,'id']),'full_name':user_list.loc[i,'full_name']},'string_response': 'Login successful','status':True}
             break
         elif(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']!=password)):
-            output = {'Response':{},'string_response': 'Incorrect Password','access_level': '','status':False,'username':username}
+            output = {'Response':{'username':username},'string_response': 'Incorrect Password','status':False}
             break
         else:
-            output = {'Response':{},'string_response': 'Incorrect Username','access_level':'','status':False,'username':username}
+            output = {'Response':{'username':username},'string_response': 'Incorrect Username','status':False}
     return output
 
 
