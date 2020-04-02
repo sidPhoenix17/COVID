@@ -58,6 +58,12 @@ def create_request():
     user_request = request.form.get('request')
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
+    if(latitude=="''"):
+        print('latitude changed to None')
+        latitude=None
+    if(longitude=="''"):
+        print('longitude changed to None')
+        longitude=None
     source = request.form.get('source')
     status = request.form.get('status')
     country = request.form.get('country')
@@ -89,6 +95,12 @@ def add_volunteer():
     address = request.form.get('address')
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
+    if(latitude=="''"):
+        print('latitude changed to None')
+        latitude=None
+    if(longitude=="''"):
+        print('longitude changed to None')
+        longitude=None
     source = request.form.get('source')
     status = request.form.get('status')
     country = request.form.get('country')
@@ -276,6 +288,14 @@ def update_volunteer_info():
 # In[ ]:
 
 
+# @app.route('/auto_assignment',methods=['POST'])
+# def auto_assign():
+#     return None
+
+
+# In[ ]:
+
+
 #Deprecated
 
 # @app.route('/update_request',methods=['POST'])
@@ -339,12 +359,6 @@ if(server_type=='local'):
 if(server_type=='server'):
     if __name__ =='__main__':
         app.run()
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:
