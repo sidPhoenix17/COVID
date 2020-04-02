@@ -23,12 +23,18 @@ import datetime as dt
 
 
 def remove_existing_volunteers(df):
-    server_con = connections('prod_db_read')
-    query = """Select mob_number from volunteers"""
-    volunteer_list = pd.read_sql(query,server_con)
-    df['mob_number']=df['mob_number'].apply(lambda x: int(x))
-    df_new = df[df['mob_number'].isin(volunteer_list['mob_number'].unique())==False]
-    return df_new
+    try:
+        server_con = connections('prod_db_read')
+        query = """Select mob_number from volunteers"""
+        volunteer_list = pd.read_sql(query,server_con)
+        df['mob_number']=df['mob_number'].str.replace(" ",'')
+        df['mob_number']=df['mob_number'].str.replace(",",'')
+        df['mob_number']=df['mob_number'].str.replace("\+91",'')
+        df['mob_number']=df['mob_number'].apply(lambda x: int(x))
+        df_new = df[df['mob_number'].isin(volunteer_list['mob_number'].unique())==False]
+        return df_new
+    except:
+        return df
     
 def last_entry_timestamp(source):
     server_con = connections('prod_db_read')
