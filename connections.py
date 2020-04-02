@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[ ]:
 
 
 
@@ -14,7 +14,7 @@ from settings import *
 from sqlalchemy.sql import text
 
 
-# In[2]:
+# In[ ]:
 
 
 def connections(con_name):
@@ -49,12 +49,12 @@ def keys(api_name):
     return gmap_key
 
 
-# In[3]:
+# In[ ]:
 
 
 def write_query(q,server_name):
     if((server_name=='prod_db_write') or (server_name=='db_write')):
-        engine = connections('prod_db_write')
+        engine = connections(server_name)
         with engine.connect() as con:
             query = text(q)
             con.execute(query)

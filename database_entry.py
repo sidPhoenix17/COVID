@@ -5,7 +5,7 @@
 
 
 import pandas as pd
-from connections import connections,keys
+from connections import connections,keys,write_query
 import requests
 from sqlalchemy.sql import text
 import datetime as dt
@@ -109,12 +109,6 @@ def geocoding(address_str,country_str,key):
 
 
 
-
-
-# In[ ]:
-
-
-
 def verify_user(username,password):
     server_con = connections('prod_db_read')
     query = """Select users.id as id,name as full_name, mob_number,email_id,password,user_access.type as type from users left join user_access on users.access_type=user_access.id"""
@@ -165,36 +159,6 @@ def request_matching(df):
 # In[ ]:
 
 
-def request_updation(r_id,column,new_value,timestamp):
-    engine = connections('prod_db_write')
-    try:
-        with engine.connect() as con:
-            query = text("""update requests set {column_name}='{new_value}',last_updated='{timestamp}' 
-            where id={r_id};""".format(column_name=column,new_value=new_value, timestamp =dt.datetime.strftime(timestamp,'%Y-%m-%d %H:%M:%S'),r_id=r_id))
-            con.execute(query)
-            return {'Response':{},'string_response': 'Request Updated','status':True}
-    except e:
-        return  {'Response':{},'string_response': 'Volunteer updation failed' ,'status':False}
-
-
-# In[ ]:
-
-
-def volunteer_updation(v_id,column,new_value,timestamp):
-    engine = connections('prod_db_write')
-    try:
-        with engine.connect() as con:
-            query = text("""update volunteers set {column_name}='{new_value}',last_updated='{timestamp}' 
-            where id={v_id};""".format(column_name=column,new_value=new_value, timestamp =dt.datetime.strftime(timestamp,'%Y-%m-%d %H:%M:%S'),v_id=v_id))
-            con.execute(query)
-            return {'Response':{},'string_response': 'Volunteer Data Updated','status':True}
-    except:
-        return  {'Response':{},'string_response': 'Volunteer updation failed' ,'status':False}
-
-
-# In[ ]:
-
-
 def check_user(table_name,user_id):
     server_con = connections('prod_db_read')
     query = """Select id from {table_name} where id={user_id}""".format(table_name=table_name,user_id=user_id)
@@ -203,6 +167,70 @@ def check_user(table_name,user_id):
         return {'Response':{},'string_response': 'User Existence validated','status':True}
     else:
         return {'Response':{},'string_response': 'ID does not exist in database','status':False}
+
+
+# In[ ]:
+
+
+def update_requests_db(r_dict):
+    try:
+        string_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = r_dict[x]) for x in r_dict if x is not 'id'))
+        query = """update requests set {dx}where id={r_id};""".format(dx = string_sql_format,r_id=r_dict['id'])
+        write_query(query,'prod_db_write')
+        return {'Response':{},'string_response': 'Request info Updated','status':True}
+    except:
+        return  {'Response':{},'string_response': 'Request info updation failed' ,'status':False}
+
+
+# In[ ]:
+
+
+def update_volunteers_db(v_dict):
+    try:
+        string_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = v_dict[x]) for x in v_dict if x is not 'id'))
+        query = """update volunteers set {dx}where id={v_id};""".format(dx = string_sql_format,v_id=v_dict['id'])
+        write_query(query,'prod_db_write')
+        return {'Response':{},'string_response': 'Volunteer info Updated','status':True}
+    except:
+        return  {'Response':{},'string_response': 'Volunteer info updation failed' ,'status':False}
+
+
+# In[ ]:
+
+
+# def volunteer_updation(v_id,column,new_value,timestamp):
+#     engine = connections('prod_db_write')
+#     try:
+#         with engine.connect() as con:
+#             query = text("""update volunteers set {column_name}='{new_value}',last_updated='{timestamp}' 
+#             where id={v_id};""".format(column_name=column,new_value=new_value, timestamp =dt.datetime.strftime(timestamp,'%Y-%m-%d %H:%M:%S'),v_id=v_id))
+#             con.execute(query)
+#             return {'Response':{},'string_response': 'Volunteer Data Updated','status':True}
+#     except:
+#         return  {'Response':{},'string_response': 'Volunteer updation failed' ,'status':False}
+
+# def request_updation(r_id,column,new_value,timestamp):
+#     engine = connections('prod_db_write')
+#     try:
+#         with engine.connect() as con:
+#             query = text("""update requests set {column_name}='{new_value}',last_updated='{timestamp}' 
+#             where id={r_id};""".format(column_name=column,new_value=new_value, timestamp =dt.datetime.strftime(timestamp,'%Y-%m-%d %H:%M:%S'),r_id=r_id))
+#             con.execute(query)
+#             return {'Response':{},'string_response': 'Request Updated','status':True}
+#     except e:
+#         return  {'Response':{},'string_response': 'Volunteer updation failed' ,'status':False}
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:

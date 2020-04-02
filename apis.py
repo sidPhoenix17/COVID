@@ -10,10 +10,18 @@ from flask import Flask,request,jsonify,json
 from flask_cors import CORS
 
 from connections import connections
-from database_entry import add_requests,add_volunteers_to_db,contact_us_form_add,verify_user,add_user,request_matching,request_updation,volunteer_updation,check_user
+from database_entry import add_requests,add_volunteers_to_db,contact_us_form_add,verify_user,add_user,request_matching,check_user,update_requests_db,update_volunteers_db
 
 from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data
 from settings import *
+
+
+# In[ ]:
+
+
+def datetime_converter(o):
+    if isinstance(o, dt.datetime):
+        return dt.datetime.strftime(o,'%a, %d %b %y, %I:%M%p %Z')
 
 
 # In[ ]:
@@ -123,7 +131,6 @@ def new_user():
     creator_access_type = request.form.get('creator_access_type')
     user_access_type = request.form.get('user_access_type')
     creator_user_id = request.form.get('creator_user_id')
-    print(user_access_type)
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     if(user_access_type=='moderator'):
         access_type=2
@@ -179,14 +186,13 @@ def ticker_counts():
 @app.route('/private_map_data',methods=['POST'])
 def private_map_data():
     user_id = request.form.get('user_id')
-#     req_dict = {'username':name,'password':password}
-#     df = pd.DataFrame(req_dict)
     response_check = check_user('users',user_id)    
-    if(response_check['status']):
+    if(response_check.get('status')):
         response = get_private_map_data()
+        return json.dumps({'Response':response,'status':True,'string_response':'Full data sent'},default=datetime_converter)
     else:
         response = {}
-    return json.dumps({'Response':response,'status':True,'string_response':'Full data sent'})
+        return json.dumps({'Response':response,'status':False,'string_response':'User does not have access'})
 
 
 # In[ ]:
@@ -210,34 +216,85 @@ def assign_volunteer():
     req_dict = {'volunteer_id':[v_id],'request_id':[r_id],'matching_by':[matching_by],'timestamp':[current_time]}
     df = pd.DataFrame(req_dict)
     response = request_matching(df)
-    response_2 = request_updation(r_id,'status','matched',current_time)
+    response_2 = update_requests_db({'id':r_id,'status':'matched'})
     return json.dumps(response)
 
 
 # In[ ]:
 
 
-@app.route('/update_request',methods=['POST'])
-def update_request():
+@app.route('/update_request_info',methods=['POST'])
+def update_request_info():
     r_id = request.form.get('request_id')
-    column_name = request.form.get('column_name')
-    new_value = request.form.get('new_value')
-    current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
-    response = request_updation(r_id,column_name,new_value,current_time)
-    return json.dumps(response)
+    name = request.form.get('name')
+    mob_number = request.form.get('mob_number')
+    email_id = request.form.get('email_id')
+    age = request.form.get('age')
+    address = request.form.get('address')
+    user_request = request.form.get('request')
+    latitude = request.form.get('latitude')
+    longitude = request.form.get('longitude')
+    source = request.form.get('source')
+    status = request.form.get('status')
+    country = request.form.get('country')
+    req_dict = {'id':r_id,'name':name,'mob_number':mob_number,'email_id':email_id,
+                'country':country,'address':address,'geoaddress':address,'latitude':latitude, 'longitude':longitude,
+                'source':source,'age':age,'request':user_request,'status':status}
+    if (req_dict.get('id') is None):
+        return json.dumps({'Response':{},'status':False,'string_response':'Request ID mandatory'})
+    r_dict = {x:req_dict[x] for x in req_dict if req_dict[x] is not None}
+    response = update_requests_db(r_dict)
+    return response
+    
 
 
 # In[ ]:
 
 
-@app.route('/inactivate_volunteer',methods=['POST'])
-def volunteer_activation():
+@app.route('/update_volunteer_info',methods=['POST'])
+def update_volunteer_info():
     v_id = request.form.get('volunteer_id')
-    column_name = request.form.get('column_name')
-    new_value = request.form.get('new_value')
-    current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
-    response = volunteer_updation(v_id,column_name,new_value,current_time)
-    return json.dumps(response)
+    name = request.form.get('name')
+    mob_number = request.form.get('mob_number')
+    email_id = request.form.get('email_id')
+    address = request.form.get('address')
+    latitude = request.form.get('latitude')
+    longitude = request.form.get('longitude')
+    source = request.form.get('source')
+    status = request.form.get('status')
+    country = request.form.get('country')
+    req_dict = {'id':v_id,'name':name,'mob_number':mob_number,'email_id':email_id,
+                'country':country,'address':address,'geoaddress':address,'latitude':latitude, 'longitude':longitude,
+                'source':source,'status':status}
+    if (req_dict.get('id') is None):
+        return {'Response':{},'status':False,'string_response':'Volunteer ID mandatory'}
+    v_dict = {x:req_dict[x] for x in req_dict if req_dict[x] is not None}
+    response = update_volunteers_db(v_dict)
+    return response
+
+
+# In[ ]:
+
+
+#Deprecated
+
+# @app.route('/update_request',methods=['POST'])
+# def update_request():
+#     r_id = request.form.get('request_id')
+#     column_name = request.form.get('column_name')
+#     new_value = request.form.get('new_value')
+#     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
+#     response = request_updation(r_id,column_name,new_value,current_time)
+#     return json.dumps(response)
+
+# @app.route('/inactivate_volunteer',methods=['POST'])
+# def volunteer_activation():
+#     v_id = request.form.get('volunteer_id')
+#     column_name = request.form.get('column_name')
+#     new_value = request.form.get('new_value')
+#     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
+#     response = volunteer_updation(v_id,column_name,new_value,current_time)
+#     return json.dumps(response)
 
 
 # In[ ]:
