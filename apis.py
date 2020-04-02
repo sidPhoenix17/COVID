@@ -61,6 +61,8 @@ def create_request():
     df['source'] = df['source'].fillna('covidsos')
     df['status'] = df['status'].fillna('pending')
     df['email_id'] = df['email_id'].fillna('')
+    df['latitude'] = df['latitude'].fillna(0.0)
+    df['longitude'] = df['longitude'].fillna(0.0)
     df['country'] = df['country'].fillna('India')
     expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age','status']
     x,y = add_requests(df)
@@ -89,6 +91,8 @@ def add_volunteer():
     df = pd.DataFrame(req_dict)
     df['status'] = df['status'].fillna(1)
     df['country'] = df['country'].fillna('India')
+    df['latitude'] = df['latitude'].fillna(0.0)
+    df['longitude'] = df['longitude'].fillna(0.0)
     expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status']
     x,y = add_volunteers_to_db(df)
     response = {'Response':{},'status':x,'string_response':y}
