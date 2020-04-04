@@ -10,7 +10,8 @@ from flask import Flask,request,jsonify,json
 from flask_cors import CORS
 
 from connections import connections
-from database_entry import add_requests,add_volunteers_to_db,contact_us_form_add,verify_user,add_user,request_matching,check_user,update_requests_db,update_volunteers_db
+from database_entry import add_requests,add_volunteers_to_db,contact_us_form_add,verify_user,add_user,\
+    request_matching,check_user,update_requests_db,update_volunteers_db,blacklist_token
 
 from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id
 from settings import server_type, SECRET_KEY
@@ -283,6 +284,15 @@ def update_volunteer_info():
     v_dict = {x:req_dict[x] for x in req_dict if req_dict[x] is not None}
     response = update_volunteers_db(v_dict)
     return response
+
+
+@app.route('/logout',methods=['POST'])
+@login_required
+def logout_request():
+    token = request.headers['Authorization'].split(" ")[1]
+    success = blacklist_token(token)
+    message = 'Logged out successfully' if success else 'Failed to logout'
+    return json.dumps({'Response': {}, 'status': success, 'string_response': message})
 
 
 # In[ ]:

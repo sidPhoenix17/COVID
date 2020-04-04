@@ -3,6 +3,9 @@ from flask import current_app as app
 from flask import json, request
 import datetime as dt
 import jwt
+import pandas as pd
+
+from connections import connections
 
 
 def login_required(f):
@@ -15,8 +18,8 @@ def login_required(f):
         resp, success = decode_auth_token(auth_token)
         if not success:
             return json.dumps({'Response':{},'status':False,'string_response': resp})
-    
-        return f(*args, **kwargs)            
+
+        return f(*args, **kwargs)
     return decorated_function
 
 
@@ -38,6 +41,12 @@ def encode_auth_token(user_id):
 
 def decode_auth_token(auth_token):
     try:
+        server_con = connections('prod_db_read')
+        query = f"""select * from token_blacklist where token='{auth_token}'"""
+        data = pd.read_sql(query, server_con)
+        token_blacklisted = data.shape[0] > 0
+        if token_blacklisted:
+            return 'Invalid token. Please log in again.', False
         payload = jwt.decode(auth_token, app.config.get('SECRET_KEY'))
         return payload['sub'], True
     except jwt.ExpiredSignatureError:
