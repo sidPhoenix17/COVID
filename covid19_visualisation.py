@@ -39,7 +39,7 @@ import os
 
 from connections import connections
 from map_generator import public_map,private_map
-from settings import *
+from settings import server_type
 
 from database_entry import add_volunteers_to_db
 from connections import connections

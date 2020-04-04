@@ -167,13 +167,17 @@ def request_matching(df):
 
 def check_user(table_name,user_id):
     server_con = connections('prod_db_read')
-    query = """Select id from {table_name} where id={user_id}""".format(table_name=table_name,user_id=user_id)
-    data = pd.read_sql(query,server_con)
-    if (data.shape[0]>0):
-        return {'Response':{},'string_response': 'User Existence validated','status':True}
-    else:
-        return {'Response':{},'string_response': 'ID does not exist in database','status':False}
-
+    errorResponse = {'Response':{},'string_response': 'Requesting user ID does not exist in database','status':False}
+    try:
+        query = """Select id from {table_name} where id={user_id}""".format(table_name=table_name,user_id=user_id)
+        data = pd.read_sql(query,server_con)
+        if (data.shape[0]>0):
+            return {'Response':{},'string_response': 'User Existence validated','status':True}
+        else:
+            return errorResponse
+    except:
+        return errorResponse
+    
 
 # In[ ]:
 
@@ -181,7 +185,7 @@ def check_user(table_name,user_id):
 def update_requests_db(r_dict):
     try:
         string_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = r_dict[x]) for x in r_dict if x is not 'id'))
-        query = """update requests set {dx}where id={r_id};""".format(dx = string_sql_format,r_id=r_dict['id'])
+        query = """update requests set {dx} where id={r_id};""".format(dx = string_sql_format,r_id=r_dict['id'])
         write_query(query,'prod_db_write')
         return {'Response':{},'string_response': 'Request info Updated','status':True}
     except:
@@ -194,7 +198,7 @@ def update_requests_db(r_dict):
 def update_volunteers_db(v_dict):
     try:
         string_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = v_dict[x]) for x in v_dict if x is not 'id'))
-        query = """update volunteers set {dx}where id={v_id};""".format(dx = string_sql_format,v_id=v_dict['id'])
+        query = """update volunteers set {dx} where id={v_id};""".format(dx = string_sql_format,v_id=v_dict['id'])
         write_query(query,'prod_db_write')
         return {'Response':{},'string_response': 'Volunteer info Updated','status':True}
     except:

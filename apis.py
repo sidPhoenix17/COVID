@@ -13,7 +13,7 @@ from connections import connections
 from database_entry import add_requests,add_volunteers_to_db,contact_us_form_add,verify_user,add_user,request_matching,check_user,update_requests_db,update_volunteers_db
 
 from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data
-from settings import *
+from settings import server_type
 
 
 # In[ ]:
@@ -55,6 +55,7 @@ def create_request():
     email_id = request.form.get('email_id')
     age = request.form.get('age')
     address = request.form.get('address')
+    geoaddress = request.form.get('geoaddress', address)
     user_request = request.form.get('request')
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
@@ -63,7 +64,7 @@ def create_request():
     country = request.form.get('country')
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     req_dict = {'timestamp':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],
-                'country':[country],'address':[address],'geoaddress':[address],'latitude':[latitude], 'longitude':[longitude],
+                'country':[country],'address':[address],'geoaddress':[geoaddress],'latitude':[latitude], 'longitude':[longitude],
                 'source':[source],'age':[age],'request':[user_request],'status':[status]}
     df = pd.DataFrame(req_dict)
     df['source'] = df['source'].fillna('covidsos')
@@ -87,6 +88,7 @@ def add_volunteer():
     mob_number = request.form.get('mob_number')
     email_id = request.form.get('email_id')
     address = request.form.get('address')
+    geoaddress = request.form.get('address', address)
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
     source = request.form.get('source')
@@ -94,7 +96,7 @@ def add_volunteer():
     country = request.form.get('country')
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     req_dict = {'timestamp':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],
-                'country':[country],'address':[address],'geoaddress':[address],'latitude':[latitude], 'longitude':[longitude],
+                'country':[country],'address':[address],'geoaddress':[geoaddress],'latitude':[latitude], 'longitude':[longitude],
                 'source':[source],'status':[status]}
     df = pd.DataFrame(req_dict)
     df['status'] = df['status'].fillna(1)
@@ -174,7 +176,7 @@ def add_org_request():
 # In[ ]:
 
 
-@app.route('/top_ticker',methods=['POST'])
+@app.route('/top_ticker',methods=['GET'])
 def ticker_counts():
     response = get_ticker_counts()
     return json.dumps(response)
@@ -183,22 +185,22 @@ def ticker_counts():
 # In[ ]:
 
 
-@app.route('/private_map_data',methods=['POST'])
+@app.route('/private_map_data',methods=['GET'])
 def private_map_data():
     user_id = request.form.get('user_id')
     response_check = check_user('users',user_id)    
-    if(response_check.get('status')):
+    if response_check.get('status'):
         response = get_private_map_data()
         return json.dumps({'Response':response,'status':True,'string_response':'Full data sent'},default=datetime_converter)
     else:
         response = {}
-        return json.dumps({'Response':response,'status':False,'string_response':'User does not have access'})
+        return json.dumps({'Response':response,'status':False,'string_response': response_check['string_response']})
 
 
 # In[ ]:
 
 
-@app.route('/public_map_data',methods=['POST'])
+@app.route('/public_map_data',methods=['GET'])
 def public_map_data():
     response = get_public_map_data()
     return json.dumps({'Response':response,'status':True,'string_response':'Public data sent'})
@@ -231,6 +233,7 @@ def update_request_info():
     email_id = request.form.get('email_id')
     age = request.form.get('age')
     address = request.form.get('address')
+    geoaddress = request.form.get('geoaddress', address)
     user_request = request.form.get('request')
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
@@ -238,7 +241,7 @@ def update_request_info():
     status = request.form.get('status')
     country = request.form.get('country')
     req_dict = {'id':r_id,'name':name,'mob_number':mob_number,'email_id':email_id,
-                'country':country,'address':address,'geoaddress':address,'latitude':latitude, 'longitude':longitude,
+                'country':country,'address':address,'geoaddress':geoaddress,'latitude':latitude, 'longitude':longitude,
                 'source':source,'age':age,'request':user_request,'status':status}
     if (req_dict.get('id') is None):
         return json.dumps({'Response':{},'status':False,'string_response':'Request ID mandatory'})
@@ -258,13 +261,14 @@ def update_volunteer_info():
     mob_number = request.form.get('mob_number')
     email_id = request.form.get('email_id')
     address = request.form.get('address')
+    geoaddress = request.form.get('geoaddress', address)
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
     source = request.form.get('source')
     status = request.form.get('status')
     country = request.form.get('country')
     req_dict = {'id':v_id,'name':name,'mob_number':mob_number,'email_id':email_id,
-                'country':country,'address':address,'geoaddress':address,'latitude':latitude, 'longitude':longitude,
+                'country':country,'address':address,'geoaddress':geoaddress,'latitude':latitude, 'longitude':longitude,
                 'source':source,'status':status}
     if (req_dict.get('id') is None):
         return {'Response':{},'status':False,'string_response':'Volunteer ID mandatory'}
@@ -276,7 +280,7 @@ def update_volunteer_info():
 # In[ ]:
 
 
-# @app.route('/nearby_volunteers',methods=['POST'])
+# @app.route('/nearby_volunteers',methods=['GET'])
 # def nearby_volunteers():
 #     r_id = request.form.get('request_id')
 #     latitude = request.form.get('latitude')
