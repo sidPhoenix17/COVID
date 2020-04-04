@@ -187,7 +187,7 @@ def ticker_counts():
 
 @app.route('/private_map_data',methods=['GET'])
 def private_map_data():
-    user_id = request.form.get('user_id')
+    user_id = request.args.get('user_id')
     response_check = check_user('users',user_id)    
     if response_check.get('status'):
         response = get_private_map_data()
