@@ -12,9 +12,9 @@ from flask_cors import CORS
 from connections import connections
 from database_entry import add_requests,add_volunteers_to_db,contact_us_form_add,verify_user,add_user,request_matching,check_user,update_requests_db,update_volunteers_db
 
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data
-from settings import server_type
-
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id
+from settings import server_type, SECRET_KEY
+from auth import encode_auth_token, decode_auth_token, login_required
 
 # In[ ]:
 
@@ -29,6 +29,7 @@ def datetime_converter(o):
 
 app = Flask(__name__)
 CORS(app)
+app.config['SECRET_KEY'] = SECRET_KEY
 
 
 # In[ ]:
@@ -117,13 +118,17 @@ def login_request():
     name = request.form.get('username')
     password = request.form.get('password')
     response = verify_user(name,password)
+    user_id = get_user_id(name, password)
+    if not user_id:
+        return {'Response':{},'status':False,'string_response':'Failed to find user.'}
+    response['auth_token'] = encode_auth_token(user_id).decode()
     return json.dumps(response)
 
 
 # In[ ]:
 
-
 @app.route('/new_user',methods=['POST'])
+@login_required
 def new_user():
     name = request.form.get('name')
     mob_number = request.form.get('mob_number')
@@ -148,6 +153,11 @@ def new_user():
     df = pd.DataFrame(req_dict)
     if(creator_access_type=='superuser'):
         response = add_user(df)
+        user_id = get_user_id(mob_number, password)
+        if not user_id:
+            return {'Response':{},'status':False,'string_response':'Failed to create user. Please try again later'}
+        response['auth_token'] = encode_auth_token(user_id).decode()
+            
     else:
         response = {'Response':{},'status':False,'string_response':'User does not have permission to create new users'}
     return json.dumps(response)
@@ -186,15 +196,10 @@ def ticker_counts():
 
 
 @app.route('/private_map_data',methods=['GET'])
+@login_required
 def private_map_data():
-    user_id = request.args.get('user_id')
-    response_check = check_user('users',user_id)    
-    if response_check.get('status'):
-        response = get_private_map_data()
-        return json.dumps({'Response':response,'status':True,'string_response':'Full data sent'},default=datetime_converter)
-    else:
-        response = {}
-        return json.dumps({'Response':response,'status':False,'string_response': response_check['string_response']})
+    response = get_private_map_data()
+    return json.dumps({'Response':response,'status':True,'string_response':'Full data sent'},default=datetime_converter)
 
 
 # In[ ]:
@@ -210,6 +215,7 @@ def public_map_data():
 
 
 @app.route('/assign_volunteer',methods=['POST'])
+@login_required
 def assign_volunteer():
     v_id = request.form.get('volunteer_id')
     r_id = request.form.get('request_id')
@@ -226,6 +232,7 @@ def assign_volunteer():
 
 
 @app.route('/update_request_info',methods=['POST'])
+@login_required
 def update_request_info():
     r_id = request.form.get('request_id')
     name = request.form.get('name')
@@ -255,6 +262,7 @@ def update_request_info():
 
 
 @app.route('/update_volunteer_info',methods=['POST'])
+@login_required
 def update_volunteer_info():
     v_id = request.form.get('volunteer_id')
     name = request.form.get('name')
