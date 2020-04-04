@@ -10,7 +10,7 @@ import mysql.connector as sql_con
 from sqlalchemy import create_engine
 import cred_config as cc
 import ftplib
-from settings import *
+from settings import server_type
 from sqlalchemy.sql import text
 
 

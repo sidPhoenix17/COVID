@@ -1,4 +1,4 @@
-from local_settings import *
+from local_settings import server_type
 import numpy as np
 default_r=0.5
 
