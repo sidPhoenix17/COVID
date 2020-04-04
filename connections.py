@@ -22,15 +22,21 @@ def connections(con_name):
         if(server_type=='local'):
             cred_r=cc.credentials['covidsos.org-local']
             server_con = sql_con.connect(user=cred_r['user'], password=cred_r['password'], host=cred_r['host'],database=cred_r['database'])
-        elif(server_type=='server'):
-            cred_r=cc.credentials['covidsos.org-server']
+        elif(server_type=='prod'):
+            cred_r=cc.credentials['covidsos.org-prod']
+            server_con = sql_con.connect(user=cred_r['user'], password=cred_r['password'], host=cred_r['host'],database=cred_r['database'])
+        elif(server_type=='staging'):
+            cred_r=cc.credentials['covidsos.org-staging']
             server_con = sql_con.connect(user=cred_r['user'], password=cred_r['password'], host=cred_r['host'],database=cred_r['database'])
     if(con_name=='prod_db_write'):
         if(server_type=='local'):
             cred_w=cc.credentials['covidsos.org-local']
             server_con = create_engine("mysql+pymysql://{user}:{password}@{host}/{database}".format(user = cred_w['user'], password = cred_w['password'], host = cred_w['host'], database = cred_w['database']), pool_size=10, max_overflow=20, echo=False)
-        elif(server_type=='server'):
-            cred_w=cc.credentials['covidsos.org-server']
+        elif(server_type=='prod'):
+            cred_w=cc.credentials['covidsos.org-prod']
+            server_con = create_engine("mysql+pymysql://{user}:{password}@{host}/{database}".format(user = cred_w['user'], password = cred_w['password'], host = cred_w['host'], database = cred_w['database']), pool_size=10, max_overflow=20, echo=False)
+        elif(server_type=='staging'):
+            cred_w=cc.credentials['covidsos.org-staging']
             server_con = create_engine("mysql+pymysql://{user}:{password}@{host}/{database}".format(user = cred_w['user'], password = cred_w['password'], host = cred_w['host'], database = cred_w['database']), pool_size=10, max_overflow=20, echo=False)
     if(con_name=='db_read'):
         cred_r=cc.credentials['covid_sos_read']
