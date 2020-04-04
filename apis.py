@@ -88,7 +88,7 @@ def add_volunteer():
     mob_number = request.form.get('mob_number')
     email_id = request.form.get('email_id')
     address = request.form.get('address')
-    geoaddress = request.form.get('address', address)
+    geoaddress = request.form.get('geoaddress', address)
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
     source = request.form.get('source')
@@ -351,7 +351,10 @@ if(server_type=='local'):
     if __name__ == '__main__':    
         app.run(debug=True,use_reloader=False)
 
-if(server_type=='server'):
+if(server_type=='prod'):
+    if __name__ =='__main__':
+        app.run()
+if(server_type=='staging'):
     if __name__ =='__main__':
         app.run()
 
