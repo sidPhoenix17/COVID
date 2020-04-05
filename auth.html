@@ -2,7 +2,7 @@
 <html>
 <head><meta charset="utf-8" />
 
-<title>database_entry</title>
+<title>auth</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
@@ -13079,14 +13079,19 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">from</span> <span class="nn">connections</span> <span class="kn">import</span> <span class="n">connections</span><span class="p">,</span><span class="n">keys</span><span class="p">,</span><span class="n">write_query</span>
-<span class="kn">import</span> <span class="nn">requests</span>
-<span class="kn">from</span> <span class="nn">sqlalchemy.sql</span> <span class="kn">import</span> <span class="n">text</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">root_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">())))</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">root_path</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">current_app</span> <span class="k">as</span> <span class="n">app</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">json</span><span class="p">,</span> <span class="n">request</span>
 <span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
-<span class="kn">from</span> <span class="nn">settings</span> <span class="kn">import</span> <span class="n">sms_key</span><span class="p">,</span> <span class="n">sms_sid</span><span class="p">,</span> <span class="n">sms_url</span><span class="p">,</span> <span class="n">EARTH_RADIUS</span>
-<span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">jwt</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+
+<span class="kn">from</span> <span class="nn">connections</span> <span class="kn">import</span> <span class="n">connections</span>
 </pre></div>
 
     </div>
@@ -13099,9 +13104,19 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#todo - AddUser</span>
-<span class="c1">#Check if User Exists</span>
-<span class="c1">#password encryption</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">login_required</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">decorated_function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">auth_header</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">)</span>
+        <span class="n">auth_token</span> <span class="o">=</span> <span class="n">auth_header</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">auth_header</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">auth_token</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Please login to view data&#39;</span><span class="p">})</span>
+        <span class="n">resp</span><span class="p">,</span> <span class="n">success</span> <span class="o">=</span> <span class="n">decode_auth_token</span><span class="p">(</span><span class="n">auth_token</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">success</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="n">resp</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">f</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">decorated_function</span>
 </pre></div>
 
     </div>
@@ -13114,402 +13129,47 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">remove_existing_volunteers</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">encode_auth_token</span><span class="p">(</span><span class="n">user_id</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;exp&#39;</span><span class="p">:</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span> <span class="o">+</span> <span class="n">dt</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s1">&#39;iat&#39;</span><span class="p">:</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">(),</span>
+            <span class="s1">&#39;sub&#39;</span><span class="p">:</span> <span class="n">user_id</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">jwt</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span>
+            <span class="n">payload</span><span class="p">,</span>
+            <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;SECRET_KEY&#39;</span><span class="p">),</span>
+            <span class="n">algorithm</span><span class="o">=</span><span class="s1">&#39;HS256&#39;</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">decode_auth_token</span><span class="p">(</span><span class="n">auth_token</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">server_con</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">)</span>
-        <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select mob_number from volunteers&quot;&quot;&quot;</span>
-        <span class="n">volunteer_list</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">server_con</span><span class="p">)</span>
-        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
-        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
-        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;\+91&quot;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
-        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="n">df_new</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">volunteer_list</span><span class="p">[</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span><span class="o">==</span><span class="kc">False</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">df_new</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">df</span>
-    
-<span class="k">def</span> <span class="nf">last_entry_timestamp</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
-    <span class="n">server_con</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">)</span>
-    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select max(timestamp) as timestamp from requests where source=&#39;</span><span class="si">{source}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">)</span>
-    <span class="n">max_timestamp</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">server_con</span><span class="p">,</span><span class="n">parse_dates</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">])</span>    
-    <span class="n">max_timestamp</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">source</span>
-    <span class="k">return</span> <span class="n">max_timestamp</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">add_volunteers_to_db</span><span class="p">(</span><span class="n">df_full</span><span class="p">):</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">remove_existing_volunteers</span><span class="p">(</span><span class="n">df_full</span><span class="p">)</span>
-    <span class="n">df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">])</span>
-    <span class="k">if</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39; New volunteers to be added&#39;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">return_str</span> <span class="o">=</span> <span class="s1">&#39;Volunteer already exists. No New Volunteers to be added&#39;</span>
-        <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">return_str</span>
-    <span class="c1">#df with columns [timestamp, name, mob_number, email_id, country, address, geoaddress,latitude, longitude, source]</span>
-    <span class="n">expected_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">,</span> <span class="s1">&#39;email_id&#39;</span><span class="p">,</span> <span class="s1">&#39;country&#39;</span><span class="p">,</span> <span class="s1">&#39;address&#39;</span><span class="p">,</span> <span class="s1">&#39;geoaddress&#39;</span><span class="p">,</span> <span class="s1">&#39;latitude&#39;</span><span class="p">,</span> <span class="s1">&#39;longitude&#39;</span><span class="p">,</span><span class="s1">&#39;source&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">]</span>
-    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">expected_columns</span><span class="p">))</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">expected_columns</span><span class="p">)):</span>
-        <span class="n">engine</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_write&#39;</span><span class="p">)</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">to_sql</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;volunteers&#39;</span><span class="p">,</span> <span class="n">con</span> <span class="o">=</span> <span class="n">engine</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="s1">&#39;covidsos&#39;</span><span class="p">,</span> <span class="n">if_exists</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span><span class="n">index_label</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="n">return_str</span> <span class="o">=</span> <span class="s1">&#39;Volunteer Data Submitted&#39;</span>
-        <span class="k">return</span> <span class="kc">True</span><span class="p">,</span><span class="n">return_str</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">return_str</span> <span class="o">=</span> <span class="s1">&#39;Data format not matching&#39;</span>
-        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span><span class="n">return_str</span>
-
-<span class="k">def</span> <span class="nf">add_requests</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-    <span class="c1">#df with columns [timestamp, name,mob_number, email_id, country, address, geoaddress, latitude, longitude, source, request,age]</span>
-    <span class="n">expected_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;mob_number&#39;</span><span class="p">,</span> <span class="s1">&#39;email_id&#39;</span><span class="p">,</span> <span class="s1">&#39;country&#39;</span><span class="p">,</span> <span class="s1">&#39;address&#39;</span><span class="p">,</span> <span class="s1">&#39;geoaddress&#39;</span><span class="p">,</span> <span class="s1">&#39;latitude&#39;</span><span class="p">,</span> <span class="s1">&#39;longitude&#39;</span><span class="p">,</span> <span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="s1">&#39;request&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">]</span>
-    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">expected_columns</span><span class="p">))</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">expected_columns</span><span class="p">)):</span>
-        <span class="n">engine</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_write&#39;</span><span class="p">)</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">to_sql</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;requests&#39;</span><span class="p">,</span> <span class="n">con</span> <span class="o">=</span> <span class="n">engine</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="s1">&#39;covidsos&#39;</span><span class="p">,</span> <span class="n">if_exists</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span><span class="n">index_label</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="n">return_str</span> <span class="o">=</span> <span class="s1">&#39;Request submitted successfully&#39;</span>
-        <span class="k">return</span> <span class="kc">True</span><span class="p">,</span><span class="n">return_str</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">return_str</span> <span class="o">=</span> <span class="s1">&#39;Data Format not matching&#39;</span>
-        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span><span class="n">return_str</span>
-
-<span class="k">def</span> <span class="nf">contact_us_form_add</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-    <span class="n">expected_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="s1">&#39;organisation&#39;</span><span class="p">,</span> <span class="s1">&#39;mob_number&#39;</span><span class="p">,</span> <span class="s1">&#39;email_id&#39;</span><span class="p">,</span> <span class="s1">&#39;comments&#39;</span><span class="p">,</span><span class="s1">&#39;source&#39;</span><span class="p">]</span>
-    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">expected_columns</span><span class="p">))</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">expected_columns</span><span class="p">)):</span>
-        <span class="n">engine</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_write&#39;</span><span class="p">)</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">to_sql</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;org_requests&#39;</span><span class="p">,</span> <span class="n">con</span> <span class="o">=</span> <span class="n">engine</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="s1">&#39;covidsos&#39;</span><span class="p">,</span> <span class="n">if_exists</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span><span class="n">index_label</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="n">return_str</span> <span class="o">=</span> <span class="s1">&#39;Request submitted successfully&#39;</span>
-        <span class="k">return</span> <span class="kc">True</span><span class="p">,</span><span class="n">return_str</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">return_str</span> <span class="o">=</span> <span class="s1">&#39;Data Format not matching&#39;</span>
-        <span class="k">return</span> <span class="kc">False</span><span class="p">,</span><span class="n">return_str</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">geocoding</span><span class="p">(</span><span class="n">address_str</span><span class="p">,</span><span class="n">country_str</span><span class="p">,</span><span class="n">key</span><span class="p">):</span>
-    <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;https://maps.googleapis.com/maps/api/geocode/json?address=&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">address_str</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;&amp;components=country:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">country_str</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;&amp;key=&#39;</span><span class="o">+</span><span class="n">key</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span><span class="o">==</span><span class="s2">&quot;OK&quot;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;geometry&#39;</span><span class="p">][</span><span class="s1">&#39;location&#39;</span><span class="p">][</span><span class="s1">&#39;lng&#39;</span><span class="p">],</span> 
-                    <span class="n">data</span><span class="p">[</span><span class="s1">&#39;results&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;geometry&#39;</span><span class="p">][</span><span class="s1">&#39;location&#39;</span><span class="p">][</span><span class="s1">&#39;lat&#39;</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot; for &quot;</span><span class="o">+</span> <span class="n">address_str</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">None</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;HTTP Error for &quot;</span><span class="o">+</span><span class="n">address_str</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">None</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">verify_user</span><span class="p">(</span><span class="n">username</span><span class="p">,</span><span class="n">password</span><span class="p">):</span>
-    <span class="n">server_con</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">)</span>
-    <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select users.id as id,name as full_name, mob_number,email_id,password,user_access.type as type from users left join user_access on users.access_type=user_access.id&quot;&quot;&quot;</span>
-    <span class="n">user_list</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">server_con</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">user_list</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-        <span class="k">if</span><span class="p">(((</span><span class="nb">str</span><span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span><span class="o">==</span><span class="n">username</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;email_id&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">username</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;password&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">password</span><span class="p">)):</span>
-            <span class="n">output</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{</span><span class="s1">&#39;access_level&#39;</span><span class="p">:</span> <span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;type&#39;</span><span class="p">],</span><span class="s1">&#39;username&#39;</span><span class="p">:</span><span class="n">username</span><span class="p">,</span><span class="s1">&#39;user_id&#39;</span><span class="p">:</span><span class="nb">str</span><span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;id&#39;</span><span class="p">]),</span><span class="s1">&#39;full_name&#39;</span><span class="p">:</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;full_name&#39;</span><span class="p">]},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Login successful&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
-            <span class="k">break</span>
-        <span class="k">elif</span><span class="p">(((</span><span class="nb">str</span><span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span><span class="o">==</span><span class="n">username</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;email_id&#39;</span><span class="p">]</span><span class="o">==</span><span class="n">username</span><span class="p">))</span> <span class="ow">and</span> <span class="p">(</span><span class="n">user_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;password&#39;</span><span class="p">]</span><span class="o">!=</span><span class="n">password</span><span class="p">)):</span>
-            <span class="n">output</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{</span><span class="s1">&#39;username&#39;</span><span class="p">:</span><span class="n">username</span><span class="p">},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Incorrect Password&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">}</span>
-            <span class="k">break</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">output</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{</span><span class="s1">&#39;username&#39;</span><span class="p">:</span><span class="n">username</span><span class="p">},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Incorrect Username&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">}</span>
-    <span class="k">return</span> <span class="n">output</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">add_user</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-    <span class="n">expected_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;creation_date&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;mob_number&#39;</span><span class="p">,</span> <span class="s1">&#39;email_id&#39;</span><span class="p">,</span> <span class="s1">&#39;organisation&#39;</span><span class="p">,</span> <span class="s1">&#39;password&#39;</span><span class="p">,</span> <span class="s1">&#39;access_type&#39;</span><span class="p">,</span><span class="s1">&#39;created_by&#39;</span><span class="p">]</span>
-    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">expected_columns</span><span class="p">))</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">expected_columns</span><span class="p">)):</span>
-        <span class="n">engine</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_write&#39;</span><span class="p">)</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">to_sql</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;users&#39;</span><span class="p">,</span> <span class="n">con</span> <span class="o">=</span> <span class="n">engine</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="s1">&#39;covidsos&#39;</span><span class="p">,</span> <span class="n">if_exists</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span><span class="n">index_label</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="k">return</span>  <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;User Added Successfully&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span>  <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;User addition failed due to incorrect data format&#39;</span> <span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">}</span>
-    
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">request_matching</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
-    <span class="n">expected_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;request_id&#39;</span><span class="p">,</span><span class="s1">&#39;volunteer_id&#39;</span><span class="p">,</span><span class="s1">&#39;matching_by&#39;</span><span class="p">,</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span>
-    <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">expected_columns</span><span class="p">))</span><span class="o">==</span><span class="nb">len</span><span class="p">(</span><span class="n">expected_columns</span><span class="p">)):</span>
-        <span class="n">engine</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_write&#39;</span><span class="p">)</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">to_sql</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;request_matching&#39;</span><span class="p">,</span> <span class="n">con</span> <span class="o">=</span> <span class="n">engine</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="s1">&#39;covidsos&#39;</span><span class="p">,</span> <span class="n">if_exists</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span><span class="n">index_label</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-        <span class="k">return</span>  <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Volunteer Assigned&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span>  <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Volunteer assignment failed due to incorrect data format&#39;</span> <span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">}</span>
-        
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">check_user</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span><span class="n">user_id</span><span class="p">):</span>
-    <span class="n">server_con</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">)</span>
-    <span class="n">errorResponse</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Requesting user ID does not exist in database&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">}</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id from </span><span class="si">{table_name}</span><span class="s2"> where id=</span><span class="si">{user_id}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">table_name</span><span class="o">=</span><span class="n">table_name</span><span class="p">,</span><span class="n">user_id</span><span class="o">=</span><span class="n">user_id</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">server_con</span><span class="p">)</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">):</span>
-            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;User Existence validated&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">errorResponse</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">errorResponse</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">update_requests_db</span><span class="p">(</span><span class="n">r_dict</span><span class="p">):</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">string_sql_format</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="s2">&quot;</span><span class="si">{column_name}</span><span class="s2">=&#39;</span><span class="si">{value}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column_name</span> <span class="o">=</span> <span class="n">x</span><span class="p">,</span><span class="n">value</span> <span class="o">=</span> <span class="n">r_dict</span><span class="p">[</span><span class="n">x</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">r_dict</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;id&#39;</span><span class="p">))</span>
-        <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;update requests set </span><span class="si">{dx}</span><span class="s2"> where id=</span><span class="si">{r_id}</span><span class="s2">;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dx</span> <span class="o">=</span> <span class="n">string_sql_format</span><span class="p">,</span><span class="n">r_id</span><span class="o">=</span><span class="n">r_dict</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
-        <span class="n">write_query</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="s1">&#39;prod_db_write&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Request info Updated&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="k">return</span>  <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Request info updation failed&#39;</span> <span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">}</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">update_volunteers_db</span><span class="p">(</span><span class="n">v_dict</span><span class="p">):</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">string_sql_format</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="s2">&quot;</span><span class="si">{column_name}</span><span class="s2">=&#39;</span><span class="si">{value}</span><span class="s2">&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column_name</span> <span class="o">=</span> <span class="n">x</span><span class="p">,</span><span class="n">value</span> <span class="o">=</span> <span class="n">v_dict</span><span class="p">[</span><span class="n">x</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">v_dict</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;id&#39;</span><span class="p">))</span>
-        <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;update volunteers set </span><span class="si">{dx}</span><span class="s2"> where id=</span><span class="si">{v_id}</span><span class="s2">;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dx</span> <span class="o">=</span> <span class="n">string_sql_format</span><span class="p">,</span><span class="n">v_id</span><span class="o">=</span><span class="n">v_dict</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
-        <span class="n">write_query</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="s1">&#39;prod_db_write&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Volunteer info Updated&#39;</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">}</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="k">return</span>  <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span> <span class="s1">&#39;Volunteer info updation failed&#39;</span> <span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">}</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">blacklist_token</span><span class="p">(</span><span class="n">token</span><span class="p">):</span> 
-    <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;insert into token_blacklist (token) values (&#39;</span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">&#39;);&quot;&quot;&quot;</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">write_query</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="s1">&#39;prod_db_write&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">True</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">False</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">send_sms</span><span class="p">(</span><span class="n">sms_text</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="mi">9582148040</span><span class="p">,</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-    <span class="n">sid</span> <span class="o">=</span> <span class="n">sms_sid</span>
-    <span class="n">key</span> <span class="o">=</span> <span class="n">sms_key</span>
-    <span class="n">url</span> <span class="o">=</span> <span class="n">sms_url</span>
-    <span class="k">if</span><span class="p">(</span><span class="n">sms_type</span><span class="o">==</span><span class="s1">&#39;transactional&#39;</span><span class="p">):</span>
-        <span class="n">route</span><span class="o">=</span><span class="s2">&quot;4&quot;</span>
-    <span class="k">elif</span><span class="p">(</span><span class="n">sms_type</span><span class="o">==</span><span class="s1">&#39;promotional&#39;</span><span class="p">):</span>
-        <span class="n">route</span><span class="o">=</span><span class="s2">&quot;1&quot;</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;sender&quot;</span><span class="p">:</span> <span class="s2">&quot;SOCKET&quot;</span><span class="p">,</span><span class="s2">&quot;route&quot;</span><span class="p">:</span> <span class="n">route</span><span class="p">,</span><span class="s2">&quot;country&quot;</span><span class="p">:</span> <span class="s2">&quot;91&quot;</span><span class="p">,</span><span class="s2">&quot;sms&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">sms_text</span><span class="p">,</span><span class="s2">&quot;to&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">sms_to</span><span class="p">]}]}</span>
-    <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Content-type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">,</span> <span class="s1">&#39;authkey&#39;</span><span class="p">:</span> <span class="n">key</span><span class="p">}</span>
-    <span class="k">if</span> <span class="n">send</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
-            <span class="n">sms_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;sms_text&#39;</span><span class="p">:[</span><span class="n">sms_text</span><span class="p">],</span><span class="s1">&#39;sms_type&#39;</span><span class="p">:[</span><span class="n">sms_type</span><span class="p">],</span><span class="s1">&#39;sms_to&#39;</span><span class="p">:[</span><span class="n">sms_to</span><span class="p">],</span><span class="s1">&#39;sms_status_code&#39;</span><span class="p">:[</span><span class="n">r</span><span class="o">.</span><span class="n">status_code</span><span class="p">],</span><span class="s1">&#39;sms_json_response&#39;</span><span class="p">:[</span><span class="nb">str</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">json</span><span class="p">())]}</span>
-            <span class="n">new_sms_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">sms_dict</span><span class="p">)</span>
-            <span class="n">engine</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_write&#39;</span><span class="p">)</span>
-            <span class="n">new_sms_df</span><span class="o">.</span><span class="n">to_sql</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;sms_log&#39;</span><span class="p">,</span> <span class="n">con</span> <span class="o">=</span> <span class="n">engine</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="s1">&#39;covidsos&#39;</span><span class="p">,</span> <span class="n">if_exists</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span><span class="n">index_label</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">None</span>
-        <span class="k">except</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;SMS API error&#39;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">None</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">get_haversine_distance</span><span class="p">(</span><span class="n">start_lat</span><span class="p">,</span> <span class="n">start_lng</span><span class="p">,</span> <span class="n">end_lat</span><span class="p">,</span> <span class="n">end_lng</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;km&#39;</span><span class="p">):</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="c1"># convert decimal degrees to radians</span>
-        <span class="n">lon1</span><span class="p">,</span> <span class="n">lat1</span><span class="p">,</span> <span class="n">lon2</span><span class="p">,</span> <span class="n">lat2</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">,</span> <span class="p">[</span><span class="n">start_lng</span><span class="p">,</span> <span class="n">start_lat</span><span class="p">,</span> <span class="n">end_lng</span><span class="p">,</span> <span class="n">end_lat</span><span class="p">])</span>
-    
-        <span class="c1"># haversine formula</span>
-        <span class="n">dlon</span> <span class="o">=</span> <span class="n">lon2</span> <span class="o">-</span> <span class="n">lon1</span>
-        <span class="n">dlat</span> <span class="o">=</span> <span class="n">lat2</span> <span class="o">-</span> <span class="n">lat1</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dlat</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">lat1</span><span class="p">)</span> <span class="o">*</span>
-             <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">lat2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dlon</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="n">c</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arcsin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
-    
-        <span class="n">distance</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">EARTH_RADIUS</span> <span class="o">*</span> <span class="n">c</span>
-        <span class="k">if</span> <span class="n">units</span><span class="o">==</span><span class="s1">&#39;m&#39;</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">distance</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">distance</span> <span class="o">/</span> <span class="mf">1000.0</span>
-    <span class="k">except</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">None</span>
-    
-
-<span class="k">def</span> <span class="nf">auto_assign_volunteer</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="n">lon</span><span class="p">):</span>
-    <span class="n">v_list_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id as v_id, latitude,longitude from volunteers where status=1&quot;&quot;&quot;</span>
-    <span class="n">v_list</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">v_list_q</span><span class="p">,</span><span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">))</span>
-    <span class="n">v_list</span><span class="p">[</span><span class="s1">&#39;dist&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_haversine_distance</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="n">lon</span><span class="p">,)</span>
-    <span class="n">v_list</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;dist&#39;</span><span class="p">,</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="c1">#incomplete</span>
-    <span class="k">return</span> <span class="kc">None</span>
-    
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># def volunteer_updation(v_id,column,new_value,timestamp):</span>
-<span class="c1">#     engine = connections(&#39;prod_db_write&#39;)</span>
-<span class="c1">#     try:</span>
-<span class="c1">#         with engine.connect() as con:</span>
-<span class="c1">#             query = text(&quot;&quot;&quot;update volunteers set {column_name}=&#39;{new_value}&#39;,last_updated=&#39;{timestamp}&#39; </span>
-<span class="c1">#             where id={v_id};&quot;&quot;&quot;.format(column_name=column,new_value=new_value, timestamp =dt.datetime.strftime(timestamp,&#39;%Y-%m-%d %H:%M:%S&#39;),v_id=v_id))</span>
-<span class="c1">#             con.execute(query)</span>
-<span class="c1">#             return {&#39;Response&#39;:{},&#39;string_response&#39;: &#39;Volunteer Data Updated&#39;,&#39;status&#39;:True}</span>
-<span class="c1">#     except:</span>
-<span class="c1">#         return  {&#39;Response&#39;:{},&#39;string_response&#39;: &#39;Volunteer updation failed&#39; ,&#39;status&#39;:False}</span>
-
-<span class="c1"># def request_updation(r_id,column,new_value,timestamp):</span>
-<span class="c1">#     engine = connections(&#39;prod_db_write&#39;)</span>
-<span class="c1">#     try:</span>
-<span class="c1">#         with engine.connect() as con:</span>
-<span class="c1">#             query = text(&quot;&quot;&quot;update requests set {column_name}=&#39;{new_value}&#39;,last_updated=&#39;{timestamp}&#39; </span>
-<span class="c1">#             where id={r_id};&quot;&quot;&quot;.format(column_name=column,new_value=new_value, timestamp =dt.datetime.strftime(timestamp,&#39;%Y-%m-%d %H:%M:%S&#39;),r_id=r_id))</span>
-<span class="c1">#             con.execute(query)</span>
-<span class="c1">#             return {&#39;Response&#39;:{},&#39;string_response&#39;: &#39;Request Updated&#39;,&#39;status&#39;:True}</span>
-<span class="c1">#     except e:</span>
-<span class="c1">#         return  {&#39;Response&#39;:{},&#39;string_response&#39;: &#39;Volunteer updation failed&#39; ,&#39;status&#39;:False}</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span> 
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span> 
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span> 
+        <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;select * from token_blacklist where token=&#39;</span><span class="si">{</span><span class="n">auth_token</span><span class="si">}</span><span class="s2">&#39;&quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">server_con</span><span class="p">)</span>
+        <span class="n">token_blacklisted</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">token_blacklisted</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;Invalid token. Please log in again.&#39;</span><span class="p">,</span> <span class="kc">False</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">jwt</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">auth_token</span><span class="p">,</span> <span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;SECRET_KEY&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;sub&#39;</span><span class="p">],</span> <span class="kc">True</span>
+    <span class="k">except</span> <span class="n">jwt</span><span class="o">.</span><span class="n">ExpiredSignatureError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;Signature expired. Please log in again.&#39;</span><span class="p">,</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="n">jwt</span><span class="o">.</span><span class="n">InvalidTokenError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;Invalid token. Please log in again.&#39;</span><span class="p">,</span> <span class="kc">False</span>
 </pre></div>
 
     </div>

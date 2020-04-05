@@ -10,12 +10,14 @@ from flask import Flask,request,jsonify,json
 from flask_cors import CORS
 
 from connections import connections
-from database_entry import add_requests,add_volunteers_to_db,contact_us_form_add,verify_user,add_user,\
-    request_matching,check_user,update_requests_db,update_volunteers_db,blacklist_token
+from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user, add_user, request_matching, check_user, update_requests_db, update_volunteers_db, blacklist_token
 
 from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id
 from settings import server_type, SECRET_KEY
 from auth import encode_auth_token, decode_auth_token, login_required
+
+from celery import Celery
+
 
 # In[ ]:
 
@@ -31,6 +33,34 @@ def datetime_converter(o):
 app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = SECRET_KEY
+
+
+# In[ ]:
+
+
+
+app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+celery.conf.update(app.config)
+
+@celery.task
+def async_task():
+    send_sms()
+
+
+    
+
+@app.route('/test_async',methods=['GET'])
+def test_async():
+    try:
+        async_task.delay()
+    except Exception as e:
+        response = {'Response':str(e),'status':200,'string_response':'Ok'}
+        return json.dumps(response)
+    response = {'Response':{'key': 'Ok'},'status':200,'string_response':'Ok'}
+    return json.dumps(response)
 
 
 # In[ ]:
@@ -119,14 +149,15 @@ def login_request():
     name = request.form.get('username')
     password = request.form.get('password')
     response = verify_user(name,password)
-    user_id = get_user_id(name, password)
-    if not user_id:
-        return {'Response':{},'status':False,'string_response':'Failed to find user.'}
+    user_id = get_user_id(name, password) 
+    if not user_id: 
+        return {'Response':{},'status':False,'string_response':'Failed to find user.'} 
     response['auth_token'] = encode_auth_token(user_id).decode()
     return json.dumps(response)
 
 
 # In[ ]:
+
 
 @app.route('/new_user',methods=['POST'])
 @login_required
@@ -154,11 +185,10 @@ def new_user():
     df = pd.DataFrame(req_dict)
     if(creator_access_type=='superuser'):
         response = add_user(df)
-        user_id = get_user_id(mob_number, password)
-        if not user_id:
-            return {'Response':{},'status':False,'string_response':'Failed to create user. Please try again later'}
-        response['auth_token'] = encode_auth_token(user_id).decode()
-            
+        user_id = get_user_id(mob_number, password) 
+        if not user_id: 
+            return {'Response':{},'status':False,'string_response':'Failed to create user. Please try again later'} 
+        response['auth_token'] = encode_auth_token(user_id).decode() 
     else:
         response = {'Response':{},'status':False,'string_response':'User does not have permission to create new users'}
     return json.dumps(response)
@@ -199,7 +229,7 @@ def ticker_counts():
 @app.route('/private_map_data',methods=['GET'])
 @login_required
 def private_map_data():
-    response = get_private_map_data()
+    response = get_private_map_data() 
     return json.dumps({'Response':response,'status':True,'string_response':'Full data sent'},default=datetime_converter)
 
 
@@ -286,80 +316,16 @@ def update_volunteer_info():
     return response
 
 
+# In[ ]:
+
+
 @app.route('/logout',methods=['POST'])
 @login_required
 def logout_request():
     token = request.headers['Authorization'].split(" ")[1]
     success = blacklist_token(token)
     message = 'Logged out successfully' if success else 'Failed to logout'
-    return json.dumps({'Response': {}, 'status': success, 'string_response': message})
-
-
-# In[ ]:
-
-
-# @app.route('/nearby_volunteers',methods=['GET'])
-# def nearby_volunteers():
-#     r_id = request.form.get('request_id')
-#     latitude = request.form.get('latitude')
-#     longitude = request.form.get('longitude')
-#     return None
-
-
-# In[ ]:
-
-
-#Deprecated
-
-# @app.route('/update_request',methods=['POST'])
-# def update_request():
-#     r_id = request.form.get('request_id')
-#     column_name = request.form.get('column_name')
-#     new_value = request.form.get('new_value')
-#     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
-#     response = request_updation(r_id,column_name,new_value,current_time)
-#     return json.dumps(response)
-
-# @app.route('/inactivate_volunteer',methods=['POST'])
-# def volunteer_activation():
-#     v_id = request.form.get('volunteer_id')
-#     column_name = request.form.get('column_name')
-#     new_value = request.form.get('new_value')
-#     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
-#     response = volunteer_updation(v_id,column_name,new_value,current_time)
-#     return json.dumps(response)
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-# from folium import Map, Marker, GeoJson
-# from folium.plugins import MarkerCluster
-
-
-# @app.route('/folium_test',methods=['POST'])
-# def folium_test_fn():
-#     v_df, r_df = folium_data_request()
-#     m = Map(location= [12.97194, 77.59369], zoom_start= 12, tiles="cartodbpositron", 
-#             attr= '© <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="http://cartodb.com/attributions#basemaps">CartoDB</a>')
-#     volunteer_cluster = MarkerCluster()
-#     for i in v_df.index:
-#         mk = Marker(location=[v_df.loc[i,'latitude'],v_df.loc[i,'longitude']])
-#         mk.add_to(volunteer_cluster)
-#     volunteer_cluster.add_to(m)
-#     requests_cluster = MarkerCluster()
-#     for i in r_df.index:
-#         mk = Marker(location=[r_df.loc[i,'latitude'],r_df.loc[i,'longitude']])
-#         mk.add_to(requests_cluster)
-#     requests_cluster.add_to(m)
-#     m.save('output/folium_test.html')
-#     return m._repr_html_()
+    return json.dumps({'Response': {}, 'status': success, 'string_response': message}) 
 
 
 # In[ ]:
