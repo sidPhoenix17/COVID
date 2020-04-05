@@ -1,3 +1,4 @@
+import os
 from local_settings import server_type
 import numpy as np
 default_r=0.5
@@ -10,4 +11,4 @@ buffer_radius = 1/np.sqrt(95*95+110*110)
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-
+SECRET_KEY = os.getenv('SECRET_KEY')

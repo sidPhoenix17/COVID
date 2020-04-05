@@ -78,6 +78,17 @@ def get_public_map_data():
         return {}
 
 
+def get_user_id(username, password):
+    server_con = connections('prod_db_read')
+    query = f"""Select id from users where mob_number='{username}' or email_id='{username}' and password='{password}' order by id desc limit 1"""
+    try:
+        data = pd.read_sql(query, server_con)
+        user_id = int(data.iloc[0]['id'])
+        return user_id
+    except:
+        return None
+
+
 # In[ ]:
 
 

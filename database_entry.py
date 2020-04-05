@@ -205,6 +205,15 @@ def update_volunteers_db(v_dict):
         return  {'Response':{},'string_response': 'Volunteer info updation failed' ,'status':False}
 
 
+def blacklist_token(token):
+    query = f"""insert into token_blacklist (token) values ('{token}');"""
+    try:
+        write_query(query,'prod_db_write')
+        return True
+    except:
+        return False
+
+
 # In[ ]:
 
 
