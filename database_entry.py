@@ -61,7 +61,7 @@ def add_volunteers_to_db(df_full):
         return_str = 'Volunteer already exists. No New Volunteers to be added'
         return True, return_str
     #df with columns [timestamp, name, mob_number, email_id, country, address, geoaddress,latitude, longitude, source]
-    expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status']
+    expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status','support_type']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('prod_db_write')
         df.to_sql(name = 'volunteers', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
@@ -73,7 +73,7 @@ def add_volunteers_to_db(df_full):
 
 def add_requests(df):
     #df with columns [timestamp, name,mob_number, email_id, country, address, geoaddress, latitude, longitude, source, request,age]
-    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age','status']
+    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age','status','uuid']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('prod_db_write')
         df.to_sql(name = 'requests', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
@@ -241,7 +241,7 @@ def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
     if send:
         try:
             r = requests.post(url, data=json.dumps(data), headers=headers)
-            sms_dict = {'sms_text':[sms_text],'sms_type':[sms_type],'sms_to':[sms_to],'sms_status_code':[r.status_code],'sms_json_response':[str(r.json())]}
+            sms_dict = {'sms_text':[sms_text],'sms_type':[sms_type],'sms_to':[sms_to],'sms_status_type':[r.status_code],'sms_json_response':[str(r.json())]}
             new_sms_df = pd.DataFrame(sms_dict)
             engine = connections('prod_db_write')
             new_sms_df.to_sql(name = 'sms_log', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
@@ -255,35 +255,6 @@ def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
 
 
 
-def get_haversine_distance(start_lat, start_lng, end_lat, end_lng, units='km'):
-    try:
-        # convert decimal degrees to radians
-        lon1, lat1, lon2, lat2 = map(np.radians, [start_lng, start_lat, end_lng, end_lat])
-    
-        # haversine formula
-        dlon = lon2 - lon1
-        dlat = lat2 - lat1
-        a = (np.sin(dlat / 2) ** 2 + np.cos(lat1) *
-             np.cos(lat2) * np.sin(dlon / 2) ** 2)
-        c = 2 * np.arcsin(np.sqrt(a))
-    
-        distance = settings.EARTH_RADIUS * c
-        if units=='m':
-            return distance
-        else:
-            return distance / 1000.0
-    except:
-        return None
-    
-
-def auto_assign_volunteer(lat,lon):
-    v_list_q = """Select id as v_id, latitude,longitude from volunteers where status=1"""
-    v_list = pd.read_sql(v_list_q,connections('prod_db_read'))
-    v_list['dist'] = get_haversine_distance(lat,lon,)
-    v_list.sort_values(by='dist',ascending=True)
-    #incomplete
-    return None
-    
 
 
 # In[ ]:
