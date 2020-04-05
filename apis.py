@@ -152,7 +152,7 @@ def login_request():
     user_id = get_user_id(name, password) 
     if not user_id: 
         return {'Response':{},'status':False,'string_response':'Failed to find user.'} 
-    response['auth_token'] = encode_auth_token(user_id).decode()
+    response['Response']['auth_token'] = encode_auth_token(user_id).decode()
     return json.dumps(response)
 
 
@@ -341,12 +341,6 @@ if(server_type=='prod'):
 if(server_type=='staging'):
     if __name__ =='__main__':
         app.run()
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:

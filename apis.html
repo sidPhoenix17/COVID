@@ -13275,7 +13275,7 @@ div#notebook {
     <span class="n">user_id</span> <span class="o">=</span> <span class="n">get_user_id</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span> 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">user_id</span><span class="p">:</span> 
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Failed to find user.&#39;</span><span class="p">}</span> 
-    <span class="n">response</span><span class="p">[</span><span class="s1">&#39;auth_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">encode_auth_token</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+    <span class="n">response</span><span class="p">[</span><span class="s1">&#39;Response&#39;</span><span class="p">][</span><span class="s1">&#39;auth_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">encode_auth_token</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
 </pre></div>
 
@@ -13534,19 +13534,6 @@ div#notebook {
 <span class="k">if</span><span class="p">(</span><span class="n">server_type</span><span class="o">==</span><span class="s1">&#39;staging&#39;</span><span class="p">):</span>
     <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
         <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span> 
 </pre></div>
 
     </div>
