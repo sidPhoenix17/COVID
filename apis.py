@@ -10,12 +10,14 @@ from flask import Flask,request,jsonify,json
 from flask_cors import CORS
 
 from connections import connections
-from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user, add_user, request_matching, check_user, update_requests_db, update_volunteers_db, blacklist_token
+from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user, add_user, request_matching, check_user, update_requests_db, update_volunteers_db, blacklist_token,send_sms
 
 from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id
 from settings import server_type, SECRET_KEY
 from auth import encode_auth_token, decode_auth_token, login_required
 
+import uuid
+from partner_assignment import generate_uuid
 from celery import Celery
 
 
@@ -95,9 +97,10 @@ def create_request():
     status = request.form.get('status')
     country = request.form.get('country')
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
+    uuid = generate_uuid()
     req_dict = {'timestamp':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],
                 'country':[country],'address':[address],'geoaddress':[geoaddress],'latitude':[latitude], 'longitude':[longitude],
-                'source':[source],'age':[age],'request':[user_request],'status':[status]}
+                'source':[source],'age':[age],'request':[user_request],'status':[status],'uuid':[uuid]}
     df = pd.DataFrame(req_dict)
     df['source'] = df['source'].fillna('covidsos')
     df['status'] = df['status'].fillna('pending')
@@ -105,10 +108,29 @@ def create_request():
     df['latitude'] = df['latitude'].fillna(0.0)
     df['longitude'] = df['longitude'].fillna(0.0)
     df['country'] = df['country'].fillna('India')
-    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age','status']
+    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age','status','uuid']
     x,y = add_requests(df)
     response = {'Response':{},'status':x,'string_response':y}
+    if(x):
+        url = "https://covidsos.org/track/{uuid}".format(uuid=uuid)
+        sms_text = "[COVIDSOS] "+name+", our team will try to help you as soon as possible. If urgent, please click here wa.me/918618948661"
+        send_sms(sms_text,sms_to=int(mob_number),sms_type='transactional',send=True)
+        #Move to Async after 5 mins
+        sms_text = "[COVIDSOS] "+name+", you can track your request at "+url
+        send_sms(sms_text,sms_to=int(mob_number),sms_type='transactional',send=True)
+        #Send SMS to volunteers
+        #Async Task:
+        #Schedule message after 30 mins depending on status - Send WhatsApp Link here.
     return json.dumps(response)
+
+
+# In[ ]:
+
+
+# @celery.task
+# def request_creation_trigger():
+#     #Send SMS to Moderators if no volunteer has accepted the task 
+    
 
 
 # In[ ]:
@@ -126,17 +148,24 @@ def add_volunteer():
     source = request.form.get('source')
     status = request.form.get('status')
     country = request.form.get('country')
+    support_type = request.form.get('support_type')
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     req_dict = {'timestamp':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],
                 'country':[country],'address':[address],'geoaddress':[geoaddress],'latitude':[latitude], 'longitude':[longitude],
-                'source':[source],'status':[status]}
+                'source':[source],'status':[status],'support_type':[support_type]}
     df = pd.DataFrame(req_dict)
     df['status'] = df['status'].fillna(1)
     df['country'] = df['country'].fillna('India')
     df['latitude'] = df['latitude'].fillna(0.0)
     df['longitude'] = df['longitude'].fillna(0.0)
-    expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status']
+    expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status','support_type']
     x,y = add_volunteers_to_db(df)
+    if(x):
+        if(y=='Volunteer already exists. No New Volunteers to be added'):
+            sms_text = "[COVIDSOS] You are already registered with us. We will reach out to you if we receive request near you. For help: wa.me/918618948661"
+        else:
+            sms_text = "[COVIDSOS] Thank you for registering. We will reach out to you if we receive request near you. For help: wa.me/918618948661"
+        send_sms(sms_text,sms_to=int(mob_number),sms_type='transactional',send=True)
     response = {'Response':{},'status':x,'string_response':y}
     return json.dumps(response)
 
@@ -181,7 +210,7 @@ def new_user():
     else:
         response = {'Response':{},'status':False,'string_response':'Invalid access type'}
         return json.dumps(response)
-    req_dict = {'creation_date':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],'organisation':[organisation],'password':[password],'access_type':[access_type],'created_by':creator_user_id}
+    req_dict = {'creation_date':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],'organisation':[organisation],'password':[password],'access_type':[access_type],'created_by':[creator_user_id]}
     df = pd.DataFrame(req_dict)
     if(creator_access_type=='superuser'):
         response = add_user(df)
@@ -251,6 +280,8 @@ def assign_volunteer():
     v_id = request.form.get('volunteer_id')
     r_id = request.form.get('request_id')
     matching_by = request.form.get('matched_by')
+    #Check if volunteer is already assigned
+    #if already assigned, then return that this request has already been catered to.
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     req_dict = {'volunteer_id':[v_id],'request_id':[r_id],'matching_by':[matching_by],'timestamp':[current_time]}
     df = pd.DataFrame(req_dict)
@@ -341,6 +372,12 @@ if(server_type=='prod'):
 if(server_type=='staging'):
     if __name__ =='__main__':
         app.run()
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:

@@ -59,7 +59,7 @@ senior_citizen_sheet_data = [{'source':'GreenDream','sheet_id':'1KrZCG_fYvImIy_-
        'Task Status':'status', 'GeoStamp':'geostamp', 'GeoAddress':'geoaddress','GeoCodeLat':'latitude', 'GeoCodeLon':'longitude'}}]
 
 public_file_name= 'output/COVID_SOS_v0.html'
-private_file_name= 'output/private_COVID_SOS_v0.html'
+# private_file_name= 'output/private_COVID_SOS_v0.html'
 
 
 # In[4]:
@@ -189,11 +189,12 @@ def main():
 #     print('Message:', response)
     r_df = sheet_clean_up(requests_df,default_r,buffer_radius,'requests')
     #add_requests(r_df.rename(columns={'email_d':'email_id'})[['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age']])
-    private_map_v1 = private_map(v_df,r_df,private_file_name,map_pkg='kepler')
-    push_file_to_server(private_file_name,private_file_name)
-    push_file_to_server(private_file_name,'output/share_and_survive_v0_dark.html')
+#     private_map_v1 = private_map(v_df,r_df,private_file_name,map_pkg='kepler')
+#     push_file_to_server(private_file_name,private_file_name)
+#     push_file_to_server(private_file_name,'output/share_and_survive_v0_dark.html')
     public_map_v1 = public_map(v_df,r_df,public_file_name,map_pkg='kepler')
     push_file_to_server(public_file_name,public_file_name)
+    private_map_v1 = public_map_v1
     #Processing Data
     return v_df, r_df, private_map_v1,public_map_v1
 
