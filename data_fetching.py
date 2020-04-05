@@ -35,12 +35,12 @@ def get_ticker_counts():
 def get_private_map_data():
     try:
         server_con = connections('prod_db_read')
-        v_q = """Select timestamp,id as v_id, name,source,latitude,longitude,address,mob_number,email_id,status from volunteers"""
+        v_q = """Select timestamp,id as v_id, name,source,latitude,longitude,geoaddress,address,mob_number,email_id,status from volunteers"""
         v_df = pd.read_sql(v_q,server_con)
         v_df['timestamp']=pd.to_datetime(v_df['timestamp'])#.dt.tz_localize(tz='Asia/kolkata')
         v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)&(v_df['status']==1)]
         v_df['type']='Volunteer'
-        r_q = """Select timestamp,id as r_id, name,age,source,latitude,longitude,request,status,address,mob_number from requests"""
+        r_q = """Select timestamp,id as r_id, name,age,source,latitude,longitude,geoaddress,request,status,address,mob_number from requests"""
         r_df = pd.read_sql(r_q,server_con)
         r_df['timestamp']=pd.to_datetime(r_df['timestamp'])#.dt.tz_localize(tz='Asia/kolkata')
         r_df = r_df[(r_df['latitude']!=0.0)&(r_df['longitude']!=0.0)]
@@ -78,6 +78,10 @@ def get_public_map_data():
         return {}
 
 
+# In[ ]:
+
+
+
 def get_user_id(username, password):
     server_con = connections('prod_db_read')
     query = f"""Select id from users where mob_number='{username}' or email_id='{username}' and password='{password}' order by id desc limit 1"""
@@ -87,12 +91,7 @@ def get_user_id(username, password):
         return user_id
     except:
         return None
-
-
-# In[ ]:
-
-
-
+    
 
 
 # In[ ]:

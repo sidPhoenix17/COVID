@@ -9,9 +9,13 @@ from connections import connections,keys,write_query
 import requests
 from sqlalchemy.sql import text
 import datetime as dt
+from settings import sms_key, sms_sid, sms_url, EARTH_RADIUS
+import json
+import requests
 
 
 # In[ ]:
+
 
 
 #todo - AddUser
@@ -120,7 +124,6 @@ def verify_user(username,password):
     query = """Select users.id as id,name as full_name, mob_number,email_id,password,user_access.type as type from users left join user_access on users.access_type=user_access.id"""
     user_list = pd.read_sql(query,server_con)
     for i in user_list.index:
-        print(user_list.loc[i])
         if(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']==password)):
             output = {'Response':{'access_level': user_list.loc[i,'type'],'username':username,'user_id':str(user_list.loc[i,'id']),'full_name':user_list.loc[i,'full_name']},'string_response': 'Login successful','status':True}
             break
@@ -165,6 +168,7 @@ def request_matching(df):
 # In[ ]:
 
 
+
 def check_user(table_name,user_id):
     server_con = connections('prod_db_read')
     errorResponse = {'Response':{},'string_response': 'Requesting user ID does not exist in database','status':False}
@@ -182,6 +186,7 @@ def check_user(table_name,user_id):
 # In[ ]:
 
 
+
 def update_requests_db(r_dict):
     try:
         string_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = r_dict[x]) for x in r_dict if x is not 'id'))
@@ -195,6 +200,7 @@ def update_requests_db(r_dict):
 # In[ ]:
 
 
+
 def update_volunteers_db(v_dict):
     try:
         string_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = v_dict[x]) for x in v_dict if x is not 'id'))
@@ -205,13 +211,79 @@ def update_volunteers_db(v_dict):
         return  {'Response':{},'string_response': 'Volunteer info updation failed' ,'status':False}
 
 
-def blacklist_token(token):
+# In[ ]:
+
+
+
+def blacklist_token(token): 
     query = f"""insert into token_blacklist (token) values ('{token}');"""
     try:
         write_query(query,'prod_db_write')
         return True
     except:
         return False
+
+
+# In[ ]:
+
+
+
+def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
+    sid = sms_sid
+    key = sms_key
+    url = sms_url
+    if(sms_type=='transactional'):
+        route="4"
+    elif(sms_type=='promotional'):
+        route="1"
+    data = {"sender": "SOCKET","route": route,"country": "91","sms": [{"message": sms_text,"to": [sms_to]}]}
+    headers = {'Content-type': 'application/json', 'authkey': key}
+    if send:
+        try:
+            r = requests.post(url, data=json.dumps(data), headers=headers)
+            sms_dict = {'sms_text':[sms_text],'sms_type':[sms_type],'sms_to':[sms_to],'sms_status_code':[r.status_code],'sms_json_response':[str(r.json())]}
+            new_sms_df = pd.DataFrame(sms_dict)
+            engine = connections('prod_db_write')
+            new_sms_df.to_sql(name = 'sms_log', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
+            return None
+        except:
+            print('SMS API error')
+            return None
+
+
+# In[ ]:
+
+
+
+def get_haversine_distance(start_lat, start_lng, end_lat, end_lng, units='km'):
+    try:
+        # convert decimal degrees to radians
+        lon1, lat1, lon2, lat2 = map(np.radians, [start_lng, start_lat, end_lng, end_lat])
+    
+        # haversine formula
+        dlon = lon2 - lon1
+        dlat = lat2 - lat1
+        a = (np.sin(dlat / 2) ** 2 + np.cos(lat1) *
+             np.cos(lat2) * np.sin(dlon / 2) ** 2)
+        c = 2 * np.arcsin(np.sqrt(a))
+    
+        distance = settings.EARTH_RADIUS * c
+        if units=='m':
+            return distance
+        else:
+            return distance / 1000.0
+    except:
+        return None
+    
+
+def auto_assign_volunteer(lat,lon):
+    v_list_q = """Select id as v_id, latitude,longitude from volunteers where status=1"""
+    v_list = pd.read_sql(v_list_q,connections('prod_db_read'))
+    v_list['dist'] = get_haversine_distance(lat,lon,)
+    v_list.sort_values(by='dist',ascending=True)
+    #incomplete
+    return None
+    
 
 
 # In[ ]:

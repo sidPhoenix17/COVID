@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[ ]:
+
+
+import sys
+import inspect
+import os
+root_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+sys.path.append(root_path)
 from functools import wraps
 from flask import current_app as app
 from flask import json, request
@@ -6,6 +17,10 @@ import jwt
 import pandas as pd
 
 from connections import connections
+
+
+# In[ ]:
+
 
 
 def login_required(f):
@@ -23,6 +38,9 @@ def login_required(f):
     return decorated_function
 
 
+# In[ ]:
+
+
 def encode_auth_token(user_id):
     try:
         payload = {
@@ -37,6 +55,11 @@ def encode_auth_token(user_id):
         )
     except Exception as e:
         return None
+    
+
+
+# In[ ]:
+
 
 
 def decode_auth_token(auth_token):
@@ -53,3 +76,4 @@ def decode_auth_token(auth_token):
         return 'Signature expired. Please log in again.', False
     except jwt.InvalidTokenError:
         return 'Invalid token. Please log in again.', False
+
