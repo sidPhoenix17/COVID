@@ -47,8 +47,8 @@ celery.conf.update(app.config)
 
 @celery.task
 def async_task():
-    send_sms()
-
+    print("1234")
+    print(dt.datetime.now())
 
     
 
