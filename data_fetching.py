@@ -23,7 +23,7 @@ def get_ticker_counts():
 
         volunteer_count = v_df['mob_number'].nunique()
         request_count = r_df.shape[0]
-        pending_request_count = r_df[r_df['status']=='pending'].shape[0]
+        pending_request_count = r_df[r_df['status'].isin(['pending','Pending'])].shape[0]
         return {'Response':{'volunteer_count':volunteer_count,'request_count':request_count,'pending_request_count':pending_request_count},'status':True,'string_response':'Metrics computed'}
     except:
         return {'Response':{},'status':False,'string_response':'Connection to DB failed'}
@@ -77,6 +77,18 @@ def get_public_map_data():
 # In[ ]:
 
 
+def website_requests_display():
+    server_con = connections('prod_db_read')
+    query = """Select * from website_display"""
+    query_df = pd.read_sql(query,server_con)
+    
+    return {'pending':query_df[query_df['type']=='pending'].to_dict('records'),'completed':query_df[query_df['type']=='completed'].to_dict('records')}
+    
+
+
+# In[ ]:
+
+
 
 def get_user_id(username, password):
     server_con = connections('prod_db_read')
@@ -93,7 +105,40 @@ def get_user_id(username, password):
 # In[ ]:
 
 
+def accept_request_page(uuid,v_mob_number):
+    query = """Select rm.r_id, rm.v_id,v.name as volunteer_name,rm.status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.request as request_details
+            from nearby_volunteers rm left join requests r on r.id=rm.r_id
+            left join volunteers v on v.id=rm.v_id
+            where rm.mob_number={v_mob_number} and r.uuid='{uuid}'""".format(uuid=uuid,mob_number=v_mob_number)
+    df = pd.read_sql(query,connections('prod_db_read'))
+    return df
+    
+    
+def request_data_by_uuid(uuid):
+    r_id_q = """Select id as r_id,geoaddress,latitude,longitude,request,status from requests where uuid='{uuid_str}'""".format(uuid_str=uuid)
+    try:
+        r_id_df = pd.read_sql(r_id_q,connections('prod_db_read'))
+        return r_id_df
+    except:
+        return pd.DataFrame()
+    
 
+def request_data_by_id(r_id):
+    r_id_q = """Select id as r_id,geoaddress,latitude,longitude,request,status from requests where id='{r_id}'""".format(r_id=r_id)
+    try:
+        r_id_df = pd.read_sql(r_id_q,connections('prod_db_read'))
+        return r_id_df
+    except:
+        return pd.DataFrame()
+    
+
+def volunteer_data_by_id(v_id):
+    v_id_q = """Select id as v_id,name,mob_number from volunteers where id='{v_id}'""".format(v_id=v_id)
+    try:
+        v_id_df = pd.read_sql(v_id_q,connections('prod_db_read'))
+        return v_id_df
+    except:
+        return pd.DataFrame()
 
 
 # In[ ]:
