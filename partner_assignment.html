@@ -13082,23 +13082,11 @@ div#notebook {
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
-<span class="kn">from</span> <span class="nn">settings</span> <span class="kn">import</span> <span class="n">EARTH_RADIUS</span>
+<span class="kn">from</span> <span class="nn">settings</span> <span class="kn">import</span> <span class="n">EARTH_RADIUS</span><span class="p">,</span><span class="n">moderator_list</span>
 <span class="kn">from</span> <span class="nn">connections</span> <span class="kn">import</span> <span class="n">connections</span><span class="p">,</span><span class="n">write_query</span>
 <span class="kn">from</span> <span class="nn">database_entry</span> <span class="kn">import</span> <span class="n">send_sms</span>
+<span class="kn">from</span> <span class="nn">data_fetching</span> <span class="kn">import</span> <span class="n">request_data_by_uuid</span>
 <span class="kn">import</span> <span class="nn">uuid</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span> 
 </pre></div>
 
     </div>
@@ -13142,18 +13130,77 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">auto_assign_volunteer</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="n">lon</span><span class="p">,</span><span class="n">link</span><span class="p">):</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">message_all_volunteers</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="n">lon</span><span class="p">,</span><span class="n">radius</span><span class="p">,</span><span class="n">uuid</span><span class="p">):</span>
     <span class="n">v_list_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id as v_id,mob_number,name, latitude,longitude from volunteers where status=1&quot;&quot;&quot;</span>
     <span class="n">v_list</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">v_list_q</span><span class="p">,</span><span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">))</span>
-    <span class="n">v_list</span><span class="p">[</span><span class="s1">&#39;dist&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_haversine_distance</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="n">lon</span><span class="p">,)</span>
+    <span class="n">v_list</span><span class="p">[</span><span class="s1">&#39;dist&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_haversine_distance</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="n">lon</span><span class="p">,</span><span class="n">v_list</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">],</span><span class="n">v_list</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">])</span>
     <span class="n">v_list</span> <span class="o">=</span> <span class="n">v_list</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">&#39;dist&#39;</span><span class="p">,</span><span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">r_df</span> <span class="o">=</span> <span class="n">request_data_by_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+    <span class="n">r_id</span> <span class="o">=</span> <span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">]</span>
+    <span class="n">v_ids</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">v_list</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-        <span class="k">if</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;dist&#39;</span><span class="p">]</span><span class="o">&lt;</span><span class="s1">&#39;radius&#39;</span><span class="p">):</span>
-            <span class="n">sms_text</span> <span class="o">=</span> <span class="s1">&#39;Dear, &#39;</span><span class="o">+</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; someone in your area needs help. Click here to help &#39;</span><span class="o">+</span><span class="n">link</span>
-            <span class="n">send_sms</span><span class="p">(</span><span class="n">sms_text</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">],</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="c1">#incomplete</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;dist&#39;</span><span class="p">]</span><span class="o">&lt;</span><span class="n">radius</span><span class="p">):</span>
+            <span class="n">link</span> <span class="o">=</span> <span class="s2">&quot;covidsos.org/accept/&quot;</span><span class="o">+</span><span class="n">uuid</span><span class="o">+</span><span class="s2">&quot;/&quot;</span><span class="o">+</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span>
+            <span class="n">sms_text</span> <span class="o">=</span> <span class="s1">&#39;[COVIDSOS] Dear, &#39;</span><span class="o">+</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; someone in your area needs help. Click here to help &#39;</span><span class="o">+</span><span class="n">link</span>
+            <span class="n">send_sms</span><span class="p">(</span><span class="n">sms_text</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,[</span><span class="s1">&#39;v_id&#39;</span><span class="p">]])</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">mod_sms_text</span> <span class="o">=</span> <span class="s2">&quot;New request received. Forwarded to &quot;</span><span class="o">+</span><span class="n">v_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot; Volunteers&quot;</span>
+        <span class="k">for</span> <span class="n">i_number</span> <span class="ow">in</span> <span class="n">moderator_list</span><span class="p">:</span>
+            <span class="n">send_sms</span><span class="p">(</span><span class="n">mod_sms_text</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">i_number</span><span class="p">),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;r_id&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">r_id</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">=</span><span class="s1">&#39;pending&#39;</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_sql</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;nearby_volunteers&#39;</span><span class="p">,</span> <span class="n">con</span> <span class="o">=</span> <span class="n">engine</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="s1">&#39;covidsos&#39;</span><span class="p">,</span> <span class="n">if_exists</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span><span class="n">index_label</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mod_sms_text</span> <span class="o">=</span> <span class="s2">&quot; No nearby volunteers found for new request from &quot;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">oc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;geoaddress&#39;</span><span class="p">],</span><span class="o">+</span><span class="s2">&quot;Mob: &quot;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i_number</span> <span class="ow">in</span> <span class="n">moderator_list</span><span class="p">:</span>
+            <span class="n">send_sms</span><span class="p">(</span><span class="n">mod_sms_text</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">i_number</span><span class="p">),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">None</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">volunteer_accept</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span><span class="n">mob_number</span><span class="p">):</span>
+    <span class="n">v_list_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id as v_id,name as full_name from volunteers where mob_number=&#39;</span><span class="si">{mob_number}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mob_number</span><span class="o">=</span><span class="n">mob_number</span><span class="p">)</span>
+    <span class="n">v_list</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">v_list_q</span><span class="p">,</span><span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">))</span>
+    <span class="n">v_id</span> <span class="o">=</span> <span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;v_id&#39;</span><span class="p">]</span>
+
+    <span class="n">r_id_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id as r_id, mob_number as mob_number from requests where uuid=&#39;</span><span class="si">{uuid_str}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">uuid_str</span><span class="o">=</span><span class="n">uuid</span><span class="p">)</span>
     
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
 </pre></div>
 
     </div>

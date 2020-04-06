@@ -9,7 +9,7 @@ from connections import connections,keys,write_query
 import requests
 from sqlalchemy.sql import text
 import datetime as dt
-from settings import sms_key, sms_sid, sms_url, EARTH_RADIUS
+from settings import sms_key, sms_sid, sms_url, EARTH_RADIUS,server_type
 import json
 import requests
 
@@ -196,10 +196,15 @@ def update_requests_db(r_dict):
     except:
         return  {'Response':{},'string_response': 'Request info updation failed' ,'status':False}
 
-
-# In[ ]:
-
-
+def update_nearby_volunteers_db(r_dict_where,r_dict_set):
+    try:
+        set_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = r_dict_set[x]) for x in r_dict_set))
+        where_sql_format = " and ".join(("{column_name}='{value}'".format(column_name = x,value = r_dict_where[x]) for x in r_dict_where))
+        query = """update nearby_volunteers set {set_str} where {where_str};""".format(set_str= set_sql_format,where_str=where_sql_format)
+        write_query(query,'prod_db_write')
+        return {'Response':{},'string_response': 'nearby_volunteers info Updated','status':True}
+    except:
+        return  {'Response':{},'string_response': 'nearby_volunteers info updation failed' ,'status':False}
 
 def update_volunteers_db(v_dict):
     try:
@@ -209,6 +214,12 @@ def update_volunteers_db(v_dict):
         return {'Response':{},'string_response': 'Volunteer info Updated','status':True}
     except:
         return  {'Response':{},'string_response': 'Volunteer info updation failed' ,'status':False}
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
@@ -238,7 +249,7 @@ def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
         route="1"
     data = {"sender": "SOCKET","route": route,"country": "91","sms": [{"message": sms_text,"to": [sms_to]}]}
     headers = {'Content-type': 'application/json', 'authkey': key}
-    if send:
+    if ((send)&(server_type!='local')):
         try:
             r = requests.post(url, data=json.dumps(data), headers=headers)
             sms_dict = {'sms_text':[sms_text],'sms_type':[sms_type],'sms_to':[sms_to],'sms_status_type':[r.status_code],'sms_json_response':[str(r.json())]}
