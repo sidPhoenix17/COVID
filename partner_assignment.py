@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 
 import pandas as pd
@@ -30,12 +30,13 @@ def get_haversine_distance(start_lat, start_lng, end_lat, end_lng, units='km'):
              np.cos(lat2) * np.sin(dlon / 2) ** 2)
         c = 2 * np.arcsin(np.sqrt(a))
     
-        distance = settings.EARTH_RADIUS * c
+        distance = EARTH_RADIUS * c
         if units=='m':
             return distance
         else:
             return distance / 1000.0
     except:
+        raise
         return None
 
 
@@ -68,12 +69,6 @@ def message_all_volunteers(lat,lon,radius,uuid):
         for i_number in moderator_list:
             send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
     return None
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:

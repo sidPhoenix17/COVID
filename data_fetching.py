@@ -78,12 +78,15 @@ def get_public_map_data():
 
 
 def website_requests_display():
-    server_con = connections('prod_db_read')
-    query = """Select * from website_display"""
-    query_df = pd.read_sql(query,server_con)
-    
-    return {'pending':query_df[query_df['type']=='pending'].to_dict('records'),'completed':query_df[query_df['type']=='completed'].to_dict('records')}
-    
+    try:
+        server_con = connections('prod_db_read')
+        query = """Select * from website_display"""
+        query_df = pd.read_sql(query,server_con)
+        pending_queries = query_df[query_df['type']=='pending']
+        completed_queries = query_df[query_df['type']=='completed']
+        return {'pending':pending_queries.to_dict('records'),'completed':completed_queries.to_dict('records')}
+    except:
+        return {'pending':{},'completed':{}}
 
 
 # In[ ]:
@@ -109,13 +112,13 @@ def accept_request_page(uuid,v_mob_number):
     query = """Select rm.r_id, rm.v_id,v.name as volunteer_name,rm.status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.request as request_details
             from nearby_volunteers rm left join requests r on r.id=rm.r_id
             left join volunteers v on v.id=rm.v_id
-            where rm.mob_number={v_mob_number} and r.uuid='{uuid}'""".format(uuid=uuid,mob_number=v_mob_number)
+            where v.mob_number={mob_number} and r.uuid='{uuid}'""".format(uuid=uuid,mob_number=v_mob_number)
     df = pd.read_sql(query,connections('prod_db_read'))
     return df
     
     
 def request_data_by_uuid(uuid):
-    r_id_q = """Select id as r_id,geoaddress,latitude,longitude,request,status from requests where uuid='{uuid_str}'""".format(uuid_str=uuid)
+    r_id_q = """Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status from requests where uuid='{uuid_str}'""".format(uuid_str=uuid)
     try:
         r_id_df = pd.read_sql(r_id_q,connections('prod_db_read'))
         return r_id_df
@@ -124,7 +127,7 @@ def request_data_by_uuid(uuid):
     
 
 def request_data_by_id(r_id):
-    r_id_q = """Select id as r_id,geoaddress,latitude,longitude,request,status from requests where id='{r_id}'""".format(r_id=r_id)
+    r_id_q = """Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status from requests where id='{r_id}'""".format(r_id=r_id)
     try:
         r_id_df = pd.read_sql(r_id_q,connections('prod_db_read'))
         return r_id_df
