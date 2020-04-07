@@ -13,7 +13,7 @@ from connections import connections
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms,update_nearby_volunteers_db
 
 from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,website_requests_display
-from settings import server_type, SECRET_KEY,neighbourhood_radius
+from settings import server_type, SECRET_KEY,neighbourhood_radius,moderator_list
 from auth import encode_auth_token, decode_auth_token, login_required
 
 import uuid
