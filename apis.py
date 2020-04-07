@@ -116,10 +116,10 @@ def create_request():
     response = {'Response':{},'status':x,'string_response':y}
     if(x):
 #         url = "https://covidsos.org/track/{uuid}".format(uuid=uuid)
-        url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('Hi, I need help')
+        url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('Hi')
         sms_text = "[COVIDSOS] "+name+", we are contacting our volunteers for support. If urgent, please click "+url
         send_sms(sms_text,sms_to=int(mob_number),sms_type='transactional',send=True)
-        mod_url = "https://wa.me/91"+str(mob_number)+"?text="+urllib.parse.quote_plus('Hi, We have received your request on COVIDSOS')
+        mod_url = "https://wa.me/91"+str(mob_number)+"?text="+urllib.parse.quote_plus('Hey')
         mod_sms_text = 'New query received. '+mod_url
         for i_number in moderator_list:
             send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
@@ -166,7 +166,7 @@ def add_volunteer():
     expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status','support_type']
     x,y = add_volunteers_to_db(df)
     if(x):
-        url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus("Hi, I am volunteer. How can I help?")
+        url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus("Hi")
         if(y=='Volunteer already exists. No New Volunteers to be added'):
             sms_text = "[COVIDSOS] You are already registered with us. Click here to contact us "+url
         else:    
