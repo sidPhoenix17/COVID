@@ -15,4 +15,5 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 sms_url = "https://api.msg91.com/api/v2/sendsms"
 EARTH_RADIUS = 6378000
 neighbourhood_radius = 1
-moderator_list=[9582148040,8800641080]
+moderator_list=[9582148040,9910857735]
+search_radius=15

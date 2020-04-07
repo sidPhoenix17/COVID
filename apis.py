@@ -13,7 +13,7 @@ from connections import connections
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms,update_nearby_volunteers_db
 
 from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,website_requests_display
-from settings import server_type, SECRET_KEY,neighbourhood_radius,moderator_list
+from settings import server_type, SECRET_KEY,neighbourhood_radius,moderator_list,search_radius
 from auth import encode_auth_token, decode_auth_token, login_required
 
 import uuid
@@ -72,7 +72,7 @@ app.config['SECRET_KEY'] = SECRET_KEY
 # @celery.task
 # def volunteer_request(lat,lon,radius,uuid):
 #     print('Running volunteer_request function at ', dt.datetime.now())
-#     message_all_volunteers(lat,lon,radius,uuid)
+#     message_all_volunteers(lat,lon,radius,search_radius,uuid)
 #     return None
 
 
@@ -123,7 +123,9 @@ def create_request():
         mod_sms_text = 'New query received. '+mod_url
         for i_number in moderator_list:
             send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
-
+        #move to async
+        message_all_volunteers(latitude,longitude,neighbourhood_radius,search_radius,uuid)
+        
         #Move to Async after 5 mins
 #         sms_text = "[COVIDSOS] "+name+", you can track your request at "+url
 #         send_sms(sms_text,sms_to=int(mob_number),sms_type='transactional',send=True)
