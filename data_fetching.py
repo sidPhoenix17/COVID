@@ -32,7 +32,7 @@ def get_ticker_counts():
 
         volunteer_count = v_df['mob_number'].nunique()
         request_count = r_df.shape[0]
-        pending_request_count = r_df[r_df['status'].isin(['pending','Pending'])].shape[0]
+        pending_request_count = r_df[r_df['status'].isin(['received','verified','pending'])].shape[0]
         return {'Response':{'volunteer_count':volunteer_count,'request_count':request_count,'pending_request_count':pending_request_count},'status':True,'string_response':'Metrics computed'}
     except:
         return {'Response':{},'status':False,'string_response':'Connection to DB failed'}
@@ -91,7 +91,7 @@ def website_requests_display():
         server_con = connections('prod_db_read')
         query = """Select * from website_display"""
         query_df = pd.read_sql(query,server_con)
-        pending_queries = query_df[query_df['type']=='pending']
+        pending_queries = query_df[query_df['type'].isin(['received','verified','pending'])]
         completed_queries = query_df[query_df['type']=='completed']
         return {'pending':pending_queries.to_dict('records'),'completed':completed_queries.to_dict('records')}
     except:
