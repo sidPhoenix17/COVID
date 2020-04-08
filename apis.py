@@ -102,7 +102,7 @@ def create_request():
     latitude = request.form.get('latitude',0.0)
     longitude = request.form.get('longitude',0.0)
     source = request.form.get('source','covidsos')
-    status = request.form.get('status','pending')
+    status = request.form.get('status','received')
     country = request.form.get('country','India')
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     uuid = generate_uuid()
@@ -310,7 +310,7 @@ def assign_volunteer():
     if(v_df.shape[0]==0):
         return json.dumps({'status':False,'string_response':'Volunteer does not exist','Response':{}})
     else:
-        if(r_df.loc[0,'status']=='pending'):
+        if(r_df.loc[0,'status'].isin(['received','verified','pending'])):
             current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
             req_dict = {'volunteer_id':[v_id],'request_id':[r_df.loc[0,'r_id']],'matching_by':[matching_by],'timestamp':[current_time]}
             df = pd.DataFrame(req_dict)
@@ -325,7 +325,7 @@ def assign_volunteer():
             v_sms_text = '[COVID SOS] Volunteer '+v_df.loc[0,'name']+' will help you. Mob: '+str(v_df.loc[0,'mob_number'])
             send_sms(v_sms_text,int(r_df.loc[0,'mob_number']),sms_type='transactional',send=True)
         else:
-            return json.dumps({'status':False,'string_response':'Request already assigned','Response':{}})
+            return json.dumps({'status':False,'string_response':'Request already assigned/closed/completed','Response':{}})
     return json.dumps(response)
 
 
@@ -345,7 +345,7 @@ def auto_assign_volunteer():
     if(v_df.shape[0]==0):
         return json.dumps({'status':False,'string_response':'Volunteer does not exist','Response':{}})
     else:
-        if((r_df.loc[0,'status']=='pending')&(task_action=='accepted')):
+        if((r_df.loc[0,'status'].isin(['received','verified','pending']))&(task_action=='accepted')):
             current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
             req_dict = {'volunteer_id':[v_id],'request_id':[r_df.loc[0,'r_id']],'matching_by':[matching_by],'timestamp':[current_time]}
             df = pd.DataFrame(req_dict)
@@ -359,7 +359,7 @@ def auto_assign_volunteer():
             v_sms_text = '[COVID SOS] Volunteer '+v_df.loc[0,'name']+' will help you. Mob: '+str(v_df.loc[0,'mob_number'])
             send_sms(v_sms_text,int(r_df.loc[0,'mob_number']),sms_type='transactional',send=True)
             return json.dumps(response)
-        elif(r_df.loc[0,'status']=='pending'):
+        elif(r_df.loc[0,'status'].isin(['received','verified','pending'])):
             response_3 = update_nearby_volunteers_db({'r_id':r_id,'v_id':v_id},{'status':'expired'})            
         else:
             return json.dumps({'status':False,'string_response':'Request already assigned','Response':{}})
@@ -451,7 +451,7 @@ def request_accept_page():
     if(df.shape[0]==0):
         return json.dumps({'Response':{},'status':False,'string_response':'This page does not exist. Redirecting to homepage'})
     else:
-        if(df.loc[0,'status']=='pending'):
+        if(r_df.loc[0,'status'].isin(['received','verified','pending'])):
             return json.dumps({'Response':df.to_dict('records'),'status':True,'string_response':'Request related data extracted'})
         else:
             return json.dumps({'Response':{},'status':False,'string_response':'This request is already completed'})
