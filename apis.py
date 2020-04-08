@@ -42,11 +42,11 @@ app.config['SECRET_KEY'] = SECRET_KEY
 
 
 
-# app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-# app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
 
-# celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
-# celery.conf.update(app.config)
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+celery.conf.update(app.config)
 
 # @celery.task
 # def async_task():
@@ -69,11 +69,11 @@ app.config['SECRET_KEY'] = SECRET_KEY
 # In[ ]:
 
 
-# @celery.task
-# def volunteer_request(lat,lon,radius,uuid):
-#     print('Running volunteer_request function at ', dt.datetime.now())
-#     message_all_volunteers(lat,lon,radius,search_radius,uuid)
-#     return None
+@celery.task
+def volunteer_request(lat,lon,radius,uuid):
+    print('Running volunteer_request function at ', dt.datetime.now())
+    message_all_volunteers(lat,lon,radius,search_radius,uuid)
+    return None
 
 
 # @celery.task
@@ -124,7 +124,8 @@ def create_request():
         for i_number in moderator_list:
             send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
         #move to async
-        message_all_volunteers(latitude,longitude,neighbourhood_radius,search_radius,uuid)
+        volunteer_request(latitude,longitude,neighbourhood_radius,search_radius,uuid)
+#         volunteer_request.apply_async((latitude,longitude,neighbourhood_radius,search_radius,uuid),countdown=100)
         
         #Move to Async after 5 mins
 #         sms_text = "[COVIDSOS] "+name+", you can track your request at "+url

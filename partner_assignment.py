@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[1]:
 
 
 import pandas as pd
@@ -61,7 +61,7 @@ def message_all_volunteers(lat,lon,radius,search_radius,uuid):
         if(v_list.loc[i,'dist']<radius):
             link = "https://wa.me/918618948661?text=Hi%20I%20will%20help"
 #             link = "covidsos.org/accept/"+uuid+"/"+v_list.loc[i,'mob_number']
-            sms_text = '[COVIDSOS] Dear, '+v_list.loc[i,'name']+' someone in your area needs help. Request #'+(r_df.loc[0,'r_id'])+' Message us if you can volunteer '+link
+            sms_text = '[COVIDSOS] HELP NEEDED. Dear, '+v_list.loc[i,'name']+' someone in your area needs help. Request #'+(r_df.loc[0,'r_id'])+' Message us if you can volunteer '+link
             sms_to = int(v_list.loc[i,'mob_number'])
             df = df.append(v_list.loc[i,['v_id']])
             if(server_type=='prod'):
@@ -74,7 +74,7 @@ def message_all_volunteers(lat,lon,radius,search_radius,uuid):
             if(count>20):
                 break
             link = "https://wa.me/918618948661?text=Refer"
-            sms_text = '[COVIDSOS] Request #'+str(r_df.loc[0,'r_id'])+'. Volunteer needed in '+r_df.loc[0,'geoaddress'][0:40]+'. Please refer someone who can help '+link
+            sms_text = '[COVIDSOS] HELP NEEDED. Request #'+str(r_df.loc[0,'r_id'])+'. Area '+r_df.loc[0,'geoaddress'][0:40]+'. Please refer someone who can help '+link
             sms_to=int(v_list.loc[i,'mob_number'])
             df2 = df2.append(v_list.loc[i,['v_id']])
             if(server_type=='prod'):
@@ -122,7 +122,7 @@ def volunteer_accept(uuid,mob_number):
     
 
 
-# In[ ]:
+# In[2]:
 
 
 def generate_uuid():
