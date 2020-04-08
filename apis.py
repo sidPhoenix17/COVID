@@ -17,7 +17,7 @@ from settings import server_type, SECRET_KEY,neighbourhood_radius,moderator_list
 from auth import encode_auth_token, decode_auth_token, login_required
 
 import uuid
-from partner_assignment import generate_uuid
+from partner_assignment import generate_uuid,message_all_volunteers
 from celery import Celery
 import urllib
 
@@ -117,7 +117,7 @@ def create_request():
     if(x):
 #         url = "https://covidsos.org/track/{uuid}".format(uuid=uuid)
         url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('Hi')
-        sms_text = "[COVIDSOS] "+name+", we are contacting our volunteers for support. If urgent, please click "+url
+        sms_text = "[COVIDSOS] "+name+", we are contacting volunteers to help you. If urgent, please click "+url
         send_sms(sms_text,sms_to=int(mob_number),sms_type='transactional',send=True)
         mod_url = "https://wa.me/91"+str(mob_number)+"?text="+urllib.parse.quote_plus('Hey')
         mod_sms_text = 'New query received. '+mod_url
