@@ -13175,7 +13175,7 @@ div#notebook {
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@celery</span><span class="o">.</span><span class="n">task</span>
-<span class="k">def</span> <span class="nf">volunteer_request</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="n">lon</span><span class="p">,</span><span class="n">radius</span><span class="p">,</span><span class="n">uuid</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">volunteer_request</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="n">lon</span><span class="p">,</span><span class="n">radius</span><span class="p">,</span><span class="n">search_radius</span><span class="p">,</span><span class="n">uuid</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Running volunteer_request function at &#39;</span><span class="p">,</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
     <span class="n">message_all_volunteers</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="n">lon</span><span class="p">,</span><span class="n">radius</span><span class="p">,</span><span class="n">search_radius</span><span class="p">,</span><span class="n">uuid</span><span class="p">)</span>
     <span class="k">return</span> <span class="kc">None</span>
@@ -13236,7 +13236,7 @@ div#notebook {
         <span class="k">for</span> <span class="n">i_number</span> <span class="ow">in</span> <span class="n">moderator_list</span><span class="p">:</span>
             <span class="n">send_sms</span><span class="p">(</span><span class="n">mod_sms_text</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">i_number</span><span class="p">),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="c1">#move to async</span>
-        <span class="n">volunteer_request</span><span class="p">(</span><span class="n">latitude</span><span class="p">,</span><span class="n">longitude</span><span class="p">,</span><span class="n">neighbourhood_radius</span><span class="p">,</span><span class="n">search_radius</span><span class="p">,</span><span class="n">uuid</span><span class="p">)</span>
+        <span class="n">message_all_volunteers</span><span class="p">(</span><span class="n">latitude</span><span class="p">,</span><span class="n">longitude</span><span class="p">,</span><span class="n">neighbourhood_radius</span><span class="p">,</span><span class="n">search_radius</span><span class="p">,</span><span class="n">uuid</span><span class="p">)</span>
 <span class="c1">#         volunteer_request.apply_async((latitude,longitude,neighbourhood_radius,search_radius,uuid),countdown=100)</span>
         
         <span class="c1">#Move to Async after 5 mins</span>
@@ -13245,8 +13245,8 @@ div#notebook {
         <span class="c1">#Send SMS to volunteers via async Task:</span>
         <span class="c1">#NEEDS REVIEW</span>
 <span class="c1">#         volunteer_sms_countdown = 30</span>
-<span class="c1">#         volunteer_request.apply_async((latitude,longitude,neighbourhood_radius,uuid))</span>
-<span class="c1">#         no_volunteer_assigned.apply_async((latitude,longitude,neighbourhood_radius,uuid),countdown=volunteer_sms_countdown)</span>
+<span class="c1">#         volunteer_request.apply_async((latitude,longitude,neighbourhood_radius,search_radius,uuid))</span>
+<span class="c1">#         no_volunteer_assigned.apply_async((latitude,longitude,neighbourhood_radius,search_radius,uuid),countdown=volunteer_sms_countdown)</span>
         <span class="c1">#Schedule message after 30 mins depending on status - Send WhatsApp Link here.</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
 
