@@ -1,13 +1,22 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[ ]:
+# In[2]:
 
 
 
 import pandas as pd
 from connections import connections,keys
 import requests
+
+
+# In[3]:
+
+
+def get_requests_list():
+    req_q = """Select * from request_status"""
+    req_df = pd.read_sql(req_q, connections('prod_db_read'))
+    return req_df.to_dict('records')
 
 
 # In[ ]:
