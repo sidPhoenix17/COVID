@@ -70,7 +70,7 @@ celery.conf.update(app.config)
 
 
 @celery.task
-def volunteer_request(lat,lon,radius,uuid):
+def volunteer_request(lat,lon,radius,search_radius,uuid):
     print('Running volunteer_request function at ', dt.datetime.now())
     message_all_volunteers(lat,lon,radius,search_radius,uuid)
     return None
@@ -124,7 +124,7 @@ def create_request():
         for i_number in moderator_list:
             send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
         #move to async
-        volunteer_request(latitude,longitude,neighbourhood_radius,search_radius,uuid)
+        message_all_volunteers(latitude,longitude,neighbourhood_radius,search_radius,uuid)
 #         volunteer_request.apply_async((latitude,longitude,neighbourhood_radius,search_radius,uuid),countdown=100)
         
         #Move to Async after 5 mins
@@ -133,8 +133,8 @@ def create_request():
         #Send SMS to volunteers via async Task:
         #NEEDS REVIEW
 #         volunteer_sms_countdown = 30
-#         volunteer_request.apply_async((latitude,longitude,neighbourhood_radius,uuid))
-#         no_volunteer_assigned.apply_async((latitude,longitude,neighbourhood_radius,uuid),countdown=volunteer_sms_countdown)
+#         volunteer_request.apply_async((latitude,longitude,neighbourhood_radius,search_radius,uuid))
+#         no_volunteer_assigned.apply_async((latitude,longitude,neighbourhood_radius,search_radius,uuid),countdown=volunteer_sms_countdown)
         #Schedule message after 30 mins depending on status - Send WhatsApp Link here.
     return json.dumps(response)
 
