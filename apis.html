@@ -13083,22 +13083,25 @@ div#notebook {
 <span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
 <span class="kn">from</span> <span class="nn">flask</span> <span class="kn">import</span> <span class="n">Flask</span><span class="p">,</span><span class="n">request</span><span class="p">,</span><span class="n">jsonify</span><span class="p">,</span><span class="n">json</span>
 <span class="kn">from</span> <span class="nn">flask_cors</span> <span class="kn">import</span> <span class="n">CORS</span>
-
+<span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">Celery</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">import</span> <span class="nn">uuid</span>
+    
 <span class="kn">from</span> <span class="nn">connections</span> <span class="kn">import</span> <span class="n">connections</span>
+
 <span class="kn">from</span> <span class="nn">database_entry</span> <span class="kn">import</span> <span class="n">add_requests</span><span class="p">,</span> <span class="n">add_volunteers_to_db</span><span class="p">,</span> <span class="n">contact_us_form_add</span><span class="p">,</span> <span class="n">verify_user</span><span class="p">,</span> \
                 <span class="n">add_user</span><span class="p">,</span> <span class="n">request_matching</span><span class="p">,</span> <span class="n">check_user</span><span class="p">,</span> <span class="n">update_requests_db</span><span class="p">,</span> <span class="n">update_volunteers_db</span><span class="p">,</span> \
-                <span class="n">blacklist_token</span><span class="p">,</span><span class="n">send_sms</span><span class="p">,</span><span class="n">update_nearby_volunteers_db</span>
+                <span class="n">blacklist_token</span><span class="p">,</span><span class="n">send_sms</span><span class="p">,</span><span class="n">update_nearby_volunteers_db</span><span class="p">,</span> <span class="n">add_request_verification_db</span>
 
 <span class="kn">from</span> <span class="nn">data_fetching</span> <span class="kn">import</span> <span class="n">get_ticker_counts</span><span class="p">,</span><span class="n">get_private_map_data</span><span class="p">,</span><span class="n">get_public_map_data</span><span class="p">,</span> <span class="n">get_user_id</span><span class="p">,</span>\
                         <span class="n">accept_request_page</span><span class="p">,</span><span class="n">request_data_by_uuid</span><span class="p">,</span><span class="n">request_data_by_id</span><span class="p">,</span><span class="n">volunteer_data_by_id</span><span class="p">,</span>\
                         <span class="n">website_requests_display</span><span class="p">,</span><span class="n">get_requests_list</span>
-<span class="kn">from</span> <span class="nn">settings</span> <span class="kn">import</span> <span class="n">server_type</span><span class="p">,</span> <span class="n">SECRET_KEY</span><span class="p">,</span><span class="n">neighbourhood_radius</span><span class="p">,</span><span class="n">moderator_list</span><span class="p">,</span><span class="n">search_radius</span>
+<span class="kn">from</span> <span class="nn">partner_assignment</span> <span class="kn">import</span> <span class="n">generate_uuid</span><span class="p">,</span><span class="n">message_all_volunteers</span>
 <span class="kn">from</span> <span class="nn">auth</span> <span class="kn">import</span> <span class="n">encode_auth_token</span><span class="p">,</span> <span class="n">decode_auth_token</span><span class="p">,</span> <span class="n">login_required</span>
 
-<span class="kn">import</span> <span class="nn">uuid</span>
-<span class="kn">from</span> <span class="nn">partner_assignment</span> <span class="kn">import</span> <span class="n">generate_uuid</span><span class="p">,</span><span class="n">message_all_volunteers</span>
-<span class="kn">from</span> <span class="nn">celery</span> <span class="kn">import</span> <span class="n">Celery</span>
-<span class="kn">import</span> <span class="nn">urllib</span>
+
+<span class="kn">from</span> <span class="nn">settings</span> <span class="kn">import</span> <span class="n">server_type</span><span class="p">,</span> <span class="n">SECRET_KEY</span><span class="p">,</span><span class="n">neighbourhood_radius</span><span class="p">,</span><span class="n">moderator_list</span><span class="p">,</span><span class="n">search_radius</span>
+<span class="kn">import</span> <span class="nn">cred_config</span> <span class="k">as</span> <span class="nn">cc</span>
 </pre></div>
 
     </div>
@@ -13141,11 +13144,11 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CELERY_BROKER_URL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;redis://localhost:6379/0&#39;</span>
-<span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CELERY_RESULT_BACKEND&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;redis://localhost:6379/0&#39;</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># app.config[&#39;CELERY_BROKER_URL&#39;] = &#39;redis://localhost:6379/0&#39;</span>
+<span class="c1"># app.config[&#39;CELERY_RESULT_BACKEND&#39;] = &#39;redis://localhost:6379/0&#39;</span>
 
-<span class="n">celery</span> <span class="o">=</span> <span class="n">Celery</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">broker</span><span class="o">=</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;CELERY_BROKER_URL&#39;</span><span class="p">])</span>
-<span class="n">celery</span><span class="o">.</span><span class="n">conf</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+<span class="c1"># celery = Celery(app.name, broker=app.config[&#39;CELERY_BROKER_URL&#39;])</span>
+<span class="c1"># celery.conf.update(app.config)</span>
 
 <span class="c1"># @celery.task</span>
 <span class="c1"># def async_task():</span>
@@ -13175,11 +13178,11 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@celery</span><span class="o">.</span><span class="n">task</span>
-<span class="k">def</span> <span class="nf">volunteer_request</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="n">lon</span><span class="p">,</span><span class="n">radius</span><span class="p">,</span><span class="n">search_radius</span><span class="p">,</span><span class="n">uuid</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Running volunteer_request function at &#39;</span><span class="p">,</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
-    <span class="n">message_all_volunteers</span><span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="n">lon</span><span class="p">,</span><span class="n">radius</span><span class="p">,</span><span class="n">search_radius</span><span class="p">,</span><span class="n">uuid</span><span class="p">)</span>
-    <span class="k">return</span> <span class="kc">None</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># @celery.task</span>
+<span class="c1"># def volunteer_request(lat,lon,radius,search_radius,uuid):</span>
+<span class="c1">#     print(&#39;Running volunteer_request function at &#39;, dt.datetime.now())</span>
+<span class="c1">#     message_all_volunteers(uuid,radius,search_radius)</span>
+<span class="c1">#     return None</span>
 
 
 <span class="c1"># @celery.task</span>
@@ -13228,16 +13231,15 @@ div#notebook {
     <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">add_requests</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
     <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="n">x</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="n">y</span><span class="p">}</span>
     <span class="k">if</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-<span class="c1">#         url = &quot;https://covidsos.org/track/{uuid}&quot;.format(uuid=uuid)</span>
         <span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;https://wa.me/918618948661?text=&quot;</span><span class="o">+</span><span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">quote_plus</span><span class="p">(</span><span class="s1">&#39;Hi&#39;</span><span class="p">)</span>
-        <span class="n">sms_text</span> <span class="o">=</span> <span class="s2">&quot;[COVIDSOS] &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot;, we are contacting volunteers to help you. If urgent, please click &quot;</span><span class="o">+</span><span class="n">url</span>
+        <span class="n">sms_text</span> <span class="o">=</span> <span class="s2">&quot;[COVIDSOS] &quot;</span><span class="o">+</span><span class="n">name</span><span class="o">+</span><span class="s2">&quot;, we have received your request. We will call you soon. If urgent, please click &quot;</span><span class="o">+</span><span class="n">url</span>
         <span class="n">send_sms</span><span class="p">(</span><span class="n">sms_text</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">mob_number</span><span class="p">),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">mod_url</span> <span class="o">=</span> <span class="s2">&quot;https://wa.me/91&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">mob_number</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;?text=&quot;</span><span class="o">+</span><span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">quote_plus</span><span class="p">(</span><span class="s1">&#39;Hey&#39;</span><span class="p">)</span>
-        <span class="n">mod_sms_text</span> <span class="o">=</span> <span class="s1">&#39;New query received. &#39;</span><span class="o">+</span><span class="n">mod_url</span>
+        <span class="n">mod_url</span> <span class="o">=</span> <span class="s2">&quot;https://covidsos.org/verify/&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+        <span class="n">mod_sms_text</span> <span class="o">=</span> <span class="s1">&#39;New query received. Verify lead by clicking here: &#39;</span>
         <span class="k">for</span> <span class="n">i_number</span> <span class="ow">in</span> <span class="n">moderator_list</span><span class="p">:</span>
             <span class="n">send_sms</span><span class="p">(</span><span class="n">mod_sms_text</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">i_number</span><span class="p">),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="c1">#move to async</span>
-        <span class="n">message_all_volunteers</span><span class="p">(</span><span class="n">latitude</span><span class="p">,</span><span class="n">longitude</span><span class="p">,</span><span class="n">neighbourhood_radius</span><span class="p">,</span><span class="n">search_radius</span><span class="p">,</span><span class="n">uuid</span><span class="p">)</span>
 <span class="c1">#         volunteer_request.apply_async((latitude,longitude,neighbourhood_radius,search_radius,uuid),countdown=100)</span>
         
         <span class="c1">#Move to Async after 5 mins</span>
@@ -13492,7 +13494,7 @@ div#notebook {
             <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">req_dict</span><span class="p">)</span>
             <span class="n">response</span> <span class="o">=</span> <span class="n">request_matching</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
             <span class="c1">#Add entry in request_matching table</span>
-            <span class="n">response_2</span> <span class="o">=</span> <span class="n">update_requests_db</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="n">r_id</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;matched&#39;</span><span class="p">})</span>
+            <span class="n">response_2</span> <span class="o">=</span> <span class="n">update_requests_db</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="n">r_id</span><span class="p">},{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;matched&#39;</span><span class="p">})</span>
             <span class="n">response_3</span> <span class="o">=</span> <span class="n">update_nearby_volunteers_db</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="n">r_id</span><span class="p">},{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;expired&#39;</span><span class="p">})</span>
             <span class="c1">#Send to Volunteer</span>
             <span class="n">v_sms_text</span> <span class="o">=</span> <span class="s1">&#39;[COVID SOS] Thank you agreeing to help. Name:&#39;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; Mob:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span><span class="o">+</span><span class="s1">&#39; Request:&#39;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;request&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; Address:&#39;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;geoaddress&#39;</span><span class="p">]</span>
@@ -13533,7 +13535,7 @@ div#notebook {
             <span class="n">req_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;volunteer_id&#39;</span><span class="p">:[</span><span class="n">v_id</span><span class="p">],</span><span class="s1">&#39;request_id&#39;</span><span class="p">:[</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">]],</span><span class="s1">&#39;matching_by&#39;</span><span class="p">:[</span><span class="n">matching_by</span><span class="p">],</span><span class="s1">&#39;timestamp&#39;</span><span class="p">:[</span><span class="n">current_time</span><span class="p">]}</span>
             <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">req_dict</span><span class="p">)</span>
             <span class="n">response</span> <span class="o">=</span> <span class="n">request_matching</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-            <span class="n">response_2</span> <span class="o">=</span> <span class="n">update_requests_db</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">],</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;matched&#39;</span><span class="p">})</span>
+            <span class="n">response_2</span> <span class="o">=</span> <span class="n">update_requests_db</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">]},{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;matched&#39;</span><span class="p">})</span>
             <span class="n">response_3</span> <span class="o">=</span> <span class="n">update_nearby_volunteers_db</span><span class="p">({</span><span class="s1">&#39;r_id&#39;</span><span class="p">:</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">]},{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;expired&#39;</span><span class="p">})</span>
             <span class="c1">#Send to Volunteer</span>
             <span class="n">v_sms_text</span> <span class="o">=</span> <span class="s1">&#39;[COVID SOS] Thank you agreeing to help. Name:&#39;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; Mob:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span><span class="o">+</span><span class="s1">&#39; Request:&#39;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;request&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; Address:&#39;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;geoaddress&#39;</span><span class="p">]</span>
@@ -13612,16 +13614,16 @@ div#notebook {
     <span class="n">source</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;source&#39;</span><span class="p">)</span>
     <span class="n">status</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span>
     <span class="n">country</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;country&#39;</span><span class="p">)</span>
-    <span class="n">req_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="n">v_id</span><span class="p">,</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="n">name</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">:</span><span class="n">mob_number</span><span class="p">,</span><span class="s1">&#39;email_id&#39;</span><span class="p">:</span><span class="n">email_id</span><span class="p">,</span>
+    <span class="n">req_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span><span class="n">name</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">:</span><span class="n">mob_number</span><span class="p">,</span><span class="s1">&#39;email_id&#39;</span><span class="p">:</span><span class="n">email_id</span><span class="p">,</span>
                 <span class="s1">&#39;country&#39;</span><span class="p">:</span><span class="n">country</span><span class="p">,</span><span class="s1">&#39;address&#39;</span><span class="p">:</span><span class="n">address</span><span class="p">,</span><span class="s1">&#39;geoaddress&#39;</span><span class="p">:</span><span class="n">geoaddress</span><span class="p">,</span><span class="s1">&#39;latitude&#39;</span><span class="p">:</span><span class="n">latitude</span><span class="p">,</span> <span class="s1">&#39;longitude&#39;</span><span class="p">:</span><span class="n">longitude</span><span class="p">,</span>
                 <span class="s1">&#39;source&#39;</span><span class="p">:</span><span class="n">source</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="n">status</span><span class="p">}</span>
     <span class="n">v_df</span> <span class="o">=</span> <span class="n">volunteer_data_by_id</span><span class="p">(</span><span class="n">v_id</span><span class="p">)</span>
     <span class="k">if</span><span class="p">(</span><span class="n">v_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Volunteer does not exist&#39;</span><span class="p">,</span><span class="s1">&#39;Response&#39;</span><span class="p">:{}})</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">req_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">v_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Volunteer ID mandatory&#39;</span><span class="p">}</span>
     <span class="n">v_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span><span class="n">req_dict</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">req_dict</span> <span class="k">if</span> <span class="n">req_dict</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">update_volunteers_db</span><span class="p">(</span><span class="n">v_dict</span><span class="p">))</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">update_volunteers_db</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="n">v_id</span><span class="p">},</span><span class="n">v_dict</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">response</span>
 </pre></div>
 
@@ -13678,6 +13680,72 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/verify_request_page&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">verify_request_page</span><span class="p">():</span>
+    <span class="n">uuid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;uuid&#39;</span><span class="p">)</span>
+    <span class="n">r_df</span> <span class="o">=</span> <span class="n">request_data_by_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Request ID does not exist.&#39;</span><span class="p">,</span><span class="s1">&#39;Response&#39;</span><span class="p">:{}})</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;received&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">r_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">),</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Request data extracted&#39;</span><span class="p">},</span><span class="n">default</span><span class="o">=</span><span class="n">datetime_converter</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Request already verified/rejected&#39;</span><span class="p">})</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/verify_request&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">verify_request</span><span class="p">():</span>
+    <span class="n">uuid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;uuid&#39;</span><span class="p">)</span>
+    <span class="n">what</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;what&#39;</span><span class="p">)</span>
+    <span class="n">why</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;why&#39;</span><span class="p">)</span>
+    <span class="n">verification_status</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verification_status&#39;</span><span class="p">)</span>
+    <span class="n">verified_by</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verified_by&#39;</span><span class="p">,</span><span class="s1">&#39;covidsos&#39;</span><span class="p">)</span>
+    <span class="n">r_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;r_id&#39;</span><span class="p">)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+    <span class="n">where</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geoaddress&#39;</span><span class="p">)</span>
+    <span class="n">mob_number</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mob_number&#39;</span><span class="p">)</span>
+    <span class="n">current_time</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">+</span><span class="n">dt</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">330</span><span class="p">)</span>
+    <span class="k">if</span><span class="p">((</span><span class="n">r_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">uuid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Please send UUID/request ID&#39;</span><span class="p">})</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">verification_status</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Please send verification status&#39;</span><span class="p">})</span>
+    <span class="n">r_v_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;r_id&#39;</span><span class="p">:[</span><span class="n">r_id</span><span class="p">],</span><span class="s1">&#39;why&#39;</span><span class="p">:[</span><span class="n">why</span><span class="p">],</span><span class="s1">&#39;what&#39;</span><span class="p">:[</span><span class="n">what</span><span class="p">],</span><span class="s1">&#39;where&#39;</span><span class="p">:[</span><span class="n">where</span><span class="p">],</span><span class="s1">&#39;verification_status&#39;</span><span class="p">:[</span><span class="n">verification_status</span><span class="p">],</span><span class="s1">&#39;verified_by&#39;</span><span class="p">:[</span><span class="n">verified_by</span><span class="p">],</span><span class="s1">&#39;timestamp&#39;</span><span class="p">:[</span><span class="n">current_time</span><span class="p">]}</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">r_v_dict</span><span class="p">)</span>
+    <span class="n">expected_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">,</span> <span class="s1">&#39;r_id&#39;</span><span class="p">,</span><span class="s1">&#39;what&#39;</span><span class="p">,</span> <span class="s1">&#39;why&#39;</span><span class="p">,</span> <span class="s1">&#39;where&#39;</span><span class="p">,</span> <span class="s1">&#39;verification_status&#39;</span><span class="p">,</span><span class="s1">&#39;verified_by&#39;</span><span class="p">]</span>
+    <span class="n">response_2</span> <span class="o">=</span> <span class="n">update_requests_db</span><span class="p">({</span><span class="s1">&#39;uuid&#39;</span><span class="p">:</span><span class="n">uuid</span><span class="p">},{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="n">verification_status</span><span class="p">})</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;updated the status&#39;</span><span class="p">)</span>
+    <span class="n">x</span><span class="p">,</span><span class="n">y</span> <span class="o">=</span> <span class="n">add_request_verification_db</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">verification_status</span><span class="o">==</span><span class="s1">&#39;verified&#39;</span><span class="p">):</span>
+        <span class="n">requestor_text</span> <span class="o">=</span> <span class="s1">&#39;Your request has been verified. We will look for volunteers in your neighbourhood.&#39;</span>
+        <span class="n">send_sms</span><span class="p">(</span><span class="n">requestor_text</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">mob_number</span><span class="p">),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">message_all_volunteers</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span><span class="n">neighbourhood_radius</span><span class="p">,</span><span class="n">search_radius</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">requestor_text</span> <span class="o">=</span> <span class="s1">&#39;Your request has been cancelled/rejected. If you still need help, please submit request again.&#39;</span>
+        <span class="n">send_sms</span><span class="p">(</span><span class="n">requestor_text</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">mob_number</span><span class="p">),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="n">response_2</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">],</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="n">response_2</span><span class="p">[</span><span class="s1">&#39;string_response&#39;</span><span class="p">]})</span>
+    
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/pending_requests&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
 <span class="k">def</span> <span class="nf">pending_requests</span><span class="p">():</span>
     <span class="n">response</span> <span class="o">=</span> <span class="n">website_requests_display</span><span class="p">()</span>
@@ -13704,6 +13772,19 @@ div#notebook {
 <span class="k">if</span><span class="p">(</span><span class="n">server_type</span><span class="o">==</span><span class="s1">&#39;staging&#39;</span><span class="p">):</span>
     <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
         <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
 </pre></div>
 
     </div>

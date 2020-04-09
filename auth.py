@@ -15,9 +15,9 @@ from flask import json, request
 import datetime as dt
 import jwt
 import pandas as pd
+import mailer_fn as mailer
 
 from connections import connections
-from apis import send_exception_mail
 
 
 # In[ ]:
@@ -55,9 +55,8 @@ def encode_auth_token(user_id):
             algorithm='HS256'
         )
     except Exception as e:
-        send_exception_mail()
+        mailer.send_exception_mail()        
         return None
-    
 
 
 # In[ ]:
@@ -78,4 +77,16 @@ def decode_auth_token(auth_token):
         return 'Signature expired. Please log in again.', False
     except jwt.InvalidTokenError:
         return 'Invalid token. Please log in again.', False
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
 

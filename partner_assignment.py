@@ -12,7 +12,8 @@ from settings import EARTH_RADIUS,moderator_list,server_type
 from connections import connections,write_query
 from database_entry import send_sms
 from data_fetching import request_data_by_uuid
-from apis import send_exception_mail
+import mailer_fn as mailer
+
 
 # In[ ]:
 
@@ -36,7 +37,7 @@ def get_haversine_distance(start_lat, start_lng, end_lat, end_lng, units='km'):
         else:
             return distance / 1000.0
     except Exception as e:
-        send_exception_mail()
+        mailer.send_exception_mail()
         return None
 
 
@@ -46,25 +47,33 @@ def get_haversine_distance(start_lat, start_lng, end_lat, end_lng, units='km'):
 #Send message to all volunteers within 1km - to accept request
 #Send message to all volunteers within 10kms - to help looking for volunteer
 #Send message to all moderators about the both
-def message_all_volunteers(lat,lon,radius,search_radius,uuid):
+
+def message_all_volunteers(uuid,radius,search_radius):
     v_list_q = """Select id as v_id,mob_number,name, latitude,longitude from volunteers where status=1"""
     v_list = pd.read_sql(v_list_q,connections('prod_db_read'))
-    v_list['dist'] = get_haversine_distance(float(lat),float(lon),v_list['latitude'].astype(float).values,v_list['longitude'].astype(float).values)
-    v_list = v_list.sort_values(by='dist',ascending=True)
     r_df = request_data_by_uuid(uuid)
     r_id = r_df.loc[0,'r_id']
+    lat = r_df.loc[0,'latitude']
+    lon = r_df.loc[0,'longitude']
+    v_list['dist'] = get_haversine_distance(float(lat),float(lon),v_list['latitude'].astype(float).values,v_list['longitude'].astype(float).values)
+    v_list = v_list.sort_values(by='dist',ascending=True)
     v_ids = pd.DataFrame()
     df = pd.DataFrame()
     df2 = pd.DataFrame()
     count=0
+    if(server_type=='prod'):
+        key_word = 'COVIDSOS'
+    else:
+        key_word = 'TEST'
+
     for i in v_list.index:
         if(v_list.loc[i,'dist']<radius):
             link = "https://wa.me/918618948661?text=Hi"
 #             link = "covidsos.org/accept/"+uuid+"/"+v_list.loc[i,'mob_number']
-            sms_text = '[COVIDSOS]. Dear '+v_list.loc[i,'name']+ ', HELP NEEDED in your area. Click '+link+' to help or refer. Request #'+str(r_df.loc[0,'r_id'])
+            sms_text = "["+key_word+"]. Dear "+v_list.loc[i,'name']+ ", HELP NEEDED in your area. Click "+link+" to help or refer. Request #"+str(r_df.loc[0,'r_id'])
             sms_to = int(v_list.loc[i,'mob_number'])
             df = df.append(v_list.loc[i,['v_id']])
-            if((server_type=='prod') or (server_type=='staging')):
+            if((server_type=='prod')):
                 send_sms(sms_text,sms_to,sms_type='transactional',send=True)
                 print('SMS sent')
             else:
@@ -74,10 +83,10 @@ def message_all_volunteers(lat,lon,radius,search_radius,uuid):
             if(count>20):
                 break
             link = "https://wa.me/918618948661?text=Hi"
-            sms_text = "[COVIDSOS] HELP NEEDED in "+r_df.loc[0,'geoaddress'][0:40]+".. Click "+link+ " to help or refer someone."+"Request #"+str(r_df.loc[0,'r_id'])
+            sms_text = "["+key_word+"] HELP NEEDED in "+r_df.loc[0,'geoaddress'][0:40]+".. Click "+link+ " to help or refer someone."+"Request #"+str(r_df.loc[0,'r_id'])
             sms_to=int(v_list.loc[i,'mob_number'])
             df2 = df2.append(v_list.loc[i,['v_id']])
-            if((server_type=='prod') or (server_type=='staging')):
+            if((server_type=='prod')):
                 send_sms(sms_text,sms_to,sms_type='transactional',send=True)
                 print('SMS sent')
             else:
@@ -87,13 +96,13 @@ def message_all_volunteers(lat,lon,radius,search_radius,uuid):
     print(v_list)
     print(df)
     print(df2)
-    if((server_type=='prod') or (server_type=='staging')):
+    if((server_type=='prod')):
         engine = connections('prod_db_write')
         df.to_sql(name = 'nearby_volunteers', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
-    mod_sms_text = "New request received. Sent to "+str(df.shape[0])+" nearby Volunteers and "+str(df2.shape[0])+" volunteers further away"
-    mod_sms_text_2 = "Request #"+str(r_df.loc[0,'r_id'])+" New Request Name: "+r_df.loc[0,'name']+" Address: "+r_df.loc[0,'geoaddress'][0:50]+" Mob: "+str(r_df.loc[0,'mob_number'])+" Req:"+r_df.loc[0,'request']
+    mod_sms_text = key_word+" New request verified. Sent to "+str(df.shape[0])+" nearby Volunteers and "+str(df2.shape[0])+" volunteers further away"
+    mod_sms_text_2 = key_word+" Request #"+str(r_df.loc[0,'r_id'])+" New Request Name: "+r_df.loc[0,'name']+" Address: "+r_df.loc[0,'geoaddress'][0:50]+" Mob: "+str(r_df.loc[0,'mob_number'])+" Req:"+r_df.loc[0,'request']
     for i_number in moderator_list:
-        if((server_type=='prod') or (server_type=='staging')):
+        if((server_type=='prod')):
             send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
             send_sms(mod_sms_text_2,sms_to=int(i_number),sms_type='transactional',send=True)
             print('SMS sent')
@@ -107,7 +116,7 @@ def message_all_volunteers(lat,lon,radius,search_radius,uuid):
         counter_sid = counter_sid+1
         if((counter_sid>10) or (v_list.loc[i,'dist']>search_radius)):
             break
-        str_sid = str_sid + v_list.loc[i,'name']+" m: wa.me/91"+str(v_list.loc[i,'mob_number'])+" "
+        str_sid = key_word+" " +str_sid + v_list.loc[i,'name']+" m: wa.me/91"+str(v_list.loc[i,'mob_number'])+" "
     send_sms(str_sid,sms_to=int(8618948661),sms_type='transactional',send=True)
     print('Sending sms:',str_sid,' to ',str(8618948661))
     return None
@@ -122,7 +131,7 @@ def volunteer_accept(uuid,mob_number):
     v_id = v_list.loc[0,'v_id']
 
     r_id_q = """Select id as r_id, mob_number as mob_number from requests where uuid='{uuid_str}'""".format(uuid_str=uuid)
-    
+    return None
 
 
 # In[ ]:

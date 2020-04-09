@@ -4,29 +4,25 @@
 # In[ ]:
 
 
-import sys, traceback
 import pandas as pd
 import datetime as dt
 from flask import Flask,request,jsonify,json
 from flask_cors import CORS
-from flask_mail import Mail, Message
-
-from connections import connections
-from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user, \
-    add_user, request_matching, check_user, update_requests_db, update_volunteers_db, \
-    blacklist_token,send_sms,update_nearby_volunteers_db
-
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id, \
-    accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id, \
-    website_requests_display,get_requests_list
-
-from settings import server_type, SECRET_KEY, neighbourhood_radius, moderator_list, search_radius, mail_config
-from auth import encode_auth_token, decode_auth_token, login_required
-
-import uuid
-from partner_assignment import generate_uuid,message_all_volunteers
 from celery import Celery
 import urllib
+import uuid
+    
+from connections import connections
+
+from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms,update_nearby_volunteers_db, add_request_verification_db
+
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list
+from partner_assignment import generate_uuid,message_all_volunteers
+from auth import encode_auth_token, decode_auth_token, login_required
+
+
+from settings import server_type, SECRET_KEY,neighbourhood_radius,moderator_list,search_radius
+import cred_config as cc
 
 
 # In[ ]:
@@ -42,26 +38,18 @@ def datetime_converter(o):
 
 app = Flask(__name__)
 CORS(app)
-app.config.from_object(mail_config)
 app.config['SECRET_KEY'] = SECRET_KEY
-mail = Mail(app)
-
-
-def send_exception_mail():
-    exc = sys.exc_info()
-    msg = Message(exc[0] + exc[1], recipients=["covidsos60@gmail.com"])
-    msg.html = ''.join(traceback.format_tb(exc[2]))
-    mail.send(msg)
 
 
 # In[ ]:
 
 
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
 
-celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
-celery.conf.update(app.config)
+# app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+# app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+
+# celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+# celery.conf.update(app.config)
 
 # @celery.task
 # def async_task():
@@ -84,11 +72,11 @@ celery.conf.update(app.config)
 # In[ ]:
 
 
-@celery.task
-def volunteer_request(lat,lon,radius,search_radius,uuid):
-    print('Running volunteer_request function at ', dt.datetime.now())
-    message_all_volunteers(lat,lon,radius,search_radius,uuid)
-    return None
+# @celery.task
+# def volunteer_request(lat,lon,radius,search_radius,uuid):
+#     print('Running volunteer_request function at ', dt.datetime.now())
+#     message_all_volunteers(uuid,radius,search_radius)
+#     return None
 
 
 # @celery.task
@@ -130,16 +118,15 @@ def create_request():
     x,y = add_requests(df)
     response = {'Response':{},'status':x,'string_response':y}
     if(x):
-#         url = "https://covidsos.org/track/{uuid}".format(uuid=uuid)
         url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('Hi')
-        sms_text = "[COVIDSOS] "+name+", we are contacting volunteers to help you. If urgent, please click "+url
+        sms_text = "[COVIDSOS] "+name+", we have received your request. We will call you soon. If urgent, please click "+url
         send_sms(sms_text,sms_to=int(mob_number),sms_type='transactional',send=True)
         mod_url = "https://wa.me/91"+str(mob_number)+"?text="+urllib.parse.quote_plus('Hey')
-        mod_sms_text = 'New query received. '+mod_url
+        mod_url = "https://covidsos.org/verify/"+str(uuid)
+        mod_sms_text = 'New query received. Verify lead by clicking here: '
         for i_number in moderator_list:
             send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
         #move to async
-        message_all_volunteers(latitude,longitude,neighbourhood_radius,search_radius,uuid)
 #         volunteer_request.apply_async((latitude,longitude,neighbourhood_radius,search_radius,uuid),countdown=100)
         
         #Move to Async after 5 mins
@@ -331,7 +318,7 @@ def assign_volunteer():
             df = pd.DataFrame(req_dict)
             response = request_matching(df)
             #Add entry in request_matching table
-            response_2 = update_requests_db({'id':r_id,'status':'matched'})
+            response_2 = update_requests_db({'id':r_id},{'status':'matched'})
             response_3 = update_nearby_volunteers_db({'id':r_id},{'status':'expired'})
             #Send to Volunteer
             v_sms_text = '[COVID SOS] Thank you agreeing to help. Name:'+r_df.loc[0,'name']+' Mob:'+str(r_df.loc[0,'mob_number'])+' Request:'+r_df.loc[0,'request']+' Address:'+r_df.loc[0,'geoaddress']
@@ -349,7 +336,7 @@ def assign_volunteer():
 
 @app.route('/auto_assign_volunteer',methods=['POST'])
 def auto_assign_volunteer():
-    v_id = requeest.form.get('volunteer_id')
+    v_id = request.form.get('volunteer_id')
     uuid = request.form.get('uuid')
     matching_by = 'autoassigned'
     task_action = request.form.get('task_action')
@@ -365,7 +352,7 @@ def auto_assign_volunteer():
             req_dict = {'volunteer_id':[v_id],'request_id':[r_df.loc[0,'r_id']],'matching_by':[matching_by],'timestamp':[current_time]}
             df = pd.DataFrame(req_dict)
             response = request_matching(df)
-            response_2 = update_requests_db({'id':r_df.loc[0,'r_id'],'status':'matched'})
+            response_2 = update_requests_db({'id':r_df.loc[0,'r_id']},{'status':'matched'})
             response_3 = update_nearby_volunteers_db({'r_id':r_df.loc[0,'r_id']},{'status':'expired'})
             #Send to Volunteer
             v_sms_text = '[COVID SOS] Thank you agreeing to help. Name:'+r_df.loc[0,'name']+' Mob:'+str(r_df.loc[0,'mob_number'])+' Request:'+r_df.loc[0,'request']+' Address:'+r_df.loc[0,'geoaddress']
@@ -430,16 +417,16 @@ def update_volunteer_info():
     source = request.form.get('source')
     status = request.form.get('status')
     country = request.form.get('country')
-    req_dict = {'id':v_id,'name':name,'mob_number':mob_number,'email_id':email_id,
+    req_dict = {'name':name,'mob_number':mob_number,'email_id':email_id,
                 'country':country,'address':address,'geoaddress':geoaddress,'latitude':latitude, 'longitude':longitude,
                 'source':source,'status':status}
     v_df = volunteer_data_by_id(v_id)
     if(v_df.shape[0]==0):
         return json.dumps({'status':False,'string_response':'Volunteer does not exist','Response':{}})
-    if (req_dict.get('id') is None):
+    if (v_id is None):
         return {'Response':{},'status':False,'string_response':'Volunteer ID mandatory'}
     v_dict = {x:req_dict[x] for x in req_dict if req_dict[x] is not None}
-    response = json.dumps(update_volunteers_db(v_dict))
+    response = json.dumps(update_volunteers_db({'id':v_id},v_dict))
     return response
 
 
@@ -475,6 +462,58 @@ def request_accept_page():
 # In[ ]:
 
 
+@app.route('/verify_request_page',methods=['GET'])
+def verify_request_page():
+    uuid = request.form.get('uuid')
+    r_df = request_data_by_uuid(uuid)
+    if(r_df.shape[0]==0):
+        return json.dumps({'status':False,'string_response':'Request ID does not exist.','Response':{}})
+    if(r_df.loc[0,'status']=='received'):
+        return json.dumps({'Response':r_df.to_dict('records'),'status':True,'string_response':'Request data extracted'},default=datetime_converter)
+    else:
+        return json.dumps({'Response':{},'status':False,'string_response':'Request already verified/rejected'})
+
+
+# In[ ]:
+
+
+@app.route('/verify_request',methods=['POST'])
+def verify_request():
+    uuid = request.form.get('uuid')
+    what = request.form.get('what')
+    why = request.form.get('why')
+    verification_status=request.form.get('verification_status')
+    verified_by = request.form.get('verified_by','covidsos')
+    r_id = request.form.get('r_id')
+    name = request.form.get('name')
+    where = request.form.get('geoaddress')
+    mob_number = request.form.get('mob_number')
+    current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
+    if((r_id is None) or (uuid is None)):
+        return json.dumps({'Response':{},'status':False,'string_response':'Please send UUID/request ID'})
+    if(verification_status is None):
+        return json.dumps({'Response':{},'status':False,'string_response':'Please send verification status'})
+    r_v_dict = {'r_id':[r_id],'why':[why],'what':[what],'where':[where],'verification_status':[verification_status],'verified_by':[verified_by],'timestamp':[current_time]}
+    df = pd.DataFrame(r_v_dict)
+    expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by']
+    response_2 = update_requests_db({'uuid':uuid},{'status':verification_status})
+    print('updated the status')
+    x,y = add_request_verification_db(df)
+    if(verification_status=='verified'):
+        requestor_text = 'Your request has been verified. We will look for volunteers in your neighbourhood.'
+        send_sms(requestor_text,sms_to=int(mob_number),sms_type='transactional',send=True)
+        message_all_volunteers(uuid,neighbourhood_radius,search_radius)
+    else:
+        requestor_text = 'Your request has been cancelled/rejected. If you still need help, please submit request again.'
+        send_sms(requestor_text,sms_to=int(mob_number),sms_type='transactional',send=True)
+    
+    return json.dumps({'Response':{},'status':response_2['status'],'string_response':response_2['string_response']})
+    
+
+
+# In[ ]:
+
+
 @app.route('/pending_requests',methods=['GET'])
 def pending_requests():
     response = website_requests_display()
@@ -494,6 +533,12 @@ if(server_type=='prod'):
 if(server_type=='staging'):
     if __name__ =='__main__':
         app.run()
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
