@@ -4,14 +4,13 @@
 # In[ ]:
 
 
+import requests, json
 import pandas as pd
-from connections import connections,keys,write_query
-import requests
-from sqlalchemy.sql import text
 import datetime as dt
+from connections import connections,keys,write_query
+from sqlalchemy.sql import text
 from settings import sms_key, sms_sid, sms_url, EARTH_RADIUS,server_type
-import json
-import requests
+from apis import send_exception_mail
 
 
 # In[ ]:
@@ -38,6 +37,7 @@ def remove_existing_volunteers(df):
         df_new = df[df['mob_number'].isin(volunteer_list['mob_number'].unique())==False]
         return df_new
     except:
+        send_exception_mail()
         return df
     
 def last_entry_timestamp(source):
@@ -112,6 +112,7 @@ def geocoding(address_str,country_str,key):
             return None
     except:
         print("HTTP Error for "+address_str)
+        send_exception_mail()
         return None
 
 
@@ -180,6 +181,7 @@ def check_user(table_name,user_id):
         else:
             return errorResponse
     except:
+        send_exception_mail()
         return errorResponse
 
 
@@ -204,6 +206,7 @@ def update_nearby_volunteers_db(r_dict_where,r_dict_set):
         write_query(query,'prod_db_write')
         return {'Response':{},'string_response': 'nearby_volunteers info Updated','status':True}
     except:
+        send_exception_mail()
         return  {'Response':{},'string_response': 'nearby_volunteers info updation failed' ,'status':False}
 
 def update_volunteers_db(v_dict):
@@ -213,6 +216,7 @@ def update_volunteers_db(v_dict):
         write_query(query,'prod_db_write')
         return {'Response':{},'string_response': 'Volunteer info Updated','status':True}
     except:
+        send_exception_mail()
         return  {'Response':{},'string_response': 'Volunteer info updation failed' ,'status':False}
 
 
@@ -232,6 +236,7 @@ def blacklist_token(token):
         write_query(query,'prod_db_write')
         return True
     except:
+        send_exception_mail()
         return False
 
 
@@ -259,6 +264,7 @@ def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
             return None
         except:
             print('SMS API error')
+            send_exception_mail()
             return None
 
 

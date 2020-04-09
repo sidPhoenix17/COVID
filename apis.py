@@ -4,16 +4,23 @@
 # In[ ]:
 
 
+import sys, traceback
 import pandas as pd
 import datetime as dt
 from flask import Flask,request,jsonify,json
 from flask_cors import CORS
+from flask_mail import Mail, Message
 
 from connections import connections
-from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms,update_nearby_volunteers_db
+from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user, \
+    add_user, request_matching, check_user, update_requests_db, update_volunteers_db, \
+    blacklist_token,send_sms,update_nearby_volunteers_db
 
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list
-from settings import server_type, SECRET_KEY,neighbourhood_radius,moderator_list,search_radius
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id, \
+    accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id, \
+    website_requests_display,get_requests_list
+
+from settings import server_type, SECRET_KEY, neighbourhood_radius, moderator_list, search_radius, mail_config
 from auth import encode_auth_token, decode_auth_token, login_required
 
 import uuid
@@ -35,11 +42,19 @@ def datetime_converter(o):
 
 app = Flask(__name__)
 CORS(app)
+app.config.from_object(mail_config)
 app.config['SECRET_KEY'] = SECRET_KEY
+mail = Mail(app)
+
+
+def send_exception_mail():
+    exc = sys.exc_info()
+    msg = Message(exc[0] + exc[1], recipients=["covidsos60@gmail.com"])
+    msg.html = ''.join(traceback.format_tb(exc[2]))
+    mail.send(msg)
 
 
 # In[ ]:
-
 
 
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
@@ -334,7 +349,7 @@ def assign_volunteer():
 
 @app.route('/auto_assign_volunteer',methods=['POST'])
 def auto_assign_volunteer():
-    v_id = request.form.get('volunteer_id')
+    v_id = requeest.form.get('volunteer_id')
     uuid = request.form.get('uuid')
     matching_by = 'autoassigned'
     task_action = request.form.get('task_action')

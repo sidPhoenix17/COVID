@@ -17,3 +17,12 @@ EARTH_RADIUS = 6378000
 neighbourhood_radius = 1
 moderator_list=[9582148040,9910857735,8618948661]
 search_radius=15
+
+mail_config = {
+    'MAIL_SERVER': 'smtp.googlemail.com',
+    'MAIL_PORT': 587,
+    'MAIL_USE_TLS': True,
+    'MAIL_USERNAME': 'covidsos60@gmail.com',
+    'MAIL_DEFAULT_SENDER': 'covidsos60@gmail.com',
+    'MAIL_PASSWORD': 'cov!dSos@60'
+}
