@@ -121,9 +121,9 @@ def create_request():
         url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('Hi')
         sms_text = "[COVIDSOS] "+name+", we have received your request. We will call you soon. If urgent, please click "+url
         send_sms(sms_text,sms_to=int(mob_number),sms_type='transactional',send=True)
-        mod_url = "https://wa.me/91"+str(mob_number)+"?text="+urllib.parse.quote_plus('Hey')
+#         mod_url = "https://wa.me/91"+str(mob_number)+"?text="+urllib.parse.quote_plus('Hey')
         mod_url = "https://covidsos.org/verify/"+str(uuid)
-        mod_sms_text = 'New query received. Verify lead by clicking here: '
+        mod_sms_text = 'New query received. Verify lead by clicking here: '+mod_url
         for i_number in moderator_list:
             send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
         #move to async
@@ -389,13 +389,15 @@ def update_request_info():
     r_df = request_data_by_id(r_id)
     if(r_df.shape[0]==0):
         return json.dumps({'status':False,'string_response':'Request ID does not exist.','Response':{}})
-    req_dict = {'id':r_id,'name':name,'mob_number':mob_number,'email_id':email_id,
+    req_dict = {'name':name,'mob_number':mob_number,'email_id':email_id,
                 'country':country,'address':address,'geoaddress':geoaddress,'latitude':latitude, 'longitude':longitude,
                 'source':source,'age':age,'request':user_request,'status':status}
-    if (req_dict.get('id') is None):
+    if(r_df.shape[0]==0):
+        return json.dumps({'status':False,'string_response':'Request does not exist','Response':{}})
+    if (r_id is None):
         return json.dumps({'Response':{},'status':False,'string_response':'Request ID mandatory'})
     r_dict = {x:req_dict[x] for x in req_dict if req_dict[x] is not None}
-    response = json.dumps(update_requests_db(r_dict))
+    response = json.dumps(update_requests_db({'id':r_id},r_dict))
     return response
     
 

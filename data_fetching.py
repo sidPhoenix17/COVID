@@ -46,11 +46,11 @@ def get_ticker_counts():
 def get_private_map_data():
     try:
         server_con = connections('prod_db_read')
-        v_q = """Select timestamp,id as v_id, name,source,latitude,longitude,geoaddress,address,mob_number,email_id,status from volunteers"""
+        v_q = """Select timestamp,id as v_id, name,source,latitude,longitude,geoaddress,address,mob_number,email_id,status,source from volunteers"""
         v_df = pd.read_sql(v_q,server_con)
         v_df['timestamp']=pd.to_datetime(v_df['timestamp'])#.dt.tz_localize(tz='Asia/kolkata')
         v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)&(v_df['status']==1)]
-        r_q = """Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number from requests"""
+        r_q = """Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number,source from requests"""
         r_df = pd.read_sql(r_q,server_con)
         r_df['timestamp']=pd.to_datetime(r_df['timestamp'])#.dt.tz_localize(tz='Asia/kolkata')
         r_df = r_df[(r_df['latitude']!=0.0)&(r_df['longitude']!=0.0)]
@@ -69,7 +69,7 @@ def get_private_map_data():
 def get_public_map_data():
     try:
         server_con = connections('prod_db_read')
-        v_q = """Select name,latitude,longitude from volunteers"""
+        v_q = """Select name,latitude,longitude,source from volunteers"""
         v_df = pd.read_sql(v_q,server_con)    
         v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)]
         v_df['name']='PRIVATE USER'
@@ -77,7 +77,7 @@ def get_public_map_data():
     #     geometry = v_df.apply(lambda x: Point(x['longitude'],x['latitude']).buffer(buffer_radius*x.radius),axis=1)
     #     crs = {'init': 'epsg:4326'}
     #     v_df = gpd.GeoDataFrame(v_df, crs=crs, geometry=geometry)
-        r_q = """Select name,request,latitude,longitude from requests"""
+        r_q = """Select name,request,latitude,longitude,source from requests"""
         r_df = pd.read_sql(r_q,server_con)
         r_df['name']='PRIVATE USER'
         r_df = r_df[(r_df['latitude']!=0.0)&(r_df['longitude']!=0.0)]
