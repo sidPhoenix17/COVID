@@ -15,14 +15,6 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 sms_url = "https://api.msg91.com/api/v2/sendsms"
 EARTH_RADIUS = 6378000
 neighbourhood_radius = 1
-moderator_list=[9582148040,9910857735,8618948661]
+moderator_list=[9582148040,8618948661]
+error_mailing_list=['jain.siddarth94@gmail.com']
 search_radius=15
-
-mail_config = {
-    'MAIL_SERVER': 'smtp.googlemail.com',
-    'MAIL_PORT': 587,
-    'MAIL_USE_TLS': True,
-    'MAIL_USERNAME': 'covidsos60@gmail.com',
-    'MAIL_DEFAULT_SENDER': 'covidsos60@gmail.com',
-    'MAIL_PASSWORD': 'cov!dSos@60'
-}

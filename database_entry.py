@@ -8,9 +8,13 @@ import requests, json
 import pandas as pd
 import datetime as dt
 from connections import connections,keys,write_query
+import requests
 from sqlalchemy.sql import text
+import datetime as dt
 from settings import sms_key, sms_sid, sms_url, EARTH_RADIUS,server_type
-from apis import send_exception_mail
+import mailer_fn as mailer
+import json
+import requests
 
 
 # In[ ]:
@@ -37,7 +41,7 @@ def remove_existing_volunteers(df):
         df_new = df[df['mob_number'].isin(volunteer_list['mob_number'].unique())==False]
         return df_new
     except:
-        send_exception_mail()
+        mailer.send_exception_mail()
         return df
     
 def last_entry_timestamp(source):
@@ -98,6 +102,21 @@ def contact_us_form_add(df):
 # In[ ]:
 
 
+def add_request_verification_db(df):
+    expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by']
+    if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
+        engine = connections('prod_db_write')
+        df.to_sql(name = 'request_verification', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
+        return_str = 'Request verification data submitted successfully'
+        return True,return_str
+    else:
+        return_str = 'Data Format not matching'
+        return False,return_str
+
+
+# In[ ]:
+
+
 
 def geocoding(address_str,country_str,key):
     url = 'https://maps.googleapis.com/maps/api/geocode/json?address='+str(address_str)+'&components=country:'+str(country_str)+'&key='+key
@@ -112,7 +131,7 @@ def geocoding(address_str,country_str,key):
             return None
     except:
         print("HTTP Error for "+address_str)
-        send_exception_mail()
+        mailer.send_exception_mail()
         return None
 
 
@@ -181,7 +200,7 @@ def check_user(table_name,user_id):
         else:
             return errorResponse
     except:
-        send_exception_mail()
+        mailer.send_exception_mail()
         return errorResponse
 
 
@@ -189,34 +208,37 @@ def check_user(table_name,user_id):
 
 
 
-def update_requests_db(r_dict):
-    try:
-        string_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = r_dict[x]) for x in r_dict if x is not 'id'))
-        query = """update requests set {dx} where id={r_id};""".format(dx = string_sql_format,r_id=r_dict['id'])
-        write_query(query,'prod_db_write')
-        return {'Response':{},'string_response': 'Request info Updated','status':True}
-    except:
-        return  {'Response':{},'string_response': 'Request info updation failed' ,'status':False}
-
-def update_nearby_volunteers_db(r_dict_where,r_dict_set):
+def update_requests_db(r_dict_where,r_dict_set):
     try:
         set_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = r_dict_set[x]) for x in r_dict_set))
         where_sql_format = " and ".join(("{column_name}='{value}'".format(column_name = x,value = r_dict_where[x]) for x in r_dict_where))
+        query = """update requests set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
+        write_query(query,'prod_db_write')
+        return {'Response':{},'string_response': 'Request info Updated','status':True}
+    except:
+        mailer.send_exception_mail()
+        return  {'Response':{},'string_response': 'Request info updation failed' ,'status':False}
+
+def update_nearby_volunteers_db(nv_dict_where,nv_dict_set):
+    try:
+        set_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = nv_dict_set[x]) for x in nv_dict_set))
+        where_sql_format = " and ".join(("{column_name}='{value}'".format(column_name = x,value = nv_dict_where[x]) for x in nv_dict_where))
         query = """update nearby_volunteers set {set_str} where {where_str};""".format(set_str= set_sql_format,where_str=where_sql_format)
         write_query(query,'prod_db_write')
         return {'Response':{},'string_response': 'nearby_volunteers info Updated','status':True}
     except:
-        send_exception_mail()
+        mailer.send_exception_mail()
         return  {'Response':{},'string_response': 'nearby_volunteers info updation failed' ,'status':False}
 
-def update_volunteers_db(v_dict):
+def update_volunteers_db(v_dict_where,v_dict_set):
     try:
-        string_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = v_dict[x]) for x in v_dict if x is not 'id'))
-        query = """update volunteers set {dx} where id={v_id};""".format(dx = string_sql_format,v_id=v_dict['id'])
+        set_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = v_dict_set[x]) for x in v_dict_set))
+        where_sql_format = " and ".join(("{column_name}='{value}'".format(column_name = x,value = v_dict_where[x]) for x in v_dict_where))
+        query = """update volunteers set {set_str} where {where_str};""".format(set_str= set_sql_format,where_str=where_sql_format)
         write_query(query,'prod_db_write')
         return {'Response':{},'string_response': 'Volunteer info Updated','status':True}
     except:
-        send_exception_mail()
+        mailer.send_exception_mail()
         return  {'Response':{},'string_response': 'Volunteer info updation failed' ,'status':False}
 
 
@@ -236,7 +258,7 @@ def blacklist_token(token):
         write_query(query,'prod_db_write')
         return True
     except:
-        send_exception_mail()
+        mailer.send_exception_mail()
         return False
 
 
@@ -264,7 +286,7 @@ def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
             return None
         except:
             print('SMS API error')
-            send_exception_mail()
+            mailer.send_exception_mail()
             return None
 
 

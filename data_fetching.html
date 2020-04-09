@@ -13082,6 +13082,7 @@ div#notebook {
 <div class=" highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">connections</span> <span class="kn">import</span> <span class="n">connections</span><span class="p">,</span><span class="n">keys</span>
 <span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">mailer_fn</span> <span class="k">as</span> <span class="nn">mailer</span>
 </pre></div>
 
     </div>
@@ -13123,6 +13124,7 @@ div#notebook {
         <span class="n">pending_request_count</span> <span class="o">=</span> <span class="n">r_df</span><span class="p">[</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;received&#39;</span><span class="p">,</span><span class="s1">&#39;verified&#39;</span><span class="p">,</span><span class="s1">&#39;pending&#39;</span><span class="p">])]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{</span><span class="s1">&#39;volunteer_count&#39;</span><span class="p">:</span><span class="n">volunteer_count</span><span class="p">,</span><span class="s1">&#39;request_count&#39;</span><span class="p">:</span><span class="n">request_count</span><span class="p">,</span><span class="s1">&#39;pending_request_count&#39;</span><span class="p">:</span><span class="n">pending_request_count</span><span class="p">},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Metrics computed&#39;</span><span class="p">}</span>
     <span class="k">except</span><span class="p">:</span>
+        <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Connection to DB failed&#39;</span><span class="p">}</span>
 </pre></div>
 
@@ -13149,6 +13151,7 @@ div#notebook {
         <span class="n">r_df</span> <span class="o">=</span> <span class="n">r_df</span><span class="p">[(</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)]</span>
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Volunteers&#39;</span><span class="p">:</span> <span class="n">v_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">),</span> <span class="s1">&#39;Requests&#39;</span><span class="p">:</span><span class="n">r_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">)}</span>
     <span class="k">except</span><span class="p">:</span>
+        <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
         <span class="k">return</span> <span class="p">{}</span>
     <span class="c1">#return (v_df.to_json(orient=&#39;index&#39;))</span>
     
@@ -13182,6 +13185,7 @@ div#notebook {
         <span class="n">r_df</span> <span class="o">=</span> <span class="n">r_df</span><span class="p">[(</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)]</span>
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Volunteers&#39;</span><span class="p">:</span> <span class="n">v_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">),</span> <span class="s1">&#39;Requests&#39;</span><span class="p">:</span><span class="n">r_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">)}</span>
     <span class="k">except</span><span class="p">:</span>
+        <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
         <span class="k">return</span> <span class="p">{}</span>
 </pre></div>
 
@@ -13204,6 +13208,7 @@ div#notebook {
         <span class="n">completed_queries</span> <span class="o">=</span> <span class="n">query_df</span><span class="p">[</span><span class="n">query_df</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;completed&#39;</span><span class="p">]</span>
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;pending&#39;</span><span class="p">:</span><span class="n">pending_queries</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">),</span><span class="s1">&#39;completed&#39;</span><span class="p">:</span><span class="n">completed_queries</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">)}</span>
     <span class="k">except</span><span class="p">:</span>
+        <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;pending&#39;</span><span class="p">:{},</span><span class="s1">&#39;completed&#39;</span><span class="p">:{}}</span>
 </pre></div>
 
@@ -13225,6 +13230,7 @@ div#notebook {
         <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">user_id</span>
     <span class="k">except</span><span class="p">:</span>
+        <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
         <span class="k">return</span> <span class="kc">None</span>
     
 </pre></div>
@@ -13249,20 +13255,22 @@ div#notebook {
     
     
 <span class="k">def</span> <span class="nf">request_data_by_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">):</span>
-    <span class="n">r_id_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status from requests where uuid=&#39;</span><span class="si">{uuid_str}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">uuid_str</span><span class="o">=</span><span class="n">uuid</span><span class="p">)</span>
+    <span class="n">r_id_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp from requests where uuid=&#39;</span><span class="si">{uuid_str}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">uuid_str</span><span class="o">=</span><span class="n">uuid</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">r_id_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">r_id_q</span><span class="p">,</span><span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">r_id_df</span>
     <span class="k">except</span><span class="p">:</span>
+        <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
     
 
 <span class="k">def</span> <span class="nf">request_data_by_id</span><span class="p">(</span><span class="n">r_id</span><span class="p">):</span>
-    <span class="n">r_id_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status from requests where id=&#39;</span><span class="si">{r_id}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">r_id</span><span class="o">=</span><span class="n">r_id</span><span class="p">)</span>
+    <span class="n">r_id_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp from requests where id=&#39;</span><span class="si">{r_id}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">r_id</span><span class="o">=</span><span class="n">r_id</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">r_id_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">r_id_q</span><span class="p">,</span><span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">r_id_df</span>
     <span class="k">except</span><span class="p">:</span>
+        <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
     
 
@@ -13272,6 +13280,7 @@ div#notebook {
         <span class="n">v_id_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">v_id_q</span><span class="p">,</span><span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">v_id_df</span>
     <span class="k">except</span><span class="p">:</span>
+        <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
 </pre></div>
 
