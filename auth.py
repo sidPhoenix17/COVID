@@ -17,6 +17,7 @@ import jwt
 import pandas as pd
 
 from connections import connections
+from apis import send_exception_mail
 
 
 # In[ ]:
@@ -54,6 +55,7 @@ def encode_auth_token(user_id):
             algorithm='HS256'
         )
     except Exception as e:
+        send_exception_mail()
         return None
     
 

@@ -8,6 +8,7 @@
 import pandas as pd
 from connections import connections,keys
 import requests
+from apis import send_exception_mail
 
 
 # In[3]:
@@ -35,6 +36,7 @@ def get_ticker_counts():
         pending_request_count = r_df[r_df['status'].isin(['received','verified','pending'])].shape[0]
         return {'Response':{'volunteer_count':volunteer_count,'request_count':request_count,'pending_request_count':pending_request_count},'status':True,'string_response':'Metrics computed'}
     except:
+        send_exception_mail()
         return {'Response':{},'status':False,'string_response':'Connection to DB failed'}
 
 
@@ -54,6 +56,7 @@ def get_private_map_data():
         r_df = r_df[(r_df['latitude']!=0.0)&(r_df['longitude']!=0.0)]
         return {'Volunteers': v_df.to_dict('records'), 'Requests':r_df.to_dict('records')}
     except:
+        send_exception_mail()
         return {}
     #return (v_df.to_json(orient='index'))
     
@@ -80,6 +83,7 @@ def get_public_map_data():
         r_df = r_df[(r_df['latitude']!=0.0)&(r_df['longitude']!=0.0)]
         return {'Volunteers': v_df.to_dict('records'), 'Requests':r_df.to_dict('records')}
     except:
+        send_exception_mail()
         return {}
 
 
@@ -95,6 +99,7 @@ def website_requests_display():
         completed_queries = query_df[query_df['type']=='completed']
         return {'pending':pending_queries.to_dict('records'),'completed':completed_queries.to_dict('records')}
     except:
+        send_exception_mail()
         return {'pending':{},'completed':{}}
 
 
@@ -110,6 +115,7 @@ def get_user_id(username, password):
         user_id = int(data.iloc[0]['id'])
         return user_id
     except:
+        send_exception_mail()
         return None
     
 
@@ -132,6 +138,7 @@ def request_data_by_uuid(uuid):
         r_id_df = pd.read_sql(r_id_q,connections('prod_db_read'))
         return r_id_df
     except:
+        send_exception_mail()
         return pd.DataFrame()
     
 
@@ -141,6 +148,7 @@ def request_data_by_id(r_id):
         r_id_df = pd.read_sql(r_id_q,connections('prod_db_read'))
         return r_id_df
     except:
+        send_exception_mail()
         return pd.DataFrame()
     
 
@@ -150,6 +158,7 @@ def volunteer_data_by_id(v_id):
         v_id_df = pd.read_sql(v_id_q,connections('prod_db_read'))
         return v_id_df
     except:
+        send_exception_mail()
         return pd.DataFrame()
 
 

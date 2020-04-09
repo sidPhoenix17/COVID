@@ -4,6 +4,7 @@
 # In[ ]:
 
 
+import uuid
 import pandas as pd
 import numpy as np
 import datetime as dt
@@ -11,8 +12,7 @@ from settings import EARTH_RADIUS,moderator_list,server_type
 from connections import connections,write_query
 from database_entry import send_sms
 from data_fetching import request_data_by_uuid
-import uuid
-
+from apis import send_exception_mail
 
 # In[ ]:
 
@@ -35,8 +35,8 @@ def get_haversine_distance(start_lat, start_lng, end_lat, end_lng, units='km'):
             return distance
         else:
             return distance / 1000.0
-    except:
-        raise
+    except Exception as e:
+        send_exception_mail()
         return None
 
 
