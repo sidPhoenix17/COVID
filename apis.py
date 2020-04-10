@@ -464,7 +464,7 @@ def request_accept_page():
 # In[ ]:
 
 
-@app.route('/verify_request_page',methods=['GET'])
+@app.route('/verify_request_page',methods=['POST'])
 def verify_request_page():
     uuid = request.form.get('uuid')
     r_df = request_data_by_uuid(uuid)
