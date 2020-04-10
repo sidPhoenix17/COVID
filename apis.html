@@ -13710,7 +13710,11 @@ div#notebook {
     <span class="n">what</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;what&#39;</span><span class="p">)</span>
     <span class="n">why</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;why&#39;</span><span class="p">)</span>
     <span class="n">verification_status</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verification_status&#39;</span><span class="p">)</span>
-    <span class="n">verified_by</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verified_by&#39;</span><span class="p">,</span><span class="s1">&#39;covidsos&#39;</span><span class="p">)</span>
+    <span class="n">verified_by</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;verified_by&#39;</span><span class="p">,</span><span class="mi">331</span><span class="p">)</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">verified_by</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()):</span>
+        <span class="n">verified_by</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">verified_by</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">verified_by</span><span class="o">=</span><span class="mi">0</span>
     <span class="n">r_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;r_id&#39;</span><span class="p">)</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
     <span class="n">where</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;geoaddress&#39;</span><span class="p">)</span>
@@ -13774,45 +13778,6 @@ div#notebook {
 <span class="k">if</span><span class="p">(</span><span class="n">server_type</span><span class="o">==</span><span class="s1">&#39;staging&#39;</span><span class="p">):</span>
     <span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
         <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span> 
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span> 
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span> 
 </pre></div>
 
     </div>
