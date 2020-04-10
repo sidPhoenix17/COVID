@@ -486,7 +486,7 @@ def verify_request():
     why = request.form.get('why')
     verification_status=request.form.get('verification_status')
     verified_by = request.form.get('verified_by',331)
-    if(verified_by.isdigit()):
+    if(str(verified_by).isdigit()):
         verified_by=int(verified_by)
     else:
         verified_by=0
@@ -495,26 +495,30 @@ def verify_request():
     where = request.form.get('geoaddress')
     mob_number = request.form.get('mob_number')
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
-    if((r_id is None) or (uuid is None)):
-        return json.dumps({'Response':{},'status':False,'string_response':'Please send UUID/request ID'})
     if(verification_status is None):
         return json.dumps({'Response':{},'status':False,'string_response':'Please send verification status'})
-    r_v_dict = {'r_id':[r_id],'why':[why],'what':[what],'where':[where],'verification_status':[verification_status],'verified_by':[verified_by],'timestamp':[current_time]}
-    df = pd.DataFrame(r_v_dict)
-    expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by']
-    response_2 = update_requests_db({'uuid':uuid},{'status':verification_status})
-    print('updated the status')
-    x,y = add_request_verification_db(df)
-    if(verification_status=='verified'):
-        requestor_text = 'Your request has been verified. We will look for volunteers in your neighbourhood.'
-        send_sms(requestor_text,sms_to=int(mob_number),sms_type='transactional',send=True)
-        message_all_volunteers(uuid,neighbourhood_radius,search_radius)
+    if((r_id is None) or (uuid is None)):
+        return json.dumps({'Response':{},'status':False,'string_response':'Please send UUID/request ID'})
+    r_df = request_data_by_uuid(uuid)
+    if(r_df.shape[0]==0):
+        return json.dumps({'Response':{},'status':False,'string_response':'Invalid UUID/request ID'})
+    if(r_df.loc[0,'status']=='received'):
+        r_v_dict = {'r_id':[r_id],'why':[why],'what':[what],'where':[where],'verification_status':[verification_status],'verified_by':[verified_by],'timestamp':[current_time]}
+        df = pd.DataFrame(r_v_dict)
+        expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by']
+        response_2 = update_requests_db({'uuid':uuid},{'status':verification_status})
+        print('updated the status')
+        x,y = add_request_verification_db(df)
+        if(verification_status=='verified'):
+            requestor_text = '[COVIDSOS] Your request has been verified. We will look for volunteers in your neighbourhood.'
+            send_sms(requestor_text,sms_to=int(mob_number),sms_type='transactional',send=True)
+            message_all_volunteers(uuid,neighbourhood_radius,search_radius)
+        else:
+            requestor_text = '[COVIDSOS] Your request has been cancelled/rejected. If you still need help, please submit request again.'
+            send_sms(requestor_text,sms_to=int(mob_number),sms_type='transactional',send=True)
+        return json.dumps({'Response':{},'status':response_2['status'],'string_response':response_2['string_response']})
     else:
-        requestor_text = 'Your request has been cancelled/rejected. If you still need help, please submit request again.'
-        send_sms(requestor_text,sms_to=int(mob_number),sms_type='transactional',send=True)
-    
-    return json.dumps({'Response':{},'status':response_2['status'],'string_response':response_2['string_response']})
-    
+        return json.dumps({'Response':{},'status':False,'string_response':'Request already verified/rejected'})
 
 
 # In[ ]:
