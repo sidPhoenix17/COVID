@@ -485,7 +485,11 @@ def verify_request():
     what = request.form.get('what')
     why = request.form.get('why')
     verification_status=request.form.get('verification_status')
-    verified_by = request.form.get('verified_by','covidsos')
+    verified_by = request.form.get('verified_by',331)
+    if(verified_by.isdigit()):
+        verified_by=int(verified_by)
+    else:
+        verified_by=0
     r_id = request.form.get('r_id')
     name = request.form.get('name')
     where = request.form.get('geoaddress')
@@ -535,24 +539,6 @@ if(server_type=='prod'):
 if(server_type=='staging'):
     if __name__ =='__main__':
         app.run()
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:
