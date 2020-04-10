@@ -312,7 +312,7 @@ def assign_volunteer():
     if(v_df.shape[0]==0):
         return json.dumps({'status':False,'string_response':'Volunteer does not exist','Response':{}})
     else:
-        if(r_df.loc[0,'status'].isin(['received','verified','pending'])):
+        if((r_df.loc[0,'status']=='received')or(r_df.loc[0,'status']=='verified')or(r_df.loc[0,'status']=='pending')):
             current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
             req_dict = {'volunteer_id':[v_id],'request_id':[r_df.loc[0,'r_id']],'matching_by':[matching_by],'timestamp':[current_time]}
             df = pd.DataFrame(req_dict)
@@ -347,7 +347,7 @@ def auto_assign_volunteer():
     if(v_df.shape[0]==0):
         return json.dumps({'status':False,'string_response':'Volunteer does not exist','Response':{}})
     else:
-        if((r_df.loc[0,'status'].isin(['received','verified','pending']))&(task_action=='accepted')):
+        if(((r_df.loc[0,'status']=='received')or(r_df.loc[0,'status']=='verified')or(r_df.loc[0,'status']=='pending'))&(task_action=='accepted')):
             current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
             req_dict = {'volunteer_id':[v_id],'request_id':[r_df.loc[0,'r_id']],'matching_by':[matching_by],'timestamp':[current_time]}
             df = pd.DataFrame(req_dict)
@@ -361,7 +361,7 @@ def auto_assign_volunteer():
             v_sms_text = '[COVID SOS] Volunteer '+v_df.loc[0,'name']+' will help you. Mob: '+str(v_df.loc[0,'mob_number'])
             send_sms(v_sms_text,int(r_df.loc[0,'mob_number']),sms_type='transactional',send=True)
             return json.dumps(response)
-        elif(r_df.loc[0,'status'].isin(['received','verified','pending'])):
+        elif((r_df.loc[0,'status']=='received')or(r_df.loc[0,'status']=='verified')or(r_df.loc[0,'status']=='pending')):
             response_3 = update_nearby_volunteers_db({'r_id':r_id,'v_id':v_id},{'status':'expired'})            
         else:
             return json.dumps({'status':False,'string_response':'Request already assigned','Response':{}})
