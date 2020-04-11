@@ -140,12 +140,6 @@ def create_request():
         #Schedule message after 30 mins depending on status - Send WhatsApp Link here.
     return json.dumps(response)
 
-#     df['source'] = df['source'].fillna('covidsos')
-#     df['status'] = df['status'].fillna('pending')
-#     df['latitude'] = df['latitude'].fillna(0.0)
-#     df['longitude'] = df['longitude'].fillna(0.0)
-#     df['country'] = df['country'].fillna('India')
-
 
 # In[ ]:
 
@@ -180,11 +174,6 @@ def add_volunteer():
     response = {'Response':{},'status':x,'string_response':y}
     return json.dumps(response)
 
-#     df['status'] = df['status'].fillna(1)
-#     df['country'] = df['country'].fillna('India')
-#     df['latitude'] = df['latitude'].fillna(0.0)
-#     df['longitude'] = df['longitude'].fillna(0.0)
-
 
 # In[ ]:
 
@@ -206,7 +195,7 @@ def login_request():
 
 @app.route('/new_user',methods=['POST'])
 @login_required
-def new_user():
+def new_user(*args,**kwargs):
     name = request.form.get('name')
     mob_number = request.form.get('mob_number')
     email_id = request.form.get('email_id')
@@ -282,7 +271,7 @@ def request_status_list():
 
 @app.route('/private_map_data',methods=['GET'])
 @login_required
-def private_map_data():
+def private_map_data(*args,**kwargs):
     response = get_private_map_data() 
     return json.dumps({'Response':response,'status':True,'string_response':'Full data sent'},default=datetime_converter)
 
@@ -301,7 +290,7 @@ def public_map_data():
 
 @app.route('/assign_volunteer',methods=['POST'])
 @login_required
-def assign_volunteer():
+def assign_volunteer(*args,**kwargs):
     v_id = request.form.get('volunteer_id')
     r_id = request.form.get('request_id')
     matching_by = request.form.get('matched_by')
@@ -372,7 +361,7 @@ def auto_assign_volunteer():
 
 @app.route('/update_request_info',methods=['POST'])
 @login_required
-def update_request_info():
+def update_request_info(*args,**kwargs):
     r_id = request.form.get('request_id')
     name = request.form.get('name')
     mob_number = request.form.get('mob_number')
@@ -407,7 +396,7 @@ def update_request_info():
 
 @app.route('/update_volunteer_info',methods=['POST'])
 @login_required
-def update_volunteer_info():
+def update_volunteer_info(*args,**kwargs):
     v_id = request.form.get('volunteer_id')
     name = request.form.get('name')
     mob_number = request.form.get('mob_number')
@@ -437,7 +426,7 @@ def update_volunteer_info():
 
 @app.route('/logout',methods=['POST'])
 @login_required
-def logout_request():
+def logout_request(*args,**kwargs):
     token = request.headers['Authorization'].split(" ")[1]
     success = blacklist_token(token)
     message = 'Logged out successfully' if success else 'Failed to logout'
@@ -464,8 +453,30 @@ def request_accept_page():
 # In[ ]:
 
 
+# @app.route('/request_otp',methods=['POST'])
+# def request_otp():
+#     mob_number = request.form.get('mob_number')
+
+
+# In[ ]:
+
+
+# @app.route('verify_otp',methods=['POST']):
+# def verify_otp():
+#     mob_number = request.form.get('mob_number')
+#     response = verify_user(mob_number)
+#     if not response: 
+#         return {'Response':{},'status':False,'string_response':'Failed to find user.'} 
+#     response['Response']['auth_token'] = encode_auth_token(user_id).decode()
+#     return json.dumps(response)
+
+
+# In[ ]:
+
+
 @app.route('/verify_request_page',methods=['POST'])
-def verify_request_page():
+@login_required
+def verify_request_page(*args,**kwargs):
     uuid = request.form.get('uuid')
     r_df = request_data_by_uuid(uuid)
     if(r_df.shape[0]==0):
@@ -480,16 +491,18 @@ def verify_request_page():
 
 
 @app.route('/verify_request',methods=['POST'])
-def verify_request():
+@login_required
+def verify_request(*args,**kwargs):
     uuid = request.form.get('uuid')
     what = request.form.get('what')
     why = request.form.get('why')
     verification_status=request.form.get('verification_status')
-    verified_by = request.form.get('verified_by',331)
-    if(str(verified_by).isdigit()):
-        verified_by=int(verified_by)
-    else:
-        verified_by=0
+    verified_by = kwargs.get('user_id',0)
+# request.form.get('verified_by',331)
+#     if(str(verified_by).isdigit()):
+#         verified_by=int(verified_by)
+#     else:
+#         verified_by=0
     r_id = request.form.get('r_id')
     name = request.form.get('name')
     where = request.form.get('geoaddress')

@@ -294,6 +294,26 @@ def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
 
 
 
+# def send_otp(sms_to=9582148040):
+#     sid = sms_sid
+#     authkey = sms_key
+#     url = otp_url
+#     invisible=1
+    
+#     data = {"sender": "SOCKET","route": route,"country": "91","sms": [{"message": sms_text,"to": [sms_to]}]}
+#     headers = {'Content-type': 'application/json', 'authkey': key}
+#     if ((send)&(server_type!='local')):
+#         try:
+#             r = requests.post(url, data=json.dumps(data), headers=headers)
+#             sms_dict = {'sms_text':[sms_text],'sms_type':[sms_type],'sms_to':[sms_to],'sms_status_type':[r.status_code],'sms_json_response':[str(r.json())]}
+#             new_sms_df = pd.DataFrame(sms_dict)
+#             engine = connections('prod_db_write')
+#             new_sms_df.to_sql(name = 'sms_log', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
+#             return None
+#         except:
+#             print('SMS API error')
+#             mailer.send_exception_mail()
+#             return None
 
 
 # In[ ]:

@@ -34,7 +34,7 @@ def login_required(f):
         resp, success = decode_auth_token(auth_token)
         if not success:
             return json.dumps({'Response':{},'status':False,'string_response': resp})
-
+        kwargs['user_id'] = resp
         return f(*args, **kwargs)
     return decorated_function
 

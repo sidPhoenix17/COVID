@@ -13,6 +13,7 @@ buffer_radius = 1/np.sqrt(95*95+110*110)
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 # SECRET_KEY = os.getenv('SECRET_KEY')
 sms_url = "https://api.msg91.com/api/v2/sendsms"
+# otp_url = "https://api.msg91.com/api/v5/otp"
 EARTH_RADIUS = 6378000
 neighbourhood_radius = 1
 moderator_list=[9582148040,8618948661]
