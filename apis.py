@@ -16,7 +16,7 @@ from connections import connections
 
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms,update_nearby_volunteers_db, add_request_verification_db
 
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,website_success_stories
 from partner_assignment import generate_uuid,message_all_volunteers
 from auth import encode_auth_token, decode_auth_token, login_required
 
@@ -528,6 +528,15 @@ def verify_request():
 def pending_requests():
     response = website_requests_display()
     return json.dumps({'Response':response,'status':True,'string_response':'Request data extracted'})
+
+
+# In[ ]:
+
+
+@app.route('/success_stories',methods=['GET'])
+def success_stories():
+    response = website_success_stories()
+    return json.dumps({'Response':response,'status':True,'string_response':'Success stories data extracted'})
 
 
 # In[ ]:

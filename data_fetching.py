@@ -106,6 +106,20 @@ def website_requests_display():
 # In[ ]:
 
 
+def website_success_stories():
+    try:
+        server_con = connections('prod_db_read')
+        query = """Select * from success_stories"""
+        query_df = pd.read_sql(query,server_con)
+        return {'instagram':query_df.to_dict('records')}
+    except:
+        mailer.send_exception_mail()
+        return {'instagram':{}}
+
+
+# In[ ]:
+
+
 
 def get_user_id(username, password):
     server_con = connections('prod_db_read')
