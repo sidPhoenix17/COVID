@@ -458,7 +458,7 @@ def request_accept_page():
     if(df.shape[0]==0):
         return json.dumps({'Response':{},'status':False,'string_response':'This page does not exist. Redirecting to homepage'})
     else:
-        if(df.loc[0,'status'].isin(['received','verified','pending'])):
+        if((df.loc[0,'status']=='received')or(df.loc[0,'status']=='verified')or(df.loc[0,'status']=='pending')):
             return json.dumps({'Response':df.to_dict('records'),'status':True,'string_response':'Request related data extracted'})
         else:
             return json.dumps({'Response':{},'status':False,'string_response':'This request is already completed'})
