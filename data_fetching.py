@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[2]:
+# In[ ]:
 
 
 
@@ -11,7 +11,7 @@ import requests
 import mailer_fn as mailer
 
 
-# In[3]:
+# In[ ]:
 
 
 def get_requests_list():
@@ -134,6 +134,10 @@ def get_user_id(username, password):
         return None, None
     
 
+
+# In[ ]:
+
+
 def verify_user_exists(user_id, access_type):
     server_con = connections('prod_db_read')
     query = f"""Select id from users where id='{user_id}' and access_type='{access_type}' order by id desc limit 1"""
@@ -143,7 +147,6 @@ def verify_user_exists(user_id, access_type):
     except:
         mailer.send_exception_mail()
         return False
-
 
 def verify_volunteer_exists(mob_number, v_id=None, country=None):
     server_con = connections('prod_db_read')
@@ -163,11 +166,11 @@ def verify_volunteer_exists(mob_number, v_id=None, country=None):
 # In[ ]:
 
 
-def accept_request_page(uuid,v_mob_number):
-    query = """Select rm.r_id, rm.v_id,v.name as volunteer_name,rm.status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.request as request_details
-            from nearby_volunteers rm left join requests r on r.id=rm.r_id
-            left join volunteers v on v.id=rm.v_id
-            where v.mob_number={mob_number} and r.uuid='{uuid}'""".format(uuid=uuid,mob_number=v_mob_number)
+def accept_request_page(uuid):
+    query = """Select r.id as r_id,r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude,
+            rv.what as what, rv.why as why, rv.verification_status as verification_status
+            from requests r left join request_verification rv on r.id=rv.r_id
+            where r.uuid='{uuid}'""".format(uuid=uuid)
     df = pd.read_sql(query,connections('prod_db_read'))
     return df
     

@@ -13091,13 +13091,13 @@ div#notebook {
 
 <span class="kn">from</span> <span class="nn">database_entry</span> <span class="kn">import</span> <span class="n">add_requests</span><span class="p">,</span> <span class="n">add_volunteers_to_db</span><span class="p">,</span> <span class="n">contact_us_form_add</span><span class="p">,</span> <span class="n">verify_user</span><span class="p">,</span> \
                 <span class="n">add_user</span><span class="p">,</span> <span class="n">request_matching</span><span class="p">,</span> <span class="n">check_user</span><span class="p">,</span> <span class="n">update_requests_db</span><span class="p">,</span> <span class="n">update_volunteers_db</span><span class="p">,</span> \
-                <span class="n">blacklist_token</span><span class="p">,</span><span class="n">send_sms</span><span class="p">,</span><span class="n">update_nearby_volunteers_db</span><span class="p">,</span> <span class="n">add_request_verification_db</span>
+                <span class="n">blacklist_token</span><span class="p">,</span><span class="n">send_sms</span><span class="p">,</span> <span class="n">send_otp</span><span class="p">,</span> <span class="n">resend_otp</span><span class="p">,</span> <span class="n">verify_otp</span><span class="p">,</span> <span class="n">update_nearby_volunteers_db</span><span class="p">,</span> <span class="n">add_request_verification_db</span>
 
 <span class="kn">from</span> <span class="nn">data_fetching</span> <span class="kn">import</span> <span class="n">get_ticker_counts</span><span class="p">,</span><span class="n">get_private_map_data</span><span class="p">,</span><span class="n">get_public_map_data</span><span class="p">,</span> <span class="n">get_user_id</span><span class="p">,</span>\
                         <span class="n">accept_request_page</span><span class="p">,</span><span class="n">request_data_by_uuid</span><span class="p">,</span><span class="n">request_data_by_id</span><span class="p">,</span><span class="n">volunteer_data_by_id</span><span class="p">,</span>\
-                        <span class="n">website_requests_display</span><span class="p">,</span><span class="n">get_requests_list</span><span class="p">,</span><span class="n">website_success_stories</span>
+                        <span class="n">website_requests_display</span><span class="p">,</span><span class="n">get_requests_list</span><span class="p">,</span><span class="n">website_success_stories</span><span class="p">,</span> <span class="n">verify_volunteer_exists</span>
 <span class="kn">from</span> <span class="nn">partner_assignment</span> <span class="kn">import</span> <span class="n">generate_uuid</span><span class="p">,</span><span class="n">message_all_volunteers</span>
-<span class="kn">from</span> <span class="nn">auth</span> <span class="kn">import</span> <span class="n">encode_auth_token</span><span class="p">,</span> <span class="n">decode_auth_token</span><span class="p">,</span> <span class="n">login_required</span>
+<span class="kn">from</span> <span class="nn">auth</span> <span class="kn">import</span> <span class="n">encode_auth_token</span><span class="p">,</span> <span class="n">decode_auth_token</span><span class="p">,</span> <span class="n">login_required</span><span class="p">,</span> <span class="n">volunteer_login_req</span>
 
 
 <span class="kn">from</span> <span class="nn">settings</span> <span class="kn">import</span> <span class="n">server_type</span><span class="p">,</span> <span class="n">SECRET_KEY</span><span class="p">,</span><span class="n">neighbourhood_radius</span><span class="p">,</span><span class="n">moderator_list</span><span class="p">,</span><span class="n">search_radius</span>
@@ -13310,10 +13310,10 @@ div#notebook {
     <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span>
     <span class="n">password</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span>
     <span class="n">response</span> <span class="o">=</span> <span class="n">verify_user</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="n">password</span><span class="p">)</span>
-    <span class="n">user_id</span> <span class="o">=</span> <span class="n">get_user_id</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span> 
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">user_id</span><span class="p">:</span> 
+    <span class="n">user_id</span><span class="p">,</span> <span class="n">access_type</span> <span class="o">=</span> <span class="n">get_user_id</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">user_id</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Failed to find user.&#39;</span><span class="p">}</span> 
-    <span class="n">response</span><span class="p">[</span><span class="s1">&#39;Response&#39;</span><span class="p">][</span><span class="s1">&#39;auth_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">encode_auth_token</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+    <span class="n">response</span><span class="p">[</span><span class="s1">&#39;Response&#39;</span><span class="p">][</span><span class="s1">&#39;auth_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">encode_auth_token</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">access_type</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
 </pre></div>
 
@@ -13353,10 +13353,10 @@ div#notebook {
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">req_dict</span><span class="p">)</span>
     <span class="k">if</span><span class="p">(</span><span class="n">creator_access_type</span><span class="o">==</span><span class="s1">&#39;superuser&#39;</span><span class="p">):</span>
         <span class="n">response</span> <span class="o">=</span> <span class="n">add_user</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-        <span class="n">user_id</span> <span class="o">=</span> <span class="n">get_user_id</span><span class="p">(</span><span class="n">mob_number</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span> 
+        <span class="n">user_id</span><span class="p">,</span> <span class="n">access_type</span> <span class="o">=</span> <span class="n">get_user_id</span><span class="p">(</span><span class="n">mob_number</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span> 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">user_id</span><span class="p">:</span> 
             <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Failed to create user. Please try again later&#39;</span><span class="p">}</span> 
-        <span class="n">response</span><span class="p">[</span><span class="s1">&#39;auth_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">encode_auth_token</span><span class="p">(</span><span class="n">user_id</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span> 
+        <span class="n">response</span><span class="p">[</span><span class="s1">&#39;auth_token&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">encode_auth_token</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">access_type</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span> 
     <span class="k">else</span><span class="p">:</span>
         <span class="n">response</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;User does not have permission to create new users&#39;</span><span class="p">}</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
@@ -13519,13 +13519,14 @@ div#notebook {
     <span class="k">if</span><span class="p">(</span><span class="n">v_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Volunteer does not exist&#39;</span><span class="p">,</span><span class="s1">&#39;Response&#39;</span><span class="p">:{}})</span>
     <span class="k">else</span><span class="p">:</span>
+        <span class="n">r_id</span> <span class="o">=</span> <span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">]</span>
         <span class="k">if</span><span class="p">(((</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;received&#39;</span><span class="p">)</span><span class="ow">or</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;verified&#39;</span><span class="p">)</span><span class="ow">or</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;pending&#39;</span><span class="p">))</span><span class="o">&amp;</span><span class="p">(</span><span class="n">task_action</span><span class="o">==</span><span class="s1">&#39;accepted&#39;</span><span class="p">)):</span>
             <span class="n">current_time</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">()</span><span class="o">+</span><span class="n">dt</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">330</span><span class="p">)</span>
-            <span class="n">req_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;volunteer_id&#39;</span><span class="p">:[</span><span class="n">v_id</span><span class="p">],</span><span class="s1">&#39;request_id&#39;</span><span class="p">:[</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">]],</span><span class="s1">&#39;matching_by&#39;</span><span class="p">:[</span><span class="n">matching_by</span><span class="p">],</span><span class="s1">&#39;timestamp&#39;</span><span class="p">:[</span><span class="n">current_time</span><span class="p">]}</span>
+            <span class="n">req_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;volunteer_id&#39;</span><span class="p">:[</span><span class="n">v_id</span><span class="p">],</span><span class="s1">&#39;request_id&#39;</span><span class="p">:[</span><span class="n">r_id</span><span class="p">],</span><span class="s1">&#39;matching_by&#39;</span><span class="p">:[</span><span class="n">matching_by</span><span class="p">],</span><span class="s1">&#39;timestamp&#39;</span><span class="p">:[</span><span class="n">current_time</span><span class="p">]}</span>
             <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">req_dict</span><span class="p">)</span>
             <span class="n">response</span> <span class="o">=</span> <span class="n">request_matching</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
-            <span class="n">response_2</span> <span class="o">=</span> <span class="n">update_requests_db</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">]},{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;matched&#39;</span><span class="p">})</span>
-            <span class="n">response_3</span> <span class="o">=</span> <span class="n">update_nearby_volunteers_db</span><span class="p">({</span><span class="s1">&#39;r_id&#39;</span><span class="p">:</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">]},{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;expired&#39;</span><span class="p">})</span>
+            <span class="n">response_2</span> <span class="o">=</span> <span class="n">update_requests_db</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="n">r_id</span><span class="p">},{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;matched&#39;</span><span class="p">})</span>
+            <span class="n">response_3</span> <span class="o">=</span> <span class="n">update_nearby_volunteers_db</span><span class="p">({</span><span class="s1">&#39;r_id&#39;</span><span class="p">:</span><span class="n">r_id</span><span class="p">},{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;expired&#39;</span><span class="p">})</span>
             <span class="c1">#Send to Volunteer</span>
             <span class="n">v_sms_text</span> <span class="o">=</span> <span class="s1">&#39;[COVID SOS] Thank you agreeing to help. Name:&#39;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; Mob:&#39;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span><span class="o">+</span><span class="s1">&#39; Request:&#39;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;request&#39;</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; Address:&#39;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;geoaddress&#39;</span><span class="p">]</span>
             <span class="n">send_sms</span><span class="p">(</span><span class="n">v_sms_text</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">v_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -13534,7 +13535,8 @@ div#notebook {
             <span class="n">send_sms</span><span class="p">(</span><span class="n">v_sms_text</span><span class="p">,</span><span class="nb">int</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">]),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
         <span class="k">elif</span><span class="p">((</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;received&#39;</span><span class="p">)</span><span class="ow">or</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;verified&#39;</span><span class="p">)</span><span class="ow">or</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">==</span><span class="s1">&#39;pending&#39;</span><span class="p">)):</span>
-            <span class="n">response_3</span> <span class="o">=</span> <span class="n">update_nearby_volunteers_db</span><span class="p">({</span><span class="s1">&#39;r_id&#39;</span><span class="p">:</span><span class="n">r_id</span><span class="p">,</span><span class="s1">&#39;v_id&#39;</span><span class="p">:</span><span class="n">v_id</span><span class="p">},{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;expired&#39;</span><span class="p">})</span>            
+            <span class="n">response_3</span> <span class="o">=</span> <span class="n">update_nearby_volunteers_db</span><span class="p">({</span><span class="s1">&#39;r_id&#39;</span><span class="p">:</span><span class="n">r_id</span><span class="p">,</span><span class="s1">&#39;v_id&#39;</span><span class="p">:</span><span class="n">v_id</span><span class="p">},{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="s1">&#39;expired&#39;</span><span class="p">})</span>
+            <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Request rejected&#39;</span><span class="p">,</span><span class="s1">&#39;Response&#39;</span><span class="p">:{}})</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Request already assigned&#39;</span><span class="p">,</span><span class="s1">&#39;Response&#39;</span><span class="p">:{}})</span>
 </pre></div>
@@ -13579,6 +13581,23 @@ div#notebook {
     <span class="n">response</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">update_requests_db</span><span class="p">({</span><span class="s1">&#39;id&#39;</span><span class="p">:</span><span class="n">r_id</span><span class="p">},</span><span class="n">r_dict</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">response</span>
     
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># @app.route(&#39;/volunteer_api&#39;,methods=[&#39;GET&#39;])</span>
+<span class="c1"># @volunteer_login_req</span>
+<span class="c1"># def volunteer_login_check(*args,**kwargs):</span>
+<span class="c1">#     print(kwargs[&#39;volunteer_id&#39;])</span>
+<span class="c1">#     return json.dumps({&#39;status&#39;:True,&#39;string_response&#39;:&#39;Volunteer is logged in&#39;,&#39;Response&#39;:{}})</span>
 </pre></div>
 
     </div>
@@ -13648,52 +13667,19 @@ div#notebook {
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/accept_page&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="c1">#Volunteer Login Required</span>
 <span class="k">def</span> <span class="nf">request_accept_page</span><span class="p">():</span>
     <span class="n">uuid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;uuid&#39;</span><span class="p">)</span>
+    <span class="c1">#Can be removed once authentication is implemented</span>
     <span class="n">v_mob_number</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mob_number&#39;</span><span class="p">)</span>
-    <span class="n">df</span> <span class="o">=</span> <span class="n">accept_request_page</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span><span class="n">v_mob_number</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">accept_request_page</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
     <span class="k">if</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;This page does not exist. Redirecting to homepage&#39;</span><span class="p">})</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;received&#39;</span><span class="p">,</span><span class="s1">&#39;verified&#39;</span><span class="p">,</span><span class="s1">&#39;pending&#39;</span><span class="p">])):</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">([</span><span class="s1">&#39;received&#39;</span><span class="p">,</span><span class="s1">&#39;verified&#39;</span><span class="p">,</span><span class="s1">&#39;pending&#39;</span><span class="p">])):</span>
             <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">),</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Request related data extracted&#39;</span><span class="p">})</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;This request is already completed&#39;</span><span class="p">})</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># @app.route(&#39;/request_otp&#39;,methods=[&#39;POST&#39;])</span>
-<span class="c1"># def request_otp():</span>
-<span class="c1">#     mob_number = request.form.get(&#39;mob_number&#39;)</span>
-</pre></div>
-
-    </div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># @app.route(&#39;verify_otp&#39;,methods=[&#39;POST&#39;]):</span>
-<span class="c1"># def verify_otp():</span>
-<span class="c1">#     mob_number = request.form.get(&#39;mob_number&#39;)</span>
-<span class="c1">#     response = verify_user(mob_number)</span>
-<span class="c1">#     if not response: </span>
-<span class="c1">#         return {&#39;Response&#39;:{},&#39;status&#39;:False,&#39;string_response&#39;:&#39;Failed to find user.&#39;} </span>
-<span class="c1">#     response[&#39;Response&#39;][&#39;auth_token&#39;] = encode_auth_token(user_id).decode()</span>
-<span class="c1">#     return json.dumps(response)</span>
 </pre></div>
 
     </div>
@@ -13803,6 +13789,50 @@ div#notebook {
 <span class="k">def</span> <span class="nf">success_stories</span><span class="p">():</span>
     <span class="n">response</span> <span class="o">=</span> <span class="n">website_success_stories</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">response</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Success stories data extracted&#39;</span><span class="p">})</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/request_otp&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">send_otp_request</span><span class="p">():</span>
+    <span class="n">mob_number</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mob_number&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">verify_volunteer_exists</span><span class="p">(</span><span class="n">mob_number</span><span class="p">)[</span><span class="s1">&#39;status&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;No user found for this mobile number&#39;</span><span class="p">})</span>
+    <span class="n">response</span><span class="p">,</span> <span class="n">success</span> <span class="o">=</span> <span class="n">send_otp</span><span class="p">(</span><span class="n">mob_number</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="n">success</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="n">response</span><span class="p">})</span>
+
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/resend_otp&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">resend_otp_request</span><span class="p">():</span>
+    <span class="n">mob_number</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mob_number&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">verify_volunteer_exists</span><span class="p">(</span><span class="n">mob_number</span><span class="p">)[</span><span class="s1">&#39;status&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;No user found for this mobile number&#39;</span><span class="p">})</span>
+    <span class="n">response</span><span class="p">,</span> <span class="n">success</span> <span class="o">=</span> <span class="n">resend_otp</span><span class="p">(</span><span class="n">mob_number</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="n">success</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="n">response</span><span class="p">})</span>
+
+<span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/verify_otp&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">verify_otp_request</span><span class="p">():</span>
+    <span class="n">mob_number</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mob_number&#39;</span><span class="p">)</span>
+    <span class="n">otp</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;otp&#39;</span><span class="p">)</span>
+    <span class="n">userData</span> <span class="o">=</span> <span class="n">verify_volunteer_exists</span><span class="p">(</span><span class="n">mob_number</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">userData</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;No user found for this mobile number&#39;</span><span class="p">})</span>
+    <span class="n">response</span><span class="p">,</span> <span class="n">success</span> <span class="o">=</span> <span class="n">verify_otp</span><span class="p">(</span><span class="n">otp</span><span class="p">,</span> <span class="n">mob_number</span><span class="p">)</span>
+    <span class="n">responseObj</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+        <span class="n">user_id</span> <span class="o">=</span> <span class="n">userData</span><span class="p">[</span><span class="s1">&#39;volunteer_id&#39;</span><span class="p">]</span>
+        <span class="n">country</span> <span class="o">=</span> <span class="n">userData</span><span class="p">[</span><span class="s1">&#39;country&#39;</span><span class="p">]</span>
+        <span class="n">encodeKey</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">user_id</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">country</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">responseObj</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;auth_token&#39;</span><span class="p">:</span> <span class="n">encode_auth_token</span><span class="p">(</span><span class="n">encodeKey</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">()}</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">responseObj</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="n">success</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="n">response</span><span class="p">})</span>
 </pre></div>
 
     </div>

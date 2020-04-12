@@ -19,6 +19,8 @@ import mailer_fn as mailer
 
 from connections import connections
 from data_fetching import verify_user_exists, verify_volunteer_exists
+
+
 # In[ ]:
 
 
@@ -30,11 +32,9 @@ def login_required(f):
         auth_token = auth_header.split(" ")[1] if auth_header else ''
         if not auth_token:
             return json.dumps({'Response':{},'status':False,'string_response': 'User login required'})
-
         resp, success = decode_auth_token(auth_token)
         if not success:
             return json.dumps({'Response':{},'status':False,'string_response': resp})
-        
         try:
             data = resp.split(' ', 1)
             user_id = data[0]
@@ -44,10 +44,13 @@ def login_required(f):
                 return json.dumps({'Response':{},'status':False,'string_response': 'no valid user found'})
         except Exception:
             return json.dumps({'Response':{},'status':False,'string_response': 'no valid user found'})
-
         kwargs['user_id'] = user_id
         return f(*args, **kwargs)
     return decorated_function
+
+
+
+
 
 
 def volunteer_login_req(f):
@@ -60,7 +63,6 @@ def volunteer_login_req(f):
         resp, success = decode_auth_token(auth_token)
         if not success:
             return json.dumps({'Response':{},'status':False,'string_response': resp})
-
         try:
             data = resp.split(' ', 1)
             v_id = data[0]
@@ -70,7 +72,6 @@ def volunteer_login_req(f):
                 return json.dumps({'Response':{},'status':False,'string_response': 'no volunteer found'})
         except Exception:
             return json.dumps({'Response':{},'status':False,'string_response': 'no volunteer found'})
-
         kwargs['volunteer_id'] = v_id
         return f(*args, **kwargs)
     return decorated_function
