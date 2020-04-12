@@ -14,11 +14,11 @@ import uuid
     
 from connections import connections
 
-from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, verify_volunteer_exists, update_nearby_volunteers_db, add_request_verification_db
+from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db, add_request_verification_db
 
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,website_success_stories
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,website_success_stories, verify_volunteer_exists
 from partner_assignment import generate_uuid,message_all_volunteers
-from auth import encode_auth_token, decode_auth_token, login_required
+from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
 
 
 from settings import server_type, SECRET_KEY,neighbourhood_radius,moderator_list,search_radius
@@ -183,10 +183,10 @@ def login_request():
     name = request.form.get('username')
     password = request.form.get('password')
     response = verify_user(name,password)
-    user_id = get_user_id(name, password) 
-    if not user_id: 
+    user_id, access_type = get_user_id(name, password)
+    if not user_id:
         return {'Response':{},'status':False,'string_response':'Failed to find user.'} 
-    response['Response']['auth_token'] = encode_auth_token(user_id).decode()
+    response['Response']['auth_token'] = encode_auth_token(f'{user_id} {access_type}').decode()
     return json.dumps(response)
 
 
@@ -219,10 +219,10 @@ def new_user(*args,**kwargs):
     df = pd.DataFrame(req_dict)
     if(creator_access_type=='superuser'):
         response = add_user(df)
-        user_id = get_user_id(mob_number, password) 
+        user_id, access_type = get_user_id(mob_number, password) 
         if not user_id: 
             return {'Response':{},'status':False,'string_response':'Failed to create user. Please try again later'} 
-        response['auth_token'] = encode_auth_token(user_id).decode() 
+        response['auth_token'] = encode_auth_token(f'{user_id} {access_type}').decode() 
     else:
         response = {'Response':{},'status':False,'string_response':'User does not have permission to create new users'}
     return json.dumps(response)
@@ -392,6 +392,13 @@ def update_request_info(*args,**kwargs):
 
 
 # In[ ]:
+
+
+# @app.route('/volunteer_api',methods=['GET'])
+# @volunteer_login_req
+# def volunteer_login_check(*args,**kwargs):
+#     print(kwargs['volunteer_id'])
+#     return json.dumps({'status':True,'string_response':'Volunteer is logged in','Response':{}})
 
 
 @app.route('/update_volunteer_info',methods=['POST'])
@@ -567,11 +574,13 @@ def verify_otp_request():
     userData = verify_volunteer_exists(mob_number)
     if not userData['status']:
         return json.dumps({'Response':{},'status':False,'string_response':'No user found for this mobile number'})
-    user_id = userData['volunteer_id']
     response, success = verify_otp(otp, mob_number)
     responseObj = {}
     if success:
-        responseObj = {'auth_token': encode_auth_token(user_id).decode()}
+        user_id = userData['volunteer_id']
+        country = userData['country']
+        encodeKey = f'{user_id} {country}'
+        responseObj = {'auth_token': encode_auth_token(encodeKey).decode()}
     return json.dumps({'Response':responseObj,'status':success,'string_response':response})
  
  

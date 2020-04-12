@@ -123,15 +123,41 @@ def website_success_stories():
 
 def get_user_id(username, password):
     server_con = connections('prod_db_read')
-    query = f"""Select id from users where mob_number='{username}' or email_id='{username}' and password='{password}' order by id desc limit 1"""
+    query = f"""Select id, access_type from users where mob_number='{username}' or email_id='{username}' and password='{password}' order by id desc limit 1"""
     try:
         data = pd.read_sql(query, server_con)
-        user_id = int(data.iloc[0]['id'])
-        return user_id
+        user_id = int(data.loc[0,'id'])
+        access_type = int(data.loc[0,'access_type'])
+        return user_id, access_type
     except:
         mailer.send_exception_mail()
-        return None
+        return None, None
     
+
+def verify_user_exists(user_id, access_type):
+    server_con = connections('prod_db_read')
+    query = f"""Select id from users where id='{user_id}' and access_type='{access_type}' order by id desc limit 1"""
+    try:
+        data = pd.read_sql(query, server_con)
+        return (True if data.shape[0] > 0 else False)
+    except:
+        mailer.send_exception_mail()
+        return False
+
+
+def verify_volunteer_exists(mob_number, v_id=None, country=None):
+    server_con = connections('prod_db_read')
+    query = f"""Select id, country from volunteers where mob_number='{mob_number}'"""
+    if v_id and country:
+        query = f"""Select id, country from volunteers where id='{v_id}' and country='{country}'"""
+    try:
+        data = pd.read_sql(query, server_con)
+        if data.shape[0] > 0:
+            return {'status': True, 'volunteer_id': data.loc[0, 'id'], 'country': data.loc[0, 'country']}
+        return {'status': False, 'volunteer_id': None, 'country': None}
+    except:
+        mailer.send_exception_mail()
+        return {'status': False, 'volunteer_id': None, 'country': None}
 
 
 # In[ ]:
