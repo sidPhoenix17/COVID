@@ -47,7 +47,7 @@ def encode_auth_token(user_id):
         payload = {
             'exp': dt.datetime.utcnow() + dt.timedelta(days=1),
             'iat': dt.datetime.utcnow(),
-            'sub': user_id
+            'sub': str(user_id)
         }
         return jwt.encode(
             payload,

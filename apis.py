@@ -14,7 +14,7 @@ import uuid
     
 from connections import connections
 
-from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms,update_nearby_volunteers_db, add_request_verification_db
+from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, verify_volunteer_exists, update_nearby_volunteers_db, add_request_verification_db
 
 from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,website_success_stories
 from partner_assignment import generate_uuid,message_all_volunteers
@@ -453,27 +453,6 @@ def request_accept_page():
 # In[ ]:
 
 
-# @app.route('/request_otp',methods=['POST'])
-# def request_otp():
-#     mob_number = request.form.get('mob_number')
-
-
-# In[ ]:
-
-
-# @app.route('verify_otp',methods=['POST']):
-# def verify_otp():
-#     mob_number = request.form.get('mob_number')
-#     response = verify_user(mob_number)
-#     if not response: 
-#         return {'Response':{},'status':False,'string_response':'Failed to find user.'} 
-#     response['Response']['auth_token'] = encode_auth_token(user_id).decode()
-#     return json.dumps(response)
-
-
-# In[ ]:
-
-
 @app.route('/verify_request_page',methods=['POST'])
 @login_required
 def verify_request_page(*args,**kwargs):
@@ -552,6 +531,50 @@ def success_stories():
     return json.dumps({'Response':response,'status':True,'string_response':'Success stories data extracted'})
 
 
+# In[ ]:
+
+
+@app.route('/request_otp', methods=['POST'])
+def send_otp_request():
+    mob_number = request.form.get('mob_number')
+    if not verify_volunteer_exists(mob_number)['status']:
+        return json.dumps({'Response':{},'status':False,'string_response':'No user found for this mobile number'})
+
+    response, success = send_otp(mob_number)
+    return json.dumps({'Response':{},'status':success,'string_response':response})
+
+
+# In[ ]:
+
+
+@app.route('/resend_otp',methods=['POST'])
+def resend_otp_request():
+    mob_number = request.form.get('mob_number')
+    if not verify_volunteer_exists(mob_number)['status']:
+        return json.dumps({'Response':{},'status':False,'string_response':'No user found for this mobile number'})
+
+    response, success = resend_otp(mob_number)
+    return json.dumps({'Response':{},'status':success,'string_response':response})
+
+
+# In[ ]:
+
+
+@app.route('/verify_otp',methods=['POST'])
+def verify_otp_request():
+    mob_number = request.form.get('mob_number')
+    otp = request.form.get('otp')
+    userData = verify_volunteer_exists(mob_number)
+    if not userData['status']:
+        return json.dumps({'Response':{},'status':False,'string_response':'No user found for this mobile number'})
+    user_id = userData['volunteer_id']
+    response, success = verify_otp(otp, mob_number)
+    responseObj = {}
+    if success:
+        responseObj = {'auth_token': encode_auth_token(user_id).decode()}
+    return json.dumps({'Response':responseObj,'status':success,'string_response':response})
+ 
+ 
 # In[ ]:
 
 

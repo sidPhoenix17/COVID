@@ -11,7 +11,7 @@ from connections import connections,keys,write_query
 import requests
 from sqlalchemy.sql import text
 import datetime as dt
-from settings import sms_key, sms_sid, sms_url, EARTH_RADIUS,server_type
+from settings import sms_key, sms_sid, sms_url, otp_url, EARTH_RADIUS,server_type
 import mailer_fn as mailer
 import json
 import requests
@@ -293,29 +293,61 @@ def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
 # In[ ]:
 
 
+def verify_volunteer_exists(mob_number):
+    server_con = connections('prod_db_read')
+    query = f"""Select id from volunteers where mob_number='{mob_number}'"""
+    try:
+        data = pd.read_sql(query, server_con)
+        if data.shape[0] > 0:
+            print(data.loc[0, 'id'])
+            return {'status': True, 'volunteer_id': data.loc[0, 'id']}
+        return {'status': False, 'volunteer_id': None}
+    except:
+        mailer.send_exception_mail()
+        return {'status': False, 'volunteer_id': None}
 
-# def send_otp(sms_to=9582148040):
-#     sid = sms_sid
-#     authkey = sms_key
-#     url = otp_url
-#     invisible=1
+
+def send_otp(otp_to):
+    # if server_type=='local':
+    #     return 'server_type is local', False
+    try:
+        r = requests.post(otp_url, params={"authkey": sms_key, "mobile": f'91{otp_to}'})
+        r = r.json()
+    except:
+        mailer.send_exception_mail()
+        return 'otp api failure', False
     
-#     data = {"sender": "SOCKET","route": route,"country": "91","sms": [{"message": sms_text,"to": [sms_to]}]}
-#     headers = {'Content-type': 'application/json', 'authkey': key}
-#     if ((send)&(server_type!='local')):
-#         try:
-#             r = requests.post(url, data=json.dumps(data), headers=headers)
-#             sms_dict = {'sms_text':[sms_text],'sms_type':[sms_type],'sms_to':[sms_to],'sms_status_type':[r.status_code],'sms_json_response':[str(r.json())]}
-#             new_sms_df = pd.DataFrame(sms_dict)
-#             engine = connections('prod_db_write')
-#             new_sms_df.to_sql(name = 'sms_log', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
-#             return None
-#         except:
-#             print('SMS API error')
-#             mailer.send_exception_mail()
-#             return None
+    if r['type'] == 'success':
+        return r['request_id'], True
+    return r['message'], False
 
 
+def resend_otp(otp_to):
+    url = otp_url + '/retry'
+    # if server_type=='local':
+    #     return 'server_type is local', False
+    try:
+        r = requests.post(url, params={"authkey": sms_key, "mobile": f'91{otp_to}'})
+        r = r.json()
+    except:
+        mailer.send_exception_mail()
+        return 'resend otp api failure', False
+    return r['message'], r['type'] == 'success'
+
+
+def verify_otp(otp, otp_from):
+    url = otp_url + '/verify'
+    # if server_type=='local':
+    #     return 'server_type is local', False
+    try:
+        r = requests.post(url, params={"authkey": sms_key, "mobile": f'91{otp_from}', "otp": otp})
+        r = r.json()
+    except:
+        mailer.send_exception_mail()
+        return 'verify otp api failure', False
+    return r['message'], r['type'] == 'success'
+
+    
 # In[ ]:
 
 
