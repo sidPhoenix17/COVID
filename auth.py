@@ -18,8 +18,7 @@ import pandas as pd
 import mailer_fn as mailer
 
 from connections import connections
-from data_fetching import verify_user_exists
-from database_entry import verify_volunteer_exists
+from data_fetching import verify_user_exists, verify_volunteer_exists
 # In[ ]:
 
 
@@ -66,7 +65,7 @@ def volunteer_login_req(f):
             data = resp.split(' ', 1)
             v_id = data[0]
             country = data[1]
-            volunteer_exists = verify_volunteer_exists(v_id, country)
+            volunteer_exists = verify_volunteer_exists(None, v_id, country)
             if not volunteer_exists['status']:
                 return json.dumps({'Response':{},'status':False,'string_response': 'no volunteer found'})
         except Exception:

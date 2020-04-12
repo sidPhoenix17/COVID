@@ -14,11 +14,11 @@ import uuid
     
 from connections import connections
 
-from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, verify_volunteer_exists, update_nearby_volunteers_db, add_request_verification_db
+from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db, add_request_verification_db
 
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,website_success_stories
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,website_success_stories, verify_volunteer_exists
 from partner_assignment import generate_uuid,message_all_volunteers
-from auth import encode_auth_token, decode_auth_token, login_required
+from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
 
 
 from settings import server_type, SECRET_KEY,neighbourhood_radius,moderator_list,search_radius
@@ -392,6 +392,13 @@ def update_request_info(*args,**kwargs):
 
 
 # In[ ]:
+
+
+# @app.route('/volunteer_api',methods=['GET'])
+# @volunteer_login_req
+# def volunteer_login_check(*args,**kwargs):
+#     print(kwargs['volunteer_id'])
+#     return json.dumps({'status':True,'string_response':'Volunteer is logged in','Response':{}})
 
 
 @app.route('/update_volunteer_info',methods=['POST'])
