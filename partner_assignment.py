@@ -116,7 +116,7 @@ def message_all_volunteers(uuid,radius,search_radius):
         counter_sid = counter_sid+1
         if((counter_sid>10) or (v_list.loc[i,'dist']>search_radius)):
             break
-        str_sid = key_word+" " +str_sid + v_list.loc[i,'name']+" m: wa.me/91"+str(v_list.loc[i,'mob_number'])+" "
+        str_sid = str_sid + v_list.loc[i,'name']+" m: wa.me/91"+str(v_list.loc[i,'mob_number'])+" "
     send_sms(str_sid,sms_to=int(8618948661),sms_type='transactional',send=True)
     print('Sending sms:',str_sid,' to ',str(8618948661))
     return None

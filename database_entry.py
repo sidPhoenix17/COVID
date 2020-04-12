@@ -293,6 +293,7 @@ def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
 # In[ ]:
 
 
+
 def send_otp(otp_to):
     # if server_type=='local':
     #     return 'server_type is local', False
@@ -302,10 +303,13 @@ def send_otp(otp_to):
     except:
         mailer.send_exception_mail()
         return 'otp api failure', False
-    
     if r['type'] == 'success':
         return r['request_id'], True
     return r['message'], False
+
+
+# In[ ]:
+
 
 
 def resend_otp(otp_to):
@@ -321,6 +325,10 @@ def resend_otp(otp_to):
     return r['message'], r['type'] == 'success'
 
 
+# In[ ]:
+
+
+
 def verify_otp(otp, otp_from):
     url = otp_url + '/verify'
     # if server_type=='local':
@@ -333,7 +341,13 @@ def verify_otp(otp, otp_from):
         return 'verify otp api failure', False
     return r['message'], r['type'] == 'success'
 
-    
+
+# In[ ]:
+
+
+
+
+
 # In[ ]:
 
 

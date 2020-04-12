@@ -336,13 +336,14 @@ def auto_assign_volunteer():
     if(v_df.shape[0]==0):
         return json.dumps({'status':False,'string_response':'Volunteer does not exist','Response':{}})
     else:
+        r_id = r_df.loc[0,'r_id']
         if(((r_df.loc[0,'status']=='received')or(r_df.loc[0,'status']=='verified')or(r_df.loc[0,'status']=='pending'))&(task_action=='accepted')):
             current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
-            req_dict = {'volunteer_id':[v_id],'request_id':[r_df.loc[0,'r_id']],'matching_by':[matching_by],'timestamp':[current_time]}
+            req_dict = {'volunteer_id':[v_id],'request_id':[r_id],'matching_by':[matching_by],'timestamp':[current_time]}
             df = pd.DataFrame(req_dict)
             response = request_matching(df)
-            response_2 = update_requests_db({'id':r_df.loc[0,'r_id']},{'status':'matched'})
-            response_3 = update_nearby_volunteers_db({'r_id':r_df.loc[0,'r_id']},{'status':'expired'})
+            response_2 = update_requests_db({'id':r_id},{'status':'matched'})
+            response_3 = update_nearby_volunteers_db({'r_id':r_id},{'status':'expired'})
             #Send to Volunteer
             v_sms_text = '[COVID SOS] Thank you agreeing to help. Name:'+r_df.loc[0,'name']+' Mob:'+str(r_df.loc[0,'mob_number'])+' Request:'+r_df.loc[0,'request']+' Address:'+r_df.loc[0,'geoaddress']
             send_sms(v_sms_text,int(v_df.loc[0,'mob_number']),sms_type='transactional',send=True)
@@ -351,7 +352,8 @@ def auto_assign_volunteer():
             send_sms(v_sms_text,int(r_df.loc[0,'mob_number']),sms_type='transactional',send=True)
             return json.dumps(response)
         elif((r_df.loc[0,'status']=='received')or(r_df.loc[0,'status']=='verified')or(r_df.loc[0,'status']=='pending')):
-            response_3 = update_nearby_volunteers_db({'r_id':r_id,'v_id':v_id},{'status':'expired'})            
+            response_3 = update_nearby_volunteers_db({'r_id':r_id,'v_id':v_id},{'status':'expired'})
+            return json.dumps({'status':True,'string_response':'Request rejected','Response':{}})
         else:
             return json.dumps({'status':False,'string_response':'Request already assigned','Response':{}})
 
@@ -401,6 +403,9 @@ def update_request_info(*args,**kwargs):
 #     return json.dumps({'status':True,'string_response':'Volunteer is logged in','Response':{}})
 
 
+# In[ ]:
+
+
 @app.route('/update_volunteer_info',methods=['POST'])
 @login_required
 def update_volunteer_info(*args,**kwargs):
@@ -444,14 +449,16 @@ def logout_request(*args,**kwargs):
 
 
 @app.route('/accept_page',methods=['POST'])
+#Volunteer Login Required
 def request_accept_page():
     uuid = request.form.get('uuid')
+    #Can be removed once authentication is implemented
     v_mob_number = request.form.get('mob_number')
-    df = accept_request_page(uuid,v_mob_number)
+    df = accept_request_page(uuid)
     if(df.shape[0]==0):
         return json.dumps({'Response':{},'status':False,'string_response':'This page does not exist. Redirecting to homepage'})
     else:
-        if(r_df.loc[0,'status'].isin(['received','verified','pending'])):
+        if(df.loc[0,'status'].isin(['received','verified','pending'])):
             return json.dumps({'Response':df.to_dict('records'),'status':True,'string_response':'Request related data extracted'})
         else:
             return json.dumps({'Response':{},'status':False,'string_response':'This request is already completed'})
@@ -541,17 +548,14 @@ def success_stories():
 # In[ ]:
 
 
+
 @app.route('/request_otp', methods=['POST'])
 def send_otp_request():
     mob_number = request.form.get('mob_number')
     if not verify_volunteer_exists(mob_number)['status']:
         return json.dumps({'Response':{},'status':False,'string_response':'No user found for this mobile number'})
-
     response, success = send_otp(mob_number)
     return json.dumps({'Response':{},'status':success,'string_response':response})
-
-
-# In[ ]:
 
 
 @app.route('/resend_otp',methods=['POST'])
@@ -559,13 +563,8 @@ def resend_otp_request():
     mob_number = request.form.get('mob_number')
     if not verify_volunteer_exists(mob_number)['status']:
         return json.dumps({'Response':{},'status':False,'string_response':'No user found for this mobile number'})
-
     response, success = resend_otp(mob_number)
     return json.dumps({'Response':{},'status':success,'string_response':response})
-
-
-# In[ ]:
-
 
 @app.route('/verify_otp',methods=['POST'])
 def verify_otp_request():
@@ -582,8 +581,8 @@ def verify_otp_request():
         encodeKey = f'{user_id} {country}'
         responseObj = {'auth_token': encode_auth_token(encodeKey).decode()}
     return json.dumps({'Response':responseObj,'status':success,'string_response':response})
- 
- 
+
+
 # In[ ]:
 
 
