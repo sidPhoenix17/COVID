@@ -18,8 +18,8 @@ import pandas as pd
 import mailer_fn as mailer
 
 from connections import connections
-
-
+from data_fetching import verify_user_exists
+from database_entry import verify_volunteer_exists
 # In[ ]:
 
 
@@ -30,11 +30,49 @@ def login_required(f):
         auth_header = request.headers.get('Authorization')
         auth_token = auth_header.split(" ")[1] if auth_header else ''
         if not auth_token:
-            return json.dumps({'Response':{},'status':False,'string_response': 'Please login to view data'})
+            return json.dumps({'Response':{},'status':False,'string_response': 'User login required'})
+
         resp, success = decode_auth_token(auth_token)
         if not success:
             return json.dumps({'Response':{},'status':False,'string_response': resp})
-        kwargs['user_id'] = resp
+        
+        try:
+            data = resp.split(' ', 1)
+            user_id = data[0]
+            access_type = data[1]
+            user_exists = verify_user_exists(user_id, access_type)
+            if not user_exists:
+                return json.dumps({'Response':{},'status':False,'string_response': 'no valid user found'})
+        except Exception:
+            return json.dumps({'Response':{},'status':False,'string_response': 'no valid user found'})
+
+        kwargs['user_id'] = user_id
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def volunteer_login_req(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        auth_token = auth_header.split(" ")[1] if auth_header else ''
+        if not auth_token:
+            return json.dumps({'Response':{},'status':False,'string_response': 'Volunteer login required'})
+        resp, success = decode_auth_token(auth_token)
+        if not success:
+            return json.dumps({'Response':{},'status':False,'string_response': resp})
+
+        try:
+            data = resp.split(' ', 1)
+            v_id = data[0]
+            country = data[1]
+            volunteer_exists = verify_volunteer_exists(v_id, country)
+            if not volunteer_exists['status']:
+                return json.dumps({'Response':{},'status':False,'string_response': 'no volunteer found'})
+        except Exception:
+            return json.dumps({'Response':{},'status':False,'string_response': 'no volunteer found'})
+
+        kwargs['volunteer_id'] = v_id
         return f(*args, **kwargs)
     return decorated_function
 
@@ -42,12 +80,12 @@ def login_required(f):
 # In[ ]:
 
 
-def encode_auth_token(user_id):
+def encode_auth_token(key):
     try:
         payload = {
             'exp': dt.datetime.utcnow() + dt.timedelta(days=1),
             'iat': dt.datetime.utcnow(),
-            'sub': str(user_id)
+            'sub': str(key)
         }
         return jwt.encode(
             payload,

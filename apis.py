@@ -183,10 +183,10 @@ def login_request():
     name = request.form.get('username')
     password = request.form.get('password')
     response = verify_user(name,password)
-    user_id = get_user_id(name, password) 
-    if not user_id: 
+    user_id, access_type = get_user_id(name, password)
+    if not user_id:
         return {'Response':{},'status':False,'string_response':'Failed to find user.'} 
-    response['Response']['auth_token'] = encode_auth_token(user_id).decode()
+    response['Response']['auth_token'] = encode_auth_token(f'{user_id} {access_type}').decode()
     return json.dumps(response)
 
 
@@ -219,10 +219,10 @@ def new_user(*args,**kwargs):
     df = pd.DataFrame(req_dict)
     if(creator_access_type=='superuser'):
         response = add_user(df)
-        user_id = get_user_id(mob_number, password) 
+        user_id, access_type = get_user_id(mob_number, password) 
         if not user_id: 
             return {'Response':{},'status':False,'string_response':'Failed to create user. Please try again later'} 
-        response['auth_token'] = encode_auth_token(user_id).decode() 
+        response['auth_token'] = encode_auth_token(f'{user_id} {access_type}').decode() 
     else:
         response = {'Response':{},'status':False,'string_response':'User does not have permission to create new users'}
     return json.dumps(response)
@@ -567,11 +567,13 @@ def verify_otp_request():
     userData = verify_volunteer_exists(mob_number)
     if not userData['status']:
         return json.dumps({'Response':{},'status':False,'string_response':'No user found for this mobile number'})
-    user_id = userData['volunteer_id']
     response, success = verify_otp(otp, mob_number)
     responseObj = {}
     if success:
-        responseObj = {'auth_token': encode_auth_token(user_id).decode()}
+        user_id = userData['volunteer_id']
+        country = userData['country']
+        encodeKey = f'{user_id} {country}'
+        responseObj = {'auth_token': encode_auth_token(encodeKey).decode()}
     return json.dumps({'Response':responseObj,'status':success,'string_response':response})
  
  
