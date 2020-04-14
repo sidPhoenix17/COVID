@@ -298,6 +298,7 @@ def assign_volunteer(*args,**kwargs):
     return json.dumps(response)
 
 
+
 @app.route('/assign_request',methods=['POST'])
 @volunteer_login_req
 def assign_request(*args,**kwargs):
@@ -308,6 +309,7 @@ def assign_request(*args,**kwargs):
     return json.dumps(response)
 
 
+
 def assign_request_to_volunteer(volunteer_id, request_id, matched_by):
     r_df = request_data_by_id(request_id)
     v_df = volunteer_data_by_id(volunteer_id)
@@ -316,7 +318,7 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by):
     if(v_df.shape[0]==0):
         return {'status':False,'string_response':'Volunteer does not exist','Response':{}}
     else:
-        if r_df.loc[0,'status'] in ['received', 'verified', 'pending']:
+        if (r_df.loc[0,'status'] in ['received', 'verified', 'pending']):
             current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
             req_dict = {'volunteer_id':[volunteer_id],'request_id':[r_df.loc[0,'r_id']],'matching_by':[matched_by],'timestamp':[current_time]}
             df = pd.DataFrame(req_dict)
@@ -611,6 +613,12 @@ if(server_type=='prod'):
 if(server_type=='staging'):
     if __name__ =='__main__':
         app.run()
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
