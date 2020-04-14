@@ -156,10 +156,7 @@ def verify_volunteer_exists(mob_number, v_id=None, country=None):
     try:
         data = pd.read_sql(query, server_con)
         if data.shape[0] > 0:
-            return {'status': True,
-                    'volunteer_id': data.loc[0, 'id'],
-                    'name': data.loc[0, 'name'],
-                    'country': data.loc[0, 'country']}
+            return {'status': True, 'volunteer_id': data.loc[0, 'id'],'name':data.loc[0,'name'], 'country': data.loc[0, 'country']}
         return {'status': False, 'volunteer_id': None}
     except:
         mailer.send_exception_mail()
