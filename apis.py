@@ -591,7 +591,7 @@ def verify_otp_request():
     response, success = verify_otp(otp, mob_number)
     responseObj = {}
     if success:
-        user_id = userData['volunteer_id']
+        user_id = int(str(userData['volunteer_id']))
         country = userData['country']
         name = userData['name']
         encodeKey = f'{user_id} {country}'
