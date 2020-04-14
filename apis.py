@@ -467,7 +467,7 @@ def logout_request(*args,**kwargs):
 
 @app.route('/accept_page',methods=['GET'])
 def request_accept_page():
-    uuid = request.form.get('uuid')
+    uuid = request.args.get('uuid')
     df = accept_request_page(uuid)
     if(df.shape[0]==0):
         return json.dumps({'Response':{},'status':False,'string_response':'This page does not exist. Redirecting to homepage'})
