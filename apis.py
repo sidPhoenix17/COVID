@@ -591,8 +591,9 @@ def verify_otp_request():
     if success:
         user_id = userData['volunteer_id']
         country = userData['country']
+        name = userData['name']
         encodeKey = f'{user_id} {country}'
-        responseObj = {'auth_token': encode_auth_token(encodeKey).decode()}
+        responseObj = {'auth_token': encode_auth_token(encodeKey).decode(), 'name': name, 'volunteer_id': user_id}
     return json.dumps({'Response':responseObj,'status':success,'string_response':response})
 
 

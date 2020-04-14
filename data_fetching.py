@@ -150,17 +150,20 @@ def verify_user_exists(user_id, access_type):
 
 def verify_volunteer_exists(mob_number, v_id=None, country=None):
     server_con = connections('prod_db_read')
-    query = f"""Select id, country from volunteers where mob_number='{mob_number}'"""
+    query = f"""Select id, name, country from volunteers where mob_number='{mob_number}'"""
     if v_id and country:
-        query = f"""Select id, country from volunteers where id='{v_id}' and country='{country}'"""
+        query = f"""Select id, name, country from volunteers where id='{v_id}' and country='{country}'"""
     try:
         data = pd.read_sql(query, server_con)
         if data.shape[0] > 0:
-            return {'status': True, 'volunteer_id': data.loc[0, 'id'], 'country': data.loc[0, 'country']}
-        return {'status': False, 'volunteer_id': None, 'country': None}
+            return {'status': True,
+                    'volunteer_id': data.loc[0, 'id'],
+                    'name': data.loc[0, 'name'],
+                    'country': data.loc[0, 'country']}
+        return {'status': False, 'volunteer_id': None}
     except:
         mailer.send_exception_mail()
-        return {'status': False, 'volunteer_id': None, 'country': None}
+        return {'status': False, 'volunteer_id': None}
 
 
 # In[ ]:
