@@ -465,17 +465,15 @@ def logout_request(*args,**kwargs):
 # In[ ]:
 
 
-@app.route('/accept_page',methods=['POST'])
-#Volunteer Login Required
+@app.route('/accept_page',methods=['GET'])
+@volunteer_login_req
 def request_accept_page():
     uuid = request.form.get('uuid')
-    #Can be removed once authentication is implemented
-    v_mob_number = request.form.get('mob_number')
     df = accept_request_page(uuid)
     if(df.shape[0]==0):
         return json.dumps({'Response':{},'status':False,'string_response':'This page does not exist. Redirecting to homepage'})
     else:
-        if((df.loc[0,'status']=='received')or(df.loc[0,'status']=='verified')or(df.loc[0,'status']=='pending')):
+        if df.loc[0,'status'] in ['received', 'verified', 'pending']:
             return json.dumps({'Response':df.to_dict('records'),'status':True,'string_response':'Request related data extracted'})
         else:
             return json.dumps({'Response':{},'status':False,'string_response':'This request is already completed'})
@@ -595,8 +593,9 @@ def verify_otp_request():
     if success:
         user_id = userData['volunteer_id']
         country = userData['country']
+        name = userData['name']
         encodeKey = f'{user_id} {country}'
-        responseObj = {'auth_token': encode_auth_token(encodeKey).decode()}
+        responseObj = {'auth_token': encode_auth_token(encodeKey).decode(), 'name': name, 'volunteer_id': user_id}
     return json.dumps({'Response':responseObj,'status':success,'string_response':response})
 
 
