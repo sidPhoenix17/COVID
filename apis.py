@@ -466,7 +466,6 @@ def logout_request(*args,**kwargs):
 
 
 @app.route('/accept_page',methods=['GET'])
-@volunteer_login_req
 def request_accept_page():
     uuid = request.form.get('uuid')
     df = accept_request_page(uuid)
