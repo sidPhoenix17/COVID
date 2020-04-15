@@ -304,7 +304,7 @@ def assign_volunteer(*args,**kwargs):
 def assign_request(*args,**kwargs):
     volunteer_id = kwargs.get('volunteer_id')
     request_id = request.form.get('request_id')
-    matched_by = request.form.get('matched_by')
+    matched_by = request.form.get('matched_by','thebangaloreguy')
     response = assign_request_to_volunteer(volunteer_id, request_id, matched_by)
     return json.dumps(response)
 
