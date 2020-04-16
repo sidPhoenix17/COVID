@@ -13088,6 +13088,8 @@ div#notebook {
 <span class="kn">from</span> <span class="nn">database_entry</span> <span class="kn">import</span> <span class="n">send_sms</span>
 <span class="kn">from</span> <span class="nn">data_fetching</span> <span class="kn">import</span> <span class="n">request_data_by_uuid</span>
 <span class="kn">import</span> <span class="nn">mailer_fn</span> <span class="k">as</span> <span class="nn">mailer</span>
+<span class="kn">import</span> <span class="nn">urllib.parse</span> <span class="k">as</span> <span class="nn">p</span>
+<span class="kn">import</span> <span class="nn">requests</span>
 </pre></div>
 
     </div>
@@ -13132,6 +13134,26 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">url_shortener_fn</span><span class="p">(</span><span class="n">input_url</span><span class="p">):</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;http://tinyurl.com/api-create.php&#39;</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;url&#39;</span><span class="p">:</span><span class="n">input_url</span><span class="p">}</span>
+    <span class="n">request</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span><span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">text</span><span class="o">==</span><span class="s1">&#39;Error&#39;</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">input_url</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">text</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#Send message to all volunteers within 1km - to accept request</span>
 <span class="c1">#Send message to all volunteers within 10kms - to help looking for volunteer</span>
 <span class="c1">#Send message to all moderators about the both</span>
@@ -13151,16 +13173,18 @@ div#notebook {
     <span class="n">count</span><span class="o">=</span><span class="mi">0</span>
     <span class="k">if</span><span class="p">(</span><span class="n">server_type</span><span class="o">==</span><span class="s1">&#39;prod&#39;</span><span class="p">):</span>
         <span class="n">key_word</span> <span class="o">=</span> <span class="s1">&#39;COVIDSOS&#39;</span>
+        <span class="n">url_start</span> <span class="o">=</span> <span class="s2">&quot;https://covidsos.org/&quot;</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">key_word</span> <span class="o">=</span> <span class="s1">&#39;TEST&#39;</span>
-
+        <span class="n">url_start</span> <span class="o">=</span> <span class="s2">&quot;https://stg.covidsos.org/&quot;</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">v_list</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
         <span class="k">if</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;dist&#39;</span><span class="p">]</span><span class="o">&lt;</span><span class="n">radius</span><span class="p">):</span>
-            <span class="n">link</span> <span class="o">=</span> <span class="s2">&quot;https://wa.me/918618948661?text=Hi&quot;</span>
-<span class="c1">#             link = &quot;covidsos.org/accept/&quot;+uuid+&quot;/&quot;+v_list.loc[i,&#39;mob_number&#39;]</span>
-            <span class="n">sms_text</span> <span class="o">=</span> <span class="s2">&quot;[&quot;</span><span class="o">+</span><span class="n">key_word</span><span class="o">+</span><span class="s2">&quot;]. Dear &quot;</span><span class="o">+</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">+</span> <span class="s2">&quot;, HELP NEEDED in your area. Click &quot;</span><span class="o">+</span><span class="n">link</span><span class="o">+</span><span class="s2">&quot; to help or refer. Request #&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">])</span>
+            <span class="n">orig_link</span> <span class="o">=</span> <span class="n">url_start</span><span class="o">+</span><span class="s2">&quot;accept/&quot;</span><span class="o">+</span><span class="n">uuid</span>
+            <span class="n">link</span> <span class="o">=</span> <span class="n">url_shortener_fn</span><span class="p">(</span><span class="n">orig_link</span><span class="p">)</span>
+            <span class="n">sms_text</span> <span class="o">=</span> <span class="s2">&quot;[&quot;</span><span class="o">+</span><span class="n">key_word</span><span class="o">+</span><span class="s2">&quot;]. Dear &quot;</span><span class="o">+</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">+</span> <span class="s2">&quot;, HELP NEEDED in your area. Click &quot;</span><span class="o">+</span><span class="n">link</span><span class="o">+</span><span class="s2">&quot; to help.&quot;</span> 
             <span class="n">sms_to</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span>
             <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,[</span><span class="s1">&#39;v_id&#39;</span><span class="p">]])</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
             <span class="k">if</span><span class="p">((</span><span class="n">server_type</span><span class="o">==</span><span class="s1">&#39;prod&#39;</span><span class="p">)):</span>
                 <span class="n">send_sms</span><span class="p">(</span><span class="n">sms_text</span><span class="p">,</span><span class="n">sms_to</span><span class="p">,</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;SMS sent&#39;</span><span class="p">)</span>
@@ -13170,8 +13194,10 @@ div#notebook {
             <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span><span class="mi">1</span>
             <span class="k">if</span><span class="p">(</span><span class="n">count</span><span class="o">&gt;</span><span class="mi">20</span><span class="p">):</span>
                 <span class="k">break</span>
-            <span class="n">link</span> <span class="o">=</span> <span class="s2">&quot;https://wa.me/918618948661?text=Hi&quot;</span>
-            <span class="n">sms_text</span> <span class="o">=</span> <span class="s2">&quot;[&quot;</span><span class="o">+</span><span class="n">key_word</span><span class="o">+</span><span class="s2">&quot;] HELP NEEDED in &quot;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;geoaddress&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">40</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;.. Click &quot;</span><span class="o">+</span><span class="n">link</span><span class="o">+</span> <span class="s2">&quot; to help or refer someone.&quot;</span><span class="o">+</span><span class="s2">&quot;Request #&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">])</span>
+            <span class="n">orig_link</span> <span class="o">=</span> <span class="n">url_start</span><span class="o">+</span><span class="s2">&quot;accept/&quot;</span><span class="o">+</span><span class="n">uuid</span>
+            <span class="n">link</span> <span class="o">=</span> <span class="n">url_shortener_fn</span><span class="p">(</span><span class="n">orig_link</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+            <span class="n">sms_text</span> <span class="o">=</span> <span class="s2">&quot;[&quot;</span><span class="o">+</span><span class="n">key_word</span><span class="o">+</span><span class="s2">&quot;] HELP NEEDED in &quot;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;geoaddress&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">40</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;.. Click &quot;</span><span class="o">+</span><span class="n">link</span><span class="o">+</span> <span class="s2">&quot; to help or refer someone.&quot;</span>
             <span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span>
             <span class="n">df2</span> <span class="o">=</span> <span class="n">df2</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,[</span><span class="s1">&#39;v_id&#39;</span><span class="p">]])</span>
             <span class="k">if</span><span class="p">((</span><span class="n">server_type</span><span class="o">==</span><span class="s1">&#39;prod&#39;</span><span class="p">)):</span>
@@ -13189,24 +13215,25 @@ div#notebook {
         <span class="n">df</span><span class="o">.</span><span class="n">to_sql</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;nearby_volunteers&#39;</span><span class="p">,</span> <span class="n">con</span> <span class="o">=</span> <span class="n">engine</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="s1">&#39;covidsos&#39;</span><span class="p">,</span> <span class="n">if_exists</span><span class="o">=</span><span class="s1">&#39;append&#39;</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span><span class="n">index_label</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="n">mod_sms_text</span> <span class="o">=</span> <span class="n">key_word</span><span class="o">+</span><span class="s2">&quot; New request verified. Sent to &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot; nearby Volunteers and &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">df2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot; volunteers further away&quot;</span>
     <span class="n">mod_sms_text_2</span> <span class="o">=</span> <span class="n">key_word</span><span class="o">+</span><span class="s2">&quot; Request #&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot; New Request Name: &quot;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot; Address: &quot;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;geoaddress&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">50</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot; Mob: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot; Req:&quot;</span><span class="o">+</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;request&#39;</span><span class="p">]</span>
+    <span class="n">str_broadcast</span> <span class="o">=</span> <span class="s2">&quot;For request #&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">])</span><span class="o">+</span> <span class="s2">&quot; &quot;</span>
+    <span class="n">counter_broadcast</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">v_list</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+        <span class="n">counter_broadcast</span> <span class="o">=</span> <span class="n">counter_broadcast</span><span class="o">+</span><span class="mi">1</span>
+        <span class="k">if</span><span class="p">((</span><span class="n">counter_broadcast</span><span class="o">&gt;</span><span class="mi">10</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;dist&#39;</span><span class="p">]</span><span class="o">&gt;</span><span class="n">search_radius</span><span class="p">)):</span>
+            <span class="k">break</span>
+        <span class="n">str_broadcast</span> <span class="o">=</span> <span class="n">str_broadcast</span> <span class="o">+</span> <span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot; m: wa.me/91&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot; &quot;</span>
+    <span class="n">link</span> <span class="o">=</span> <span class="n">url_shortener_fn</span><span class="p">(</span><span class="s2">&quot;https://wa.me/918618948661?text=&quot;</span><span class="o">+</span><span class="n">p</span><span class="o">.</span><span class="n">quote</span><span class="p">(</span><span class="n">str_broadcast</span><span class="p">))</span>
+    <span class="n">mod_sms_text_3</span> <span class="o">=</span> <span class="s2">&quot;Broadcast to volunteers using &quot;</span><span class="o">+</span><span class="n">link</span>
     <span class="k">for</span> <span class="n">i_number</span> <span class="ow">in</span> <span class="n">moderator_list</span><span class="p">:</span>
         <span class="k">if</span><span class="p">((</span><span class="n">server_type</span><span class="o">==</span><span class="s1">&#39;prod&#39;</span><span class="p">)):</span>
             <span class="n">send_sms</span><span class="p">(</span><span class="n">mod_sms_text</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">i_number</span><span class="p">),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">send_sms</span><span class="p">(</span><span class="n">mod_sms_text_2</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">i_number</span><span class="p">),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;SMS sent&#39;</span><span class="p">)</span>
+            <span class="n">send_sms</span><span class="p">(</span><span class="n">mod_sms_text_3</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">i_number</span><span class="p">),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;SMS sent&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Sending sms:&#39;</span><span class="p">,</span><span class="n">mod_sms_text</span><span class="p">,</span><span class="s1">&#39; to &#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">i_number</span><span class="p">))</span>
             <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Sending sms:&#39;</span><span class="p">,</span><span class="n">mod_sms_text_2</span><span class="p">,</span><span class="s1">&#39; to &#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">i_number</span><span class="p">))</span>
-    <span class="n">str_sid</span> <span class="o">=</span> <span class="s2">&quot;For request #&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">r_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;r_id&#39;</span><span class="p">])</span><span class="o">+</span> <span class="s2">&quot; &quot;</span>
-    <span class="n">counter_sid</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">v_list</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-        <span class="n">counter_sid</span> <span class="o">=</span> <span class="n">counter_sid</span><span class="o">+</span><span class="mi">1</span>
-        <span class="k">if</span><span class="p">((</span><span class="n">counter_sid</span><span class="o">&gt;</span><span class="mi">10</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;dist&#39;</span><span class="p">]</span><span class="o">&gt;</span><span class="n">search_radius</span><span class="p">)):</span>
-            <span class="k">break</span>
-        <span class="n">str_sid</span> <span class="o">=</span> <span class="n">str_sid</span> <span class="o">+</span> <span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot; m: wa.me/91&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot; &quot;</span>
-    <span class="n">send_sms</span><span class="p">(</span><span class="n">str_sid</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">8618948661</span><span class="p">),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Sending sms:&#39;</span><span class="p">,</span><span class="n">str_sid</span><span class="p">,</span><span class="s1">&#39; to &#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="mi">8618948661</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Sending sms:&#39;</span><span class="p">,</span><span class="n">mod_sms_text_3</span><span class="p">,</span><span class="s1">&#39; to &#39;</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">i_number</span><span class="p">))</span>
     <span class="k">return</span> <span class="kc">None</span>
 </pre></div>
 
@@ -13266,6 +13293,32 @@ div#notebook {
     <span class="c1">#incomplete</span>
     <span class="k">return</span> <span class="kc">None</span>
     
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span> 
 </pre></div>
 
     </div>

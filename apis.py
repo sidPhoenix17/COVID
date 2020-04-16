@@ -330,8 +330,12 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by):
             v_sms_text = '[COVID SOS] Thank you agreeing to help. Name:'+r_df.loc[0,'name']+' Mob:'+str(r_df.loc[0,'mob_number'])+' Request:'+r_df.loc[0,'request']+' Address:'+r_df.loc[0,'geoaddress']
             send_sms(v_sms_text,int(v_df.loc[0,'mob_number']),sms_type='transactional',send=True)
             #Send to Requestor
-            v_sms_text = '[COVID SOS] Volunteer '+v_df.loc[0,'name']+' will help you. Mob: '+str(v_df.loc[0,'mob_number'])
-            send_sms(v_sms_text,int(r_df.loc[0,'mob_number']),sms_type='transactional',send=True)
+            r_sms_text = '[COVID SOS] Volunteer '+v_df.loc[0,'name']+' will help you. Mob: '+str(v_df.loc[0,'mob_number'])
+            send_sms(r_sms_text,int(r_df.loc[0,'mob_number']),sms_type='transactional',send=True)
+            #Send to Moderator
+            m_sms_text = '[COVID SOS] Volunteer '+v_df.loc[0,'name']+' Mob: '+str(v_df.loc[0,'mob_number'])+' assigned to '+r_df.loc[0,'name']+' Mob:'+str(r_df.loc[0,'mob_number'])
+            for i_number in moderator_list:
+                send_sms(m_sms_text,int(i_number),sms_type='transactional',send=True)
         else:
             return {'status':False,'string_response':'Request already assigned/closed/completed','Response':{}}
     return response
