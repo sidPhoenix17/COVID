@@ -13,6 +13,8 @@ from connections import connections,write_query
 from database_entry import send_sms
 from data_fetching import request_data_by_uuid
 import mailer_fn as mailer
+import urllib.parse as p
+import requests
 
 
 # In[ ]:
@@ -44,6 +46,19 @@ def get_haversine_distance(start_lat, start_lng, end_lat, end_lng, units='km'):
 # In[ ]:
 
 
+def url_shortener_fn(input_url):
+    url = 'http://tinyurl.com/api-create.php'
+    params = {'url':input_url}
+    request = requests.get(url=url,params=params)
+    if(request.text=='Error'):
+        return input_url
+    else:
+        return request.text
+
+
+# In[ ]:
+
+
 #Send message to all volunteers within 1km - to accept request
 #Send message to all volunteers within 10kms - to help looking for volunteer
 #Send message to all moderators about the both
@@ -63,16 +78,18 @@ def message_all_volunteers(uuid,radius,search_radius):
     count=0
     if(server_type=='prod'):
         key_word = 'COVIDSOS'
+        url_start = "https://covidsos.org/"
     else:
         key_word = 'TEST'
-
+        url_start = "https://stg.covidsos.org/"
     for i in v_list.index:
         if(v_list.loc[i,'dist']<radius):
-            link = "https://wa.me/918618948661?text=Hi"
-#             link = "covidsos.org/accept/"+uuid+"/"+v_list.loc[i,'mob_number']
-            sms_text = "["+key_word+"]. Dear "+v_list.loc[i,'name']+ ", HELP NEEDED in your area. Click "+link+" to help or refer. Request #"+str(r_df.loc[0,'r_id'])
+            orig_link = url_start+"accept/"+uuid
+            link = url_shortener_fn(orig_link)
+            sms_text = "["+key_word+"]. Dear "+v_list.loc[i,'name']+ ", HELP NEEDED in your area. Click "+link+" to help." 
             sms_to = int(v_list.loc[i,'mob_number'])
             df = df.append(v_list.loc[i,['v_id']])
+            print(link)
             if((server_type=='prod')):
                 send_sms(sms_text,sms_to,sms_type='transactional',send=True)
                 print('SMS sent')
@@ -82,8 +99,10 @@ def message_all_volunteers(uuid,radius,search_radius):
             count = count +1
             if(count>20):
                 break
-            link = "https://wa.me/918618948661?text=Hi"
-            sms_text = "["+key_word+"] HELP NEEDED in "+r_df.loc[0,'geoaddress'][0:40]+".. Click "+link+ " to help or refer someone."+"Request #"+str(r_df.loc[0,'r_id'])
+            orig_link = url_start+"accept/"+uuid
+            link = url_shortener_fn(orig_link)
+            print(link)
+            sms_text = "["+key_word+"] HELP NEEDED in "+r_df.loc[0,'geoaddress'][0:40]+".. Click "+link+ " to help or refer someone."
             sms_to=int(v_list.loc[i,'mob_number'])
             df2 = df2.append(v_list.loc[i,['v_id']])
             if((server_type=='prod')):
@@ -101,24 +120,25 @@ def message_all_volunteers(uuid,radius,search_radius):
         df.to_sql(name = 'nearby_volunteers', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
     mod_sms_text = key_word+" New request verified. Sent to "+str(df.shape[0])+" nearby Volunteers and "+str(df2.shape[0])+" volunteers further away"
     mod_sms_text_2 = key_word+" Request #"+str(r_df.loc[0,'r_id'])+" New Request Name: "+r_df.loc[0,'name']+" Address: "+r_df.loc[0,'geoaddress'][0:50]+" Mob: "+str(r_df.loc[0,'mob_number'])+" Req:"+r_df.loc[0,'request']
+    str_broadcast = "For request #"+str(r_df.loc[0,'r_id'])+ " "
+    counter_broadcast = 0
+    for i in v_list.index:
+        counter_broadcast = counter_broadcast+1
+        if((counter_broadcast>10) or (v_list.loc[i,'dist']>search_radius)):
+            break
+        str_broadcast = str_broadcast + v_list.loc[i,'name']+" m: wa.me/91"+str(v_list.loc[i,'mob_number'])+" "
+    link = url_shortener_fn("https://wa.me/918618948661?text="+p.quote(str_broadcast))
+    mod_sms_text_3 = "Broadcast to volunteers using "+link
     for i_number in moderator_list:
         if((server_type=='prod')):
             send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
             send_sms(mod_sms_text_2,sms_to=int(i_number),sms_type='transactional',send=True)
-            print('SMS sent')
+            send_sms(mod_sms_text_3,sms_to=int(i_number),sms_type='transactional',send=True)
             print('SMS sent')
         else:
             print('Sending sms:',mod_sms_text,' to ',str(i_number))
             print('Sending sms:',mod_sms_text_2,' to ',str(i_number))
-    str_sid = "For request #"+str(r_df.loc[0,'r_id'])+ " "
-    counter_sid = 0
-    for i in v_list.index:
-        counter_sid = counter_sid+1
-        if((counter_sid>10) or (v_list.loc[i,'dist']>search_radius)):
-            break
-        str_sid = str_sid + v_list.loc[i,'name']+" m: wa.me/91"+str(v_list.loc[i,'mob_number'])+" "
-    send_sms(str_sid,sms_to=int(8618948661),sms_type='transactional',send=True)
-    print('Sending sms:',str_sid,' to ',str(8618948661))
+            print('Sending sms:',mod_sms_text_3,' to ',str(i_number))
     return None
 
 
@@ -157,4 +177,16 @@ def assignment_link(r_id):
     #incomplete
     return None
     
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
+
+
+
 
