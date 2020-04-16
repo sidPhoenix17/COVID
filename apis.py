@@ -503,13 +503,9 @@ def verify_request(*args,**kwargs):
     uuid = request.form.get('uuid')
     what = request.form.get('what')
     why = request.form.get('why')
+    financial_assistance = request.form.get('financial_assistance',0)
     verification_status=request.form.get('verification_status')
     verified_by = kwargs.get('user_id',0)
-# request.form.get('verified_by',331)
-#     if(str(verified_by).isdigit()):
-#         verified_by=int(verified_by)
-#     else:
-#         verified_by=0
     r_id = request.form.get('r_id')
     name = request.form.get('name')
     where = request.form.get('geoaddress')
@@ -523,9 +519,9 @@ def verify_request(*args,**kwargs):
     if(r_df.shape[0]==0):
         return json.dumps({'Response':{},'status':False,'string_response':'Invalid UUID/request ID'})
     if(r_df.loc[0,'status']=='received'):
-        r_v_dict = {'r_id':[r_id],'why':[why],'what':[what],'where':[where],'verification_status':[verification_status],'verified_by':[verified_by],'timestamp':[current_time]}
+        r_v_dict = {'r_id':[r_id],'why':[why],'what':[what],'where':[where],'verification_status':[verification_status],'verified_by':[verified_by],'timestamp':[current_time],'financial_assistance':[financial_assistance]}
         df = pd.DataFrame(r_v_dict)
-        expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by']
+        expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance']
         response_2 = update_requests_db({'uuid':uuid},{'status':verification_status})
         print('updated the status')
         x,y = add_request_verification_db(df)
