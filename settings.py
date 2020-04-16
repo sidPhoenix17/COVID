@@ -17,6 +17,7 @@ otp_url = "https://api.msg91.com/api/v5/otp"
 EARTH_RADIUS = 6378000
 neighbourhood_radius = 1
 moderator_list=[9582148040,9899284156]
-error_mailing_list=['jain.siddarth94@gmail.com']
+error_mailing_list=['jain.siddarth94@gmail.com','chiragb1994@gmail.com']
+org_request_list =['shahraamisha@gmail.com','jain.siddarth94@gmail.com']
 search_radius=15
 

@@ -93,10 +93,11 @@ def get_public_map_data():
 def website_requests_display():
     try:
         server_con = connections('prod_db_read')
-        query = """Select * from website_display"""
+        query = """Select r.id as r_id,rv.where as location,rv.what as requirement,rv.why as reason,r.request,rv.verification_status, r.status as status from requests r left join request_verification rv on rv.r_id=r.id"""
         query_df = pd.read_sql(query,server_con)
-        pending_queries = query_df[query_df['type'].isin(['received','verified','pending'])]
-        completed_queries = query_df[query_df['type']=='completed']
+        query_df['verification_status'] = query_df['verification_status'].fillna('verified')
+        pending_queries = query_df[(query_df['verification_status']=='verified')&(query_df['status'].isin(['received','verified','pending']))]
+        completed_queries = query_df[(query_df['verification_status']=='verified')&(query_df['status'].isin(['completed','matched','assigned']))]
         return {'pending':pending_queries.to_dict('records'),'completed':completed_queries.to_dict('records')}
     except:
         mailer.send_exception_mail()
@@ -168,10 +169,14 @@ def verify_volunteer_exists(mob_number, v_id=None, country=None):
 
 def accept_request_page(uuid):
     query = """Select r.id as r_id,r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude,
-            rv.what as what, rv.why as why, rv.verification_status as verification_status
+            rv.what as what, rv.why as why, rv.verification_status as verification_status,rv.financial_assistance as financial_assistance
             from requests r left join request_verification rv on r.id=rv.r_id
             where r.uuid='{uuid}'""".format(uuid=uuid)
     df = pd.read_sql(query,connections('prod_db_read'))
+    df['verification_status']=df['verification_status'].fillna('verified')
+    df['what']=df['what'].fillna('Please call senior citizen to discuss')
+    df['why']=df['why'].fillna('Senior Citizen')
+    df['financial_assistance']=df['financial_assistance'].fillna(0)
     return df
     
     
