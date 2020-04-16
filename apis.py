@@ -543,7 +543,7 @@ def verify_request(*args,**kwargs):
 @app.route('/pending_requests',methods=['GET'])
 def pending_requests():
     response = website_requests_display()
-    return json.dumps({'Response':response,'status':True,'string_response':'Request data extracted'})
+    return json.dumps({'Response':response,'status':True,'string_response':'Request data extracted'},default=datetime_converter)
 
 
 # In[ ]:
