@@ -98,6 +98,7 @@ def website_requests_display():
                     rv.verification_status, r.status as status,r.timestamp as timestamp from requests r 
                     left join request_verification rv on rv.r_id=r.id where rv.r_id is not NULL"""
         query_df = pd.read_sql(query,server_con)
+        query_df = query_df.sort_values(by=['r_id'],ascending=[False])
         query_df['verification_status'] = query_df['verification_status'].fillna('verified')
         if(server_type=='prod'):
             query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://covidsos.org/accept/'+x)
