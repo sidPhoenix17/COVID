@@ -9,6 +9,7 @@ import pandas as pd
 from connections import connections,keys
 import requests
 import mailer_fn as mailer
+from settings import server_type
 
 
 # In[ ]:
@@ -93,11 +94,15 @@ def get_public_map_data():
 def website_requests_display():
     try:
         server_con = connections('prod_db_read')
-        query = """Select r.id as r_id,rv.where as location,rv.what as requirement,rv.why as reason,r.request,
+        query = """Select r.id as r_id,r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
                     rv.verification_status, r.status as status,r.timestamp as timestamp from requests r 
                     left join request_verification rv on rv.r_id=r.id where rv.r_id is not NULL"""
         query_df = pd.read_sql(query,server_con)
         query_df['verification_status'] = query_df['verification_status'].fillna('verified')
+        if(server_type=='prod'):
+            query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://covidsos.org/accept/'+x)
+        else:
+            query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://stg.covidsos.org/accept/'+x)
         pending_queries = query_df[(query_df['verification_status']=='verified')&(query_df['status'].isin(['received','verified','pending']))]
         completed_queries = query_df[(query_df['verification_status']=='verified')&(query_df['status'].isin(['completed','matched','assigned']))]
         return {'pending':pending_queries.to_dict('records'),'completed':completed_queries.to_dict('records')}
