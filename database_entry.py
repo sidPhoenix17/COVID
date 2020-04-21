@@ -213,8 +213,8 @@ def check_user(table_name,user_id):
 
 def update_requests_db(r_dict_where,r_dict_set):
     try:
-        set_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = r_dict_set[x]) for x in r_dict_set))
-        where_sql_format = " and ".join(("{column_name}='{value}'".format(column_name = x,value = r_dict_where[x]) for x in r_dict_where))
+        set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = r_dict_set[x]) for x in r_dict_set))
+        where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = r_dict_where[x]) for x in r_dict_where))
         query = """update requests set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
         write_query(query,'prod_db_write')
         return {'Response':{},'string_response': 'Request info Updated','status':True}
@@ -224,8 +224,8 @@ def update_requests_db(r_dict_where,r_dict_set):
 
 def update_nearby_volunteers_db(nv_dict_where,nv_dict_set):
     try:
-        set_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = nv_dict_set[x]) for x in nv_dict_set))
-        where_sql_format = " and ".join(("{column_name}='{value}'".format(column_name = x,value = nv_dict_where[x]) for x in nv_dict_where))
+        set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = nv_dict_set[x]) for x in nv_dict_set))
+        where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = nv_dict_where[x]) for x in nv_dict_where))
         query = """update nearby_volunteers set {set_str} where {where_str};""".format(set_str= set_sql_format,where_str=where_sql_format)
         write_query(query,'prod_db_write')
         return {'Response':{},'string_response': 'nearby_volunteers info Updated','status':True}
@@ -235,8 +235,8 @@ def update_nearby_volunteers_db(nv_dict_where,nv_dict_set):
 
 def update_volunteers_db(v_dict_where,v_dict_set):
     try:
-        set_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = v_dict_set[x]) for x in v_dict_set))
-        where_sql_format = " and ".join(("{column_name}='{value}'".format(column_name = x,value = v_dict_where[x]) for x in v_dict_where))
+        set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = v_dict_set[x]) for x in v_dict_set))
+        where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = v_dict_where[x]) for x in v_dict_where))
         query = """update volunteers set {set_str} where {where_str};""".format(set_str= set_sql_format,where_str=where_sql_format)
         write_query(query,'prod_db_write')
         return {'Response':{},'string_response': 'Volunteer info Updated','status':True}
@@ -247,9 +247,10 @@ def update_volunteers_db(v_dict_where,v_dict_set):
     
 def update_request_v_db(rv_dict_where,rv_dict_set):
     try:
-        set_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = rv_dict_set[x]) for x in rv_dict_set))
-        where_sql_format = " and ".join(("{column_name}='{value}'".format(column_name = x,value = rv_dict_where[x]) for x in rv_dict_where))
+        set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = rv_dict_set[x]) for x in rv_dict_set))
+        where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = rv_dict_where[x]) for x in rv_dict_where))
         query = """update request_verification set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
+        print(query)
         write_query(query,'prod_db_write')
         return {'Response':{},'string_response': 'Request Verification info Updated','status':True}
     except:
