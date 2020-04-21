@@ -213,7 +213,7 @@ def check_past_verification(r_id):
 
 
 def accept_request_page(uuid):
-    query = """Select r.id as r_id,r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude,
+    query = """Select r.id as r_id,r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd
             rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance
             from requests r left join request_verification rv on r.id=rv.r_id
             where r.uuid='{uuid}'""".format(uuid=uuid)
@@ -276,3 +276,14 @@ def volunteer_data_by_id(v_id):
 #     r_df['type']='Request'
 #     return v_df,r_df
 
+
+def get_volunteers_assigned_to_request(r_id):
+    query = f"""Select volunteer_id from request_matching where request_id={r_id}"""
+    data = pd.read_sql(query, connections('prod_db_read'))
+    if data.shape[0]==0:
+        return 0
+    data = data.to_dict()
+    volunteers = data['volunteer_id']
+    volunteers = [volunteer for (index, volunteer) in volunteers.items()]
+    unique_volunteers = set(volunteers)
+    return len(unique_volunteers)
