@@ -251,10 +251,10 @@ def update_request_v_db(rv_dict_where,rv_dict_set):
         where_sql_format = " and ".join(("{column_name}='{value}'".format(column_name = x,value = rv_dict_where[x]) for x in rv_dict_where))
         query = """update request_verification set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
         write_query(query,'prod_db_write')
-        return {'Response':{},'string_response': 'Request info Updated','status':True}
+        return {'Response':{},'string_response': 'Request Verification info Updated','status':True}
     except:
         mailer.send_exception_mail()
-        return  {'Response':{},'string_response': 'Request info updation failed' ,'status':False}
+        return  {'Response':{},'string_response': 'Request Verification info updation failed' ,'status':False}
 
 
 # In[ ]:
