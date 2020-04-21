@@ -106,6 +106,7 @@ def contact_us_form_add(df):
 
 def add_request_verification_db(df):
     expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance']
+    #If Request ID does not exist in verification table, create a new row
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('prod_db_write')
         df.to_sql(name = 'request_verification', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
@@ -242,6 +243,18 @@ def update_volunteers_db(v_dict_where,v_dict_set):
     except:
         mailer.send_exception_mail()
         return  {'Response':{},'string_response': 'Volunteer info updation failed' ,'status':False}
+
+    
+def update_request_v_db(rv_dict_where,rv_dict_set):
+    try:
+        set_sql_format = ",".join(("{column_name}='{value}'".format(column_name = x,value = rv_dict_set[x]) for x in rv_dict_set))
+        where_sql_format = " and ".join(("{column_name}='{value}'".format(column_name = x,value = rv_dict_where[x]) for x in rv_dict_where))
+        query = """update request_verification set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
+        write_query(query,'prod_db_write')
+        return {'Response':{},'string_response': 'Request Verification info Updated','status':True}
+    except:
+        mailer.send_exception_mail()
+        return  {'Response':{},'string_response': 'Request Verification info updation failed' ,'status':False}
 
 
 # In[ ]:

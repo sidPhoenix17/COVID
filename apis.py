@@ -14,15 +14,23 @@ import uuid
     
 from connections import connections
 
-from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db, add_request_verification_db
+from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db,                add_request_verification_db,update_request_v_db
 
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,website_success_stories, verify_volunteer_exists
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,get_source_list, website_success_stories,                        verify_volunteer_exists,check_past_verification
 from partner_assignment import generate_uuid,message_all_volunteers
 from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
 
 
 from settings import server_type, SECRET_KEY,neighbourhood_radius,moderator_list,search_radius
 import cred_config as cc
+
+
+# In[ ]:
+
+
+#Allow edit of source from verification page
+# Allow user to enter urgent (immediate, needed in <24 hours)/not urgent (needed in 24-48 hours)
+# Allow users to see urgent requests
 
 
 # In[ ]:
@@ -263,7 +271,16 @@ def ticker_counts():
 @app.route('/request_status_list',methods=['GET'])
 def request_status_list():
     response = get_requests_list()
-    return json.dumps({'Response':response,'status':True,'string_respone':'List of Request status'})
+    return json.dumps(response)
+
+
+# In[ ]:
+
+
+@app.route('/source_list',methods=['GET'])
+def request_source_list():
+    response = get_source_list()
+    return json.dumps(response)
 
 
 # In[ ]:
@@ -514,6 +531,8 @@ def verify_request(*args,**kwargs):
     name = request.form.get('name')
     where = request.form.get('geoaddress')
     mob_number = request.form.get('mob_number')
+    urgent_status = request.form.get('urgent',False)
+    source = request.form.get('source','covidsos')
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     if(verification_status is None):
         return json.dumps({'Response':{},'status':False,'string_response':'Please send verification status'})
@@ -522,13 +541,21 @@ def verify_request(*args,**kwargs):
     r_df = request_data_by_uuid(uuid)
     if(r_df.shape[0]==0):
         return json.dumps({'Response':{},'status':False,'string_response':'Invalid UUID/request ID'})
+    if(r_df.loc[0,'source']!=source):
+        response_0 = update_requests_db({'uuid':uuid},{'source':source})
     if(r_df.loc[0,'status']=='received'):
-        r_v_dict = {'r_id':[r_id],'why':[why],'what':[what],'where':[where],'verification_status':[verification_status],'verified_by':[verified_by],'timestamp':[current_time],'financial_assistance':[financial_assistance]}
+        r_v_dict = {'r_id':[r_id],'why':[why],'what':[what],'where':[where],'verification_status':[verification_status],'verified_by':[verified_by],'timestamp':[current_time],'financial_assistance':[financial_assistance],'urgent':[urgent_status]}
         df = pd.DataFrame(r_v_dict)
-        expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance']
+        expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance','urgent']
         response_2 = update_requests_db({'uuid':uuid},{'status':verification_status})
         print('updated the status')
-        x,y = add_request_verification_db(df)
+        past_id,past_status = check_past_verification(str(r_id))
+        if(past_status==True):
+            r_v_dict = {'r_id':r_id,'why':why,'what':what,'where':where,'verification_status':verification_status,'verified_by':verified_by,'timestamp':current_time,'financial_assistance':financial_assistance,'urgent':urgent_status}
+            rv_dict = {x:r_v_dict[x] for x in r_v_dict}
+            update_request_v_db({'id':(past_id)},rv_dict)
+        else:
+            x,y = add_request_verification_db(df)
         if(verification_status=='verified'):
             requestor_text = '[COVIDSOS] Your request has been verified. We will look for volunteers in your neighbourhood.'
             send_sms(requestor_text,sms_to=int(mob_number),sms_type='transactional',send=True)
@@ -611,6 +638,12 @@ if(server_type=='prod'):
 if(server_type=='staging'):
     if __name__ =='__main__':
         app.run()
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:

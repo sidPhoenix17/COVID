@@ -13097,9 +13097,33 @@ div#notebook {
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">get_requests_list</span><span class="p">():</span>
-    <span class="n">req_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select * from request_status&quot;&quot;&quot;</span>
-    <span class="n">req_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">req_q</span><span class="p">,</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">))</span>
-    <span class="k">return</span> <span class="n">req_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">req_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select * from request_status&quot;&quot;&quot;</span>
+        <span class="n">req_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">req_q</span><span class="p">,</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">req_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">),</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;List retrieved&#39;</span><span class="p">}</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;List unavailable&#39;</span><span class="p">}</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">get_source_list</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">req_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id,org_code from support_orgs&quot;&quot;&quot;</span>
+        <span class="n">req_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">req_q</span><span class="p">,</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">req_df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">),</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;List retrieved&#39;</span><span class="p">}</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">False</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;List unavailable&#39;</span><span class="p">}</span>
 </pre></div>
 
     </div>
@@ -13142,11 +13166,11 @@ div#notebook {
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">get_private_map_data</span><span class="p">():</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">server_con</span> <span class="o">=</span> <span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">)</span>
-        <span class="n">v_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select timestamp,id as v_id, name,source,latitude,longitude,geoaddress,address,mob_number,email_id,status,source from volunteers&quot;&quot;&quot;</span>
+        <span class="n">v_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select timestamp,id as v_id, name,source,latitude,longitude,geoaddress,address,mob_number,email_id,status from volunteers&quot;&quot;&quot;</span>
         <span class="n">v_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">v_q</span><span class="p">,</span><span class="n">server_con</span><span class="p">)</span>
         <span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">])</span><span class="c1">#.dt.tz_localize(tz=&#39;Asia/kolkata&#39;)</span>
         <span class="n">v_df</span> <span class="o">=</span> <span class="n">v_df</span><span class="p">[(</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">)]</span>
-        <span class="n">r_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number,source from requests&quot;&quot;&quot;</span>
+        <span class="n">r_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number from requests&quot;&quot;&quot;</span>
         <span class="n">r_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">r_q</span><span class="p">,</span><span class="n">server_con</span><span class="p">)</span>
         <span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">])</span><span class="c1">#.dt.tz_localize(tz=&#39;Asia/kolkata&#39;)</span>
         <span class="n">r_df</span> <span class="o">=</span> <span class="n">r_df</span><span class="p">[(</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)]</span>
@@ -13257,9 +13281,12 @@ div#notebook {
     <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;Select id, access_type from users where mob_number=&#39;</span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">&#39; or email_id=&#39;</span><span class="si">{</span><span class="n">username</span><span class="si">}</span><span class="s2">&#39; and password=&#39;</span><span class="si">{</span><span class="n">password</span><span class="si">}</span><span class="s2">&#39; order by id desc limit 1&quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">server_con</span><span class="p">)</span>
-        <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
-        <span class="n">access_type</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;access_type&#39;</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">user_id</span><span class="p">,</span> <span class="n">access_type</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">user_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+            <span class="n">access_type</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;access_type&#39;</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">user_id</span><span class="p">,</span> <span class="n">access_type</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
     <span class="k">except</span><span class="p">:</span>
         <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
         <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
@@ -13311,9 +13338,33 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">check_past_verification</span><span class="p">(</span><span class="n">r_id</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;Select id,r_id from request_verification where r_id=&#39;</span><span class="si">{</span><span class="n">r_id</span><span class="si">}</span><span class="s2">&#39;&quot;&quot;&quot;</span>
+        <span class="n">df_check</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">))</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">df_check</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">df_check</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="s1">&#39;id&#39;</span><span class="p">],</span><span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span><span class="kc">False</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span><span class="kc">False</span>
+        
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">accept_request_page</span><span class="p">(</span><span class="n">uuid</span><span class="p">):</span>
     <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select r.id as r_id,r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude,</span>
-<span class="s2">            rv.what as what, rv.why as why, rv.verification_status as verification_status,rv.financial_assistance as financial_assistance</span>
+<span class="s2">            rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance</span>
 <span class="s2">            from requests r left join request_verification rv on r.id=rv.r_id</span>
 <span class="s2">            where r.uuid=&#39;</span><span class="si">{uuid}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">uuid</span><span class="o">=</span><span class="n">uuid</span><span class="p">)</span>
     <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">query</span><span class="p">,</span><span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">))</span>
@@ -13327,7 +13378,7 @@ div#notebook {
     
     
 <span class="k">def</span> <span class="nf">request_data_by_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">):</span>
-    <span class="n">r_id_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp from requests where uuid=&#39;</span><span class="si">{uuid_str}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">uuid_str</span><span class="o">=</span><span class="n">uuid</span><span class="p">)</span>
+    <span class="n">r_id_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp,source from requests where uuid=&#39;</span><span class="si">{uuid_str}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">uuid_str</span><span class="o">=</span><span class="n">uuid</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">r_id_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">r_id_q</span><span class="p">,</span><span class="n">connections</span><span class="p">(</span><span class="s1">&#39;prod_db_read&#39;</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">r_id_df</span>

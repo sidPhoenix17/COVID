@@ -16,9 +16,26 @@ from settings import server_type
 
 
 def get_requests_list():
-    req_q = """Select * from request_status"""
-    req_df = pd.read_sql(req_q, connections('prod_db_read'))
-    return req_df.to_dict('records')
+    try:
+        req_q = """Select * from request_status"""
+        req_df = pd.read_sql(req_q, connections('prod_db_read'))
+        return {'Response':req_df.to_dict('records'),'status':True,'string_response':'List retrieved'}
+    except:
+        mailer.send_exception_mail()
+        return {'Response':{},'status':False,'string_response':'List unavailable'}
+
+
+# In[ ]:
+
+
+def get_source_list():
+    try:
+        req_q = """Select id,org_code from support_orgs"""
+        req_df = pd.read_sql(req_q, connections('prod_db_read'))
+        return {'Response':req_df.to_dict('records'),'status':True,'string_response':'List retrieved'}
+    except:
+        mailer.send_exception_mail()
+        return {'Response':{},'status':False,'string_response':'List unavailable'}
 
 
 # In[ ]:
@@ -47,11 +64,11 @@ def get_ticker_counts():
 def get_private_map_data():
     try:
         server_con = connections('prod_db_read')
-        v_q = """Select timestamp,id as v_id, name,source,latitude,longitude,geoaddress,address,mob_number,email_id,status,source from volunteers"""
+        v_q = """Select timestamp,id as v_id, name,source,latitude,longitude,geoaddress,address,mob_number,email_id,status from volunteers"""
         v_df = pd.read_sql(v_q,server_con)
         v_df['timestamp']=pd.to_datetime(v_df['timestamp'])#.dt.tz_localize(tz='Asia/kolkata')
         v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)&(v_df['status']==1)]
-        r_q = """Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number,source from requests"""
+        r_q = """Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number from requests"""
         r_df = pd.read_sql(r_q,server_con)
         r_df['timestamp']=pd.to_datetime(r_df['timestamp'])#.dt.tz_localize(tz='Asia/kolkata')
         r_df = r_df[(r_df['latitude']!=0.0)&(r_df['longitude']!=0.0)]
@@ -135,9 +152,12 @@ def get_user_id(username, password):
     query = f"""Select id, access_type from users where mob_number='{username}' or email_id='{username}' and password='{password}' order by id desc limit 1"""
     try:
         data = pd.read_sql(query, server_con)
-        user_id = int(data.loc[0,'id'])
-        access_type = int(data.loc[0,'access_type'])
-        return user_id, access_type
+        if(data.shape[0]>0):
+            user_id = int(data.loc[0,'id'])
+            access_type = int(data.loc[0,'access_type'])
+            return user_id, access_type
+        else:
+            return None, None
     except:
         mailer.send_exception_mail()
         return None, None
@@ -175,9 +195,26 @@ def verify_volunteer_exists(mob_number, v_id=None, country=None):
 # In[ ]:
 
 
+def check_past_verification(r_id):
+    try:
+        query = f"""Select id,r_id from request_verification where r_id='{r_id}'"""
+        df_check = pd.read_sql(query,connections('prod_db_read'))
+        if(df_check.shape[0]>0):
+            return df_check.loc[0,'id'],True
+        else:
+            return None,False
+    except:
+        mailer.send_exception_mail()
+        return None,False
+        
+
+
+# In[ ]:
+
+
 def accept_request_page(uuid):
     query = """Select r.id as r_id,r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude,
-            rv.what as what, rv.why as why, rv.verification_status as verification_status,rv.financial_assistance as financial_assistance
+            rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance
             from requests r left join request_verification rv on r.id=rv.r_id
             where r.uuid='{uuid}'""".format(uuid=uuid)
     df = pd.read_sql(query,connections('prod_db_read'))
@@ -191,7 +228,7 @@ def accept_request_page(uuid):
     
     
 def request_data_by_uuid(uuid):
-    r_id_q = """Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp from requests where uuid='{uuid_str}'""".format(uuid_str=uuid)
+    r_id_q = """Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp,source from requests where uuid='{uuid_str}'""".format(uuid_str=uuid)
     try:
         r_id_df = pd.read_sql(r_id_q,connections('prod_db_read'))
         return r_id_df
