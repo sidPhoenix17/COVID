@@ -81,7 +81,7 @@ def get_private_map_data():
         v_df = pd.read_sql(v_q,server_con)
         v_df['timestamp']=pd.to_datetime(v_df['timestamp'])#.dt.tz_localize(tz='Asia/kolkata')
         v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)&(v_df['status']==1)]
-        r_q = """Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number from requests"""
+        r_q = """Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number,uuid from requests"""
         r_df = pd.read_sql(r_q,server_con)
         r_df['timestamp']=pd.to_datetime(r_df['timestamp'])#.dt.tz_localize(tz='Asia/kolkata')
         r_df = r_df[(r_df['latitude']!=0.0)&(r_df['longitude']!=0.0)]
@@ -219,7 +219,6 @@ def check_past_verification(r_id):
     except:
         mailer.send_exception_mail()
         return None,False
-        
 
 
 # In[ ]:
@@ -258,7 +257,7 @@ def request_data_by_id(r_id):
     except:
         mailer.send_exception_mail()
         return pd.DataFrame()
-    
+
 
 def volunteer_data_by_id(v_id):
     v_id_q = """Select id as v_id,name,mob_number from volunteers where id='{v_id}'""".format(v_id=v_id)
