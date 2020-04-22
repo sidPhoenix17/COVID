@@ -13190,7 +13190,7 @@ div#notebook {
         <span class="n">v_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">v_q</span><span class="p">,</span><span class="n">server_con</span><span class="p">)</span>
         <span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">])</span><span class="c1">#.dt.tz_localize(tz=&#39;Asia/kolkata&#39;)</span>
         <span class="n">v_df</span> <span class="o">=</span> <span class="n">v_df</span><span class="p">[(</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">v_df</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span><span class="o">==</span><span class="mi">1</span><span class="p">)]</span>
-        <span class="n">r_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number from requests&quot;&quot;&quot;</span>
+        <span class="n">r_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number,uuid from requests&quot;&quot;&quot;</span>
         <span class="n">r_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql</span><span class="p">(</span><span class="n">r_q</span><span class="p">,</span><span class="n">server_con</span><span class="p">)</span>
         <span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;timestamp&#39;</span><span class="p">])</span><span class="c1">#.dt.tz_localize(tz=&#39;Asia/kolkata&#39;)</span>
         <span class="n">r_df</span> <span class="o">=</span> <span class="n">r_df</span><span class="p">[(</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;latitude&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">r_df</span><span class="p">[</span><span class="s1">&#39;longitude&#39;</span><span class="p">]</span><span class="o">!=</span><span class="mf">0.0</span><span class="p">)]</span>
@@ -13369,7 +13369,6 @@ div#notebook {
     <span class="k">except</span><span class="p">:</span>
         <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
         <span class="k">return</span> <span class="kc">None</span><span class="p">,</span><span class="kc">False</span>
-        
 </pre></div>
 
     </div>
@@ -13415,7 +13414,7 @@ div#notebook {
     <span class="k">except</span><span class="p">:</span>
         <span class="n">mailer</span><span class="o">.</span><span class="n">send_exception_mail</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
-    
+
 
 <span class="k">def</span> <span class="nf">volunteer_data_by_id</span><span class="p">(</span><span class="n">v_id</span><span class="p">):</span>
     <span class="n">v_id_q</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;Select id as v_id,name,mob_number from volunteers where id=&#39;</span><span class="si">{v_id}</span><span class="s2">&#39;&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">v_id</span><span class="o">=</span><span class="n">v_id</span><span class="p">)</span>
