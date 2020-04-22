@@ -16,7 +16,7 @@ from connections import connections
 
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db,                add_request_verification_db,update_request_v_db
 
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,get_source_list, website_success_stories,                        verify_volunteer_exists,check_past_verification
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,get_source_list, website_success_stories,                        verify_volunteer_exists,check_past_verification, get_volunteers_assigned_to_request
 from partner_assignment import generate_uuid,message_all_volunteers
 from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
 
@@ -339,9 +339,14 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by):
             current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
             req_dict = {'volunteer_id':[volunteer_id],'request_id':[r_df.loc[0,'r_id']],'matching_by':[matched_by],'timestamp':[current_time]}
             df = pd.DataFrame(req_dict)
-            response = request_matching(df)
             #Add entry in request_matching table
-            response_2 = update_requests_db({'id':request_id},{'status':'matched'})
+            response = request_matching(df)
+            #Update request status as matched
+            if response['status'] == True:
+                volunteers_assigned = get_volunteers_assigned_to_request(request_id)
+                if r_df.loc[0,'volunteers_reqd'] == volunteers_assigned: 
+                    response_2 = update_requests_db({'id':request_id},{'status':'matched'})
+            #Remove volunteer availability
             response_3 = update_nearby_volunteers_db({'id':request_id},{'status':'expired'})
             #Send to Volunteer
             v_sms_text = '[COVID SOS] Thank you agreeing to help. Name:'+r_df.loc[0,'name']+' Mob:'+str(r_df.loc[0,'mob_number'])+' Request:'+r_df.loc[0,'request']+' Address:'+r_df.loc[0,'geoaddress']
@@ -485,7 +490,7 @@ def logout_request(*args,**kwargs):
 
 # In[ ]:
 
-
+# get requests that are available to be assigned to volunteers
 @app.route('/accept_page',methods=['GET'])
 def request_accept_page():
     uuid = request.args.get('uuid')
@@ -501,7 +506,7 @@ def request_accept_page():
 
 # In[ ]:
 
-
+# get all requests to be verified/rejected by moderator
 @app.route('/verify_request_page',methods=['POST'])
 @login_required
 def verify_request_page(*args,**kwargs):
@@ -517,7 +522,7 @@ def verify_request_page(*args,**kwargs):
 
 # In[ ]:
 
-
+# mark verified/rejected and create a verification table entry with verification data
 @app.route('/verify_request',methods=['POST'])
 @login_required
 def verify_request(*args,**kwargs):
@@ -533,6 +538,7 @@ def verify_request(*args,**kwargs):
     mob_number = request.form.get('mob_number')
     urgent_status = request.form.get('urgent',False)
     source = request.form.get('source','covidsos')
+    volunteers_reqd = request.form.get('volunteer_count', 1)
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     if(verification_status is None):
         return json.dumps({'Response':{},'status':False,'string_response':'Please send verification status'})
@@ -547,7 +553,7 @@ def verify_request(*args,**kwargs):
         r_v_dict = {'r_id':[r_id],'why':[why],'what':[what],'where':[where],'verification_status':[verification_status],'verified_by':[verified_by],'timestamp':[current_time],'financial_assistance':[financial_assistance],'urgent':[urgent_status]}
         df = pd.DataFrame(r_v_dict)
         expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance','urgent']
-        response_2 = update_requests_db({'uuid':uuid},{'status':verification_status})
+        response_2 = update_requests_db({'uuid':uuid},{'status':verification_status, 'volunteers_reqd': volunteers_reqd})
         print('updated the status')
         past_id,past_status = check_past_verification(str(r_id))
         if(past_status==True):
