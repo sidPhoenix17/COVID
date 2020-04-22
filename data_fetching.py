@@ -41,6 +41,19 @@ def get_source_list():
 # In[ ]:
 
 
+def get_type_list():
+    try:
+        req_q = """Select id,support_type from volunteer_support"""
+        req_df = pd.read_sql(req_q, connections('prod_db_read'))
+        return {'Response':req_df.to_dict('records'),'status':True,'string_response':'List retrieved'}
+    except:
+        mailer.send_exception_mail()
+        return {'Response':{},'status':False,'string_response':'List unavailable'}
+
+
+# In[ ]:
+
+
 def get_ticker_counts():
     try:
         server_con = connections('prod_db_read')
@@ -213,7 +226,7 @@ def check_past_verification(r_id):
 
 
 def accept_request_page(uuid):
-    query = """Select r.id as r_id,r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd
+    query = """Select r.id as r_id,r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
             rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance
             from requests r left join request_verification rv on r.id=rv.r_id
             where r.uuid='{uuid}'""".format(uuid=uuid)
@@ -238,7 +251,7 @@ def request_data_by_uuid(uuid):
     
 
 def request_data_by_id(r_id):
-    r_id_q = """Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp from requests where id='{r_id}'""".format(r_id=r_id)
+    r_id_q = """Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp,volunteers_reqd from requests where id='{r_id}'""".format(r_id=r_id)
     try:
         r_id_df = pd.read_sql(r_id_q,connections('prod_db_read'))
         return r_id_df
@@ -277,13 +290,18 @@ def volunteer_data_by_id(v_id):
 #     return v_df,r_df
 
 
+# In[ ]:
+
+
 def get_volunteers_assigned_to_request(r_id):
     query = f"""Select volunteer_id from request_matching where request_id={r_id}"""
     data = pd.read_sql(query, connections('prod_db_read'))
     if data.shape[0]==0:
         return 0
-    data = data.to_dict()
-    volunteers = data['volunteer_id']
-    volunteers = [volunteer for (index, volunteer) in volunteers.items()]
-    unique_volunteers = set(volunteers)
-    return len(unique_volunteers)
+    return data['volunteer_id'].nunique()
+#     data = data.to_dict()
+#     volunteers = data['volunteer_id']
+#     volunteers = [volunteer for (index, volunteer) in volunteers.items()]
+#     unique_volunteers = set(volunteers)
+#     return len(unique_volunteers)
+

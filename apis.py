@@ -16,7 +16,7 @@ from connections import connections
 
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db,                add_request_verification_db,update_request_v_db
 
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,get_source_list, website_success_stories,                        verify_volunteer_exists,check_past_verification, get_volunteers_assigned_to_request
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,get_source_list, website_success_stories,                        verify_volunteer_exists,check_past_verification,get_volunteers_assigned_to_request,get_type_list
 from partner_assignment import generate_uuid,message_all_volunteers
 from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
 
@@ -286,6 +286,15 @@ def request_source_list():
 # In[ ]:
 
 
+@app.route('/support_type_list',methods=['GET'])
+def support_type_list():
+    response = get_type_list()
+    return json.dumps(response)
+
+
+# In[ ]:
+
+
 @app.route('/private_map_data',methods=['GET'])
 @login_required
 def private_map_data(*args,**kwargs):
@@ -344,10 +353,9 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by):
             #Update request status as matched
             if response['status'] == True:
                 volunteers_assigned = get_volunteers_assigned_to_request(request_id)
-                if r_df.loc[0,'volunteers_reqd'] == volunteers_assigned: 
+                if r_df.loc[0,'volunteers_reqd'] == volunteers_assigned:
                     response_2 = update_requests_db({'id':request_id},{'status':'matched'})
-            #Remove volunteer availability
-            response_3 = update_nearby_volunteers_db({'id':request_id},{'status':'expired'})
+                    response_3 = update_nearby_volunteers_db({'r_id':request_id},{'status':'expired'})
             #Send to Volunteer
             v_sms_text = '[COVID SOS] Thank you agreeing to help. Name:'+r_df.loc[0,'name']+' Mob:'+str(r_df.loc[0,'mob_number'])+' Request:'+r_df.loc[0,'request']+' Address:'+r_df.loc[0,'geoaddress']
             send_sms(v_sms_text,int(v_df.loc[0,'mob_number']),sms_type='transactional',send=True)
@@ -490,6 +498,7 @@ def logout_request(*args,**kwargs):
 
 # In[ ]:
 
+
 # get requests that are available to be assigned to volunteers
 @app.route('/accept_page',methods=['GET'])
 def request_accept_page():
@@ -506,6 +515,7 @@ def request_accept_page():
 
 # In[ ]:
 
+
 # get all requests to be verified/rejected by moderator
 @app.route('/verify_request_page',methods=['POST'])
 @login_required
@@ -521,6 +531,7 @@ def verify_request_page(*args,**kwargs):
 
 
 # In[ ]:
+
 
 # mark verified/rejected and create a verification table entry with verification data
 @app.route('/verify_request',methods=['POST'])
