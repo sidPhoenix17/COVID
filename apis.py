@@ -126,10 +126,13 @@ def create_request():
     x,y = add_requests(df)
     response = {'Response':{},'status':x,'string_response':y}
     if(x):
+        #Move to message_templates.py file
         url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('Hi')
         sms_text = "[COVIDSOS] "+name+", we have received your request. We will call you soon. If urgent, please click "+url
         send_sms(sms_text,sms_to=int(mob_number),sms_type='transactional',send=True)
 #         mod_url = "https://wa.me/91"+str(mob_number)+"?text="+urllib.parse.quote_plus('Hey')
+
+        #Add to message_templates.py
         mod_url = "https://covidsos.org/verify/"+str(uuid)
         mod_sms_text = 'New query received. Verify lead by clicking here: '+mod_url
         for i_number in moderator_list:
@@ -173,6 +176,7 @@ def add_volunteer():
     expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status','support_type']
     x,y = add_volunteers_to_db(df)
     if(x):
+        #Use from message_templates.py file
         url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus("Hi")
         if(y=='Volunteer already exists. No New Volunteers to be added'):
             sms_text = "[COVIDSOS] You are already registered with us. Click here to contact us "+url
@@ -356,6 +360,7 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by):
                 if r_df.loc[0,'volunteers_reqd'] == volunteers_assigned:
                     response_2 = update_requests_db({'id':request_id},{'status':'matched'})
                     response_3 = update_nearby_volunteers_db({'r_id':request_id},{'status':'expired'})
+            #Move to message_templates.py file
             #Send to Volunteer
             v_sms_text = '[COVID SOS] Thank you agreeing to help. Name:'+r_df.loc[0,'name']+' Mob:'+str(r_df.loc[0,'mob_number'])+' Request:'+r_df.loc[0,'request']+' Address:'+r_df.loc[0,'geoaddress']
             send_sms(v_sms_text,int(v_df.loc[0,'mob_number']),sms_type='transactional',send=True)
@@ -395,6 +400,7 @@ def auto_assign_volunteer():
             response = request_matching(df)
             response_2 = update_requests_db({'id':r_id},{'status':'matched'})
             response_3 = update_nearby_volunteers_db({'r_id':r_id},{'status':'expired'})
+            #Move to message_templates.py file
             #Send to Volunteer
             v_sms_text = '[COVID SOS] Thank you agreeing to help. Name:'+r_df.loc[0,'name']+' Mob:'+str(r_df.loc[0,'mob_number'])+' Request:'+r_df.loc[0,'request']+' Address:'+r_df.loc[0,'geoaddress']
             send_sms(v_sms_text,int(v_df.loc[0,'mob_number']),sms_type='transactional',send=True)
@@ -574,10 +580,12 @@ def verify_request(*args,**kwargs):
         else:
             x,y = add_request_verification_db(df)
         if(verification_status=='verified'):
+            #Move to message_templates.py file
             requestor_text = '[COVIDSOS] Your request has been verified. We will look for volunteers in your neighbourhood.'
             send_sms(requestor_text,sms_to=int(mob_number),sms_type='transactional',send=True)
             message_all_volunteers(uuid,neighbourhood_radius,search_radius)
         else:
+            #Move to message_templates.py file
             requestor_text = '[COVIDSOS] Your request has been cancelled/rejected. If you still need help, please submit request again.'
             send_sms(requestor_text,sms_to=int(mob_number),sms_type='transactional',send=True)
         return json.dumps({'Response':{},'status':response_2['status'],'string_response':response_2['string_response']})
@@ -640,6 +648,36 @@ def verify_otp_request():
         encodeKey = f'{user_id} {country}'
         responseObj = {'auth_token': encode_auth_token(encodeKey).decode(), 'name': name, 'volunteer_id': user_id}
     return json.dumps({'Response':responseObj,'status':success,'string_response':response})
+
+
+# In[ ]:
+
+
+# #Volunteer closing
+# #Show all requests by this volunteer - open & closed
+# #Add option to close request - add a comment and optional pictures.
+# @app.route('/volunteer_tracking',methods=['POST'])
+# @volunteer_login_req
+# def volunteer_tickets():
+    
+#     return None
+
+
+# @app.route('/volunteer_close',methods=['POST'])
+# @volunteer_login_req
+# def task_completed():
+#     request_id = request.form.get('r_id')
+#     status = request.form.get('status')
+#     comments = request.form.get('comments')
+#     if(status=='completed'):
+#         #update status
+#     if(status=='cancelled'):
+#         #update status
+#     if(status=='assign to another volunteer'):
+#         #update status to "verified"
+#     return None
+
+
 
 
 # In[ ]:
