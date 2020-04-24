@@ -8,10 +8,10 @@ import uuid
 import pandas as pd
 import numpy as np
 import datetime as dt
-from settings import EARTH_RADIUS,moderator_list,server_type
+from settings import EARTH_RADIUS,server_type
 from connections import connections,write_query
 from database_entry import send_sms
-from data_fetching import request_data_by_uuid
+from data_fetching import request_data_by_uuid,get_moderator_list
 import mailer_fn as mailer
 import urllib.parse as p
 import requests
@@ -129,6 +129,7 @@ def message_all_volunteers(uuid,radius,search_radius):
         str_broadcast = str_broadcast + v_list.loc[i,'name']+" m: wa.me/91"+str(v_list.loc[i,'mob_number'])+" "
     link = url_shortener_fn("https://wa.me/918618948661?text="+p.quote(str_broadcast))
     mod_sms_text_3 = "Broadcast to volunteers using "+link
+    moderator_list = get_moderator_list()
     for i_number in moderator_list:
         if((server_type=='prod')):
             send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)

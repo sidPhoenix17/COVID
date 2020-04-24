@@ -54,6 +54,19 @@ def get_type_list():
 # In[ ]:
 
 
+def get_moderator_list():
+    try:
+        req_q = """Select mob_number from users where verification_team=1"""
+        req_df = pd.read_sql(req_q,connections('prod_db_read'))
+        return req_df['mob_number'].unique().tolist()
+    except:
+        mailer.send_exception_mail()
+        return []
+
+
+# In[ ]:
+
+
 def get_ticker_counts():
     try:
         server_con = connections('prod_db_read')
