@@ -16,12 +16,12 @@ from connections import connections
 
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db,                add_request_verification_db,update_request_v_db
 
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,get_source_list, website_success_stories,                        verify_volunteer_exists,check_past_verification,get_volunteers_assigned_to_request,get_type_list
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,get_source_list, website_success_stories,                        verify_volunteer_exists,check_past_verification,get_volunteers_assigned_to_request,                        get_type_list,get_moderator_list
 from partner_assignment import generate_uuid,message_all_volunteers
 from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
 
 
-from settings import server_type, SECRET_KEY,neighbourhood_radius,moderator_list,search_radius
+from settings import server_type, SECRET_KEY,neighbourhood_radius,search_radius
 import cred_config as cc
 
 
@@ -135,6 +135,7 @@ def create_request():
         #Add to message_templates.py
         mod_url = "https://covidsos.org/verify/"+str(uuid)
         mod_sms_text = 'New query received. Verify lead by clicking here: '+mod_url
+        moderator_list = get_moderator_list()
         for i_number in moderator_list:
             send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
         #move to async
@@ -216,6 +217,7 @@ def new_user(*args,**kwargs):
     creator_access_type = request.form.get('creator_access_type')
     user_access_type = request.form.get('user_access_type')
     creator_user_id = request.form.get('creator_user_id')
+    verification_team = request.form.get('verification_team',1)
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
     if(user_access_type=='moderator'):
         access_type=2
@@ -227,7 +229,7 @@ def new_user(*args,**kwargs):
     else:
         response = {'Response':{},'status':False,'string_response':'Invalid access type'}
         return json.dumps(response)
-    req_dict = {'creation_date':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],'organisation':[organisation],'password':[password],'access_type':[access_type],'created_by':[creator_user_id]}
+    req_dict = {'creation_date':[current_time],'name':[name],'mob_number':[mob_number],'email_id':[email_id],'organisation':[organisation],'password':[password],'access_type':[access_type],'created_by':[creator_user_id],'verification_team':[verification_team]}
     df = pd.DataFrame(req_dict)
     if(creator_access_type=='superuser'):
         response = add_user(df)
@@ -369,6 +371,7 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by):
             send_sms(r_sms_text,int(r_df.loc[0,'mob_number']),sms_type='transactional',send=True)
             #Send to Moderator
             m_sms_text = '[COVID SOS] Volunteer '+v_df.loc[0,'name']+' Mob: '+str(v_df.loc[0,'mob_number'])+' assigned to '+r_df.loc[0,'name']+' Mob:'+str(r_df.loc[0,'mob_number'])
+            moderator_list = get_moderator_list()
             for i_number in moderator_list:
                 send_sms(m_sms_text,int(i_number),sms_type='transactional',send=True)
         else:

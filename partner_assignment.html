@@ -13083,10 +13083,10 @@ div#notebook {
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">datetime</span> <span class="k">as</span> <span class="nn">dt</span>
-<span class="kn">from</span> <span class="nn">settings</span> <span class="kn">import</span> <span class="n">EARTH_RADIUS</span><span class="p">,</span><span class="n">moderator_list</span><span class="p">,</span><span class="n">server_type</span>
+<span class="kn">from</span> <span class="nn">settings</span> <span class="kn">import</span> <span class="n">EARTH_RADIUS</span><span class="p">,</span><span class="n">server_type</span>
 <span class="kn">from</span> <span class="nn">connections</span> <span class="kn">import</span> <span class="n">connections</span><span class="p">,</span><span class="n">write_query</span>
 <span class="kn">from</span> <span class="nn">database_entry</span> <span class="kn">import</span> <span class="n">send_sms</span>
-<span class="kn">from</span> <span class="nn">data_fetching</span> <span class="kn">import</span> <span class="n">request_data_by_uuid</span>
+<span class="kn">from</span> <span class="nn">data_fetching</span> <span class="kn">import</span> <span class="n">request_data_by_uuid</span><span class="p">,</span><span class="n">get_moderator_list</span>
 <span class="kn">import</span> <span class="nn">mailer_fn</span> <span class="k">as</span> <span class="nn">mailer</span>
 <span class="kn">import</span> <span class="nn">urllib.parse</span> <span class="k">as</span> <span class="nn">p</span>
 <span class="kn">import</span> <span class="nn">requests</span>
@@ -13224,6 +13224,7 @@ div#notebook {
         <span class="n">str_broadcast</span> <span class="o">=</span> <span class="n">str_broadcast</span> <span class="o">+</span> <span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot; m: wa.me/91&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">v_list</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="s1">&#39;mob_number&#39;</span><span class="p">])</span><span class="o">+</span><span class="s2">&quot; &quot;</span>
     <span class="n">link</span> <span class="o">=</span> <span class="n">url_shortener_fn</span><span class="p">(</span><span class="s2">&quot;https://wa.me/918618948661?text=&quot;</span><span class="o">+</span><span class="n">p</span><span class="o">.</span><span class="n">quote</span><span class="p">(</span><span class="n">str_broadcast</span><span class="p">))</span>
     <span class="n">mod_sms_text_3</span> <span class="o">=</span> <span class="s2">&quot;Broadcast to volunteers using &quot;</span><span class="o">+</span><span class="n">link</span>
+    <span class="n">moderator_list</span> <span class="o">=</span> <span class="n">get_moderator_list</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">i_number</span> <span class="ow">in</span> <span class="n">moderator_list</span><span class="p">:</span>
         <span class="k">if</span><span class="p">((</span><span class="n">server_type</span><span class="o">==</span><span class="s1">&#39;prod&#39;</span><span class="p">)):</span>
             <span class="n">send_sms</span><span class="p">(</span><span class="n">mod_sms_text</span><span class="p">,</span><span class="n">sms_to</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">i_number</span><span class="p">),</span><span class="n">sms_type</span><span class="o">=</span><span class="s1">&#39;transactional&#39;</span><span class="p">,</span><span class="n">send</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>

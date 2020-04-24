@@ -163,7 +163,7 @@ def verify_user(username,password):
 
 
 def add_user(df):
-    expected_columns=['creation_date', 'name', 'mob_number', 'email_id', 'organisation', 'password', 'access_type','created_by']
+    expected_columns=['creation_date', 'name', 'mob_number', 'email_id', 'organisation', 'password', 'access_type','created_by','verification_team']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('prod_db_write')
         df.to_sql(name = 'users', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
