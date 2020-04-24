@@ -294,8 +294,12 @@ def request_source_list():
 
 @app.route('/support_type_list',methods=['GET'])
 def support_type_list():
-    response = get_type_list()
-    return json.dumps(response)
+    get_type = request.args.get('type')
+    if((get_type=='volunteer')or(get_type=='request')):
+        response = get_type_list(get_type)
+        return json.dumps(response)
+    else:
+        return json.dumps({'Response':{},'status':False,'string_response':'Incorrect response'})
 
 
 # In[ ]:
@@ -553,7 +557,7 @@ def verify_request(*args,**kwargs):
     name = request.form.get('name')
     where = request.form.get('geoaddress')
     mob_number = request.form.get('mob_number')
-    urgent_status = request.form.get('urgent',False)
+    urgent_status = request.form.get('urgent','no')
     source = request.form.get('source','covidsos')
     volunteers_reqd = request.form.get('volunteer_count', 1)
     current_time = dt.datetime.utcnow()+dt.timedelta(minutes=330)
