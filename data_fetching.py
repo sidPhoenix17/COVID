@@ -41,11 +41,12 @@ def get_source_list():
 # In[ ]:
 
 
-def get_type_list():
+def get_type_list(table_type='volunteer'):
     try:
-        req_q = """Select id,support_type from volunteer_support"""
+        req_q = """Select id,support_type,table_type from support_list where is_active=1"""
         req_df = pd.read_sql(req_q, connections('prod_db_read'))
-        return {'Response':req_df.to_dict('records'),'status':True,'string_response':'List retrieved'}
+        req_df = req_df[req_df['table_type']==table_type]
+        return {'Response':req_df[['id','support_type']].to_dict('records'),'status':True,'string_response':'List retrieved'}
     except:
         mailer.send_exception_mail()
         return {'Response':{},'status':False,'string_response':'List unavailable'}
