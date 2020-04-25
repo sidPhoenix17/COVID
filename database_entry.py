@@ -103,7 +103,7 @@ def contact_us_form_add(df):
 
 # In[ ]:
 
-
+# TODO: santitise df data for single quotes
 def add_request_verification_db(df):
     expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance']
     #If Request ID does not exist in verification table, create a new row
@@ -161,7 +161,7 @@ def verify_user(username,password):
 # In[ ]:
 
 
-
+# TODO: santitise df data for single quotes
 def add_user(df):
     expected_columns=['creation_date', 'name', 'mob_number', 'email_id', 'organisation', 'password', 'access_type','created_by','verification_team']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
@@ -176,7 +176,7 @@ def add_user(df):
 # In[ ]:
 
 
-
+# TODO: santitise df data for single quotes
 def request_matching(df):
     expected_columns=['request_id','volunteer_id','matching_by','timestamp']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
@@ -209,10 +209,17 @@ def check_user(table_name,user_id):
 
 # In[ ]:
 
-
+def sanitise_for_sql(obj):
+    if not isinstance(obj, dict):
+        return {}
+    for i,j in obj.items():
+        if isinstance(j, str) and "'" in j:
+            obj[i] = j.replace("'", "''")
+    return obj
 
 def update_requests_db(r_dict_where,r_dict_set):
     try:
+        r_dict_where, r_dict_set = sanitise_for_sql(r_dict_where), sanitise_for_sql(r_dict_set)
         set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = r_dict_set[x]) for x in r_dict_set))
         where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = r_dict_where[x]) for x in r_dict_where))
         query = """update requests set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
@@ -224,6 +231,7 @@ def update_requests_db(r_dict_where,r_dict_set):
 
 def update_nearby_volunteers_db(nv_dict_where,nv_dict_set):
     try:
+        nv_dict_where,nv_dict_set = sanitise_for_sql(nv_dict_where), sanitise_for_sql(nv_dict_set)
         set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = nv_dict_set[x]) for x in nv_dict_set))
         where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = nv_dict_where[x]) for x in nv_dict_where))
         query = """update nearby_volunteers set {set_str} where {where_str};""".format(set_str= set_sql_format,where_str=where_sql_format)
@@ -235,6 +243,7 @@ def update_nearby_volunteers_db(nv_dict_where,nv_dict_set):
 
 def update_volunteers_db(v_dict_where,v_dict_set):
     try:
+        v_dict_where,v_dict_set = sanitise_for_sql(v_dict_where), sanitise_for_sql(v_dict_set)
         set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = v_dict_set[x]) for x in v_dict_set))
         where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = v_dict_where[x]) for x in v_dict_where))
         query = """update volunteers set {set_str} where {where_str};""".format(set_str= set_sql_format,where_str=where_sql_format)
@@ -247,6 +256,7 @@ def update_volunteers_db(v_dict_where,v_dict_set):
     
 def update_request_v_db(rv_dict_where,rv_dict_set):
     try:
+        rv_dict_where,rv_dict_set = sanitise_for_sql(rv_dict_where), sanitise_for_sql(rv_dict_set)
         set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = rv_dict_set[x]) for x in rv_dict_set))
         where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = rv_dict_where[x]) for x in rv_dict_where))
         query = """update request_verification set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
