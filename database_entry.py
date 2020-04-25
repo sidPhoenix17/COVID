@@ -191,6 +191,18 @@ def request_matching(df):
 # In[ ]:
 
 
+def sanitise_for_sql(obj):
+    if not isinstance(obj, dict):
+        return {}
+    for i,j in obj.items():
+        if isinstance(j, str) and "'" in j:
+            obj[i] = j.replace("'", "''")
+    return obj
+
+
+# In[ ]:
+
+
 
 def check_user(table_name,user_id):
     server_con = connections('prod_db_read')
