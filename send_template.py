@@ -40,7 +40,7 @@ print(response.text)
 
 ## send template
 
-payload = "{\n\t\"to\": \""+to+"\",\n\t\"type\": \"hsm\",\n\t\"recipient_type\": \"individual\",\n\t\"hsm\": {\n\t\t\"namespace\": \""+namespase+"\",\n    \t\"element_name\": \""+element_name+"\",\n    \t\"language\": {\n    \t\t\"policy\": \"deterministic\",\n    \t\t\"code\": \"en\"\n    \t},\n    \t\"localizable_params\": [{\"default\":\"Bridgestone\"},{\"default\":\"invoice\"}]\n\t}\n}\n"
+payload = "{\n\t\"to\": \""+to+"\",\n\t\"type\": \"hsm\",\n\t\"recipient_type\": \"individual\",\n\t\"hsm\": {\n\t\t\"namespace\": \"10aac1cc_58ce_4275_8374_9b0ffd4b9de1\",\n    \t\"element_name\": \"ktpl_welcome\",\n    \t\"language\": {\n    \t\t\"policy\": \"deterministic\",\n    \t\t\"code\": \"en\"\n    \t},\n    \t\"localizable_params\": [{\"default\":\"Bridgestone\"},{\"default\":\"invoice\"}]\n\t}\n}\n"
 print(payload)
 
 headers = {
