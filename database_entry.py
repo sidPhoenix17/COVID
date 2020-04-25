@@ -103,6 +103,7 @@ def contact_us_form_add(df):
 
 # In[ ]:
 
+
 # TODO: santitise df data for single quotes
 def add_request_verification_db(df):
     expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance']
@@ -221,13 +222,7 @@ def check_user(table_name,user_id):
 
 # In[ ]:
 
-def sanitise_for_sql(obj):
-    if not isinstance(obj, dict):
-        return {}
-    for i,j in obj.items():
-        if isinstance(j, str) and "'" in j:
-            obj[i] = j.replace("'", "''")
-    return obj
+
 
 def update_requests_db(r_dict_where,r_dict_set):
     try:
