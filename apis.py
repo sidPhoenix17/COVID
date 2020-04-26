@@ -16,7 +16,7 @@ from connections import connections
 
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db,                add_request_verification_db,update_request_v_db, update_request_status
 
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,get_source_list, website_success_stories,                        verify_volunteer_exists,check_past_verification,get_volunteers_assigned_to_request,                        get_type_list,get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,get_source_list, website_success_stories,                        verify_volunteer_exists,check_past_verification,get_volunteers_assigned_to_request,                        get_type_list,get_moderator_list,get_unverified_requests, get_requests_assigned_to_volunteer
 from partner_assignment import generate_uuid,message_all_volunteers
 from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
 
@@ -678,13 +678,13 @@ def volunteer_tickets(*args,**kwargs):
     volunteer_reqs = get_requests_assigned_to_volunteer(volunteer_id)
     return json.dumps({'Response':volunteer_reqs, 'status':True, 'string_response':'Data sent'})
 
+# @app.route('/request-info',methods=['GET'])
+# def get_request_info():
+#     request_uuid = request.form.get('uuid', '')
+#     request_data = request_data_by_uuid(request_uuid)
+#     request_data = request_data.to_dict('records')
+#     return json.dumps({'Response':request_data, 'status':True, 'string_response':'Data sent'})
 
-@app.route('/request-info',methods=['GET'])
-def get_request_info():
-    request_uuid = request.form.get('uuid', '')
-    request_data = request_data_by_uuid(request_uuid)
-    request_data = request_data.to_dict('records')
-    return json.dumps({'Response':request_data, 'status':True, 'string_response':'Data sent'})
 
 
 @app.route('/vol-update-request',methods=['POST'])
@@ -696,9 +696,8 @@ def task_completed(*args,**kwargs):
     status_message = request.form.get('status_message', '')
     if status not in ['completed', 'completed externally', 'cancelled', 'reported']:
         return json.dumps({'Response':{}, 'status':False, 'string_response':'invalid status value'})
-    response, success = update_request_status(request_uuid, status, status_message)
+    response, success = update_request_status(request_uuid, status, status_message,volunteer_id)
     return json.dumps({'Response':{}, 'status':success, 'string_response':response})
-
 
 
 # In[ ]:

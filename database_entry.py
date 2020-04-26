@@ -273,6 +273,19 @@ def update_request_v_db(rv_dict_where,rv_dict_set):
         mailer.send_exception_mail()
         return  {'Response':{},'string_response': 'Request Verification info updation failed' ,'status':False}
 
+    
+def update_request_updates_db(ru_dict_where,ru_dict_set):
+    try:
+        ru_dict_where,ru_dict_set = sanitise_for_sql(ru_dict_where), sanitise_for_sql(ru_dict_set)
+        set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = ru_dict_set[x]) for x in ru_dict_set))
+        where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = ru_dict_where[x]) for x in ru_dict_where))
+        query = """update request_updates set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
+        write_query(query,'prod_db_write')
+        return {'Response':{},'string_response': 'Request Update info Updated','status':True}
+    except:
+        mailer.send_exception_mail()
+        return  {'Response':{},'string_response': 'Request Update info updation failed' ,'status':False}
+
 
 # In[ ]:
 
@@ -376,42 +389,47 @@ def verify_otp(otp, otp_from):
 
 # In[ ]:
 
-def update_request_status(r_uuid, status, status_message):
 
+def update_request_status(r_uuid, status, status_message, volunteer_id):
     reqStatus = status
     if status == 'completed externally':
-        reqStatus, status_message = 'completed', 'completed externally'
+        reqStatus, status_message = 'completed', 'completed externally' 
     if status == 'cancelled':
         reqStatus = 'verified'
     status_message = sanitise_for_sql({'message': status_message}).get('message', '')
-    requests_query = f""" update requests set status = {reqStatus} where uuid = '{r_uuid}'; """
-    request_update_query = f""" insert into request_updates (request_uuid, status, status_message) values ('{r_uuid}', '{status}', '{status_message}'); """
-
+    request_update_query = f""" insert into request_updates (request_uuid, status, status_message,v_id) values ('{r_uuid}', '{status}', '{status_message}','{volunteer_id}'); """
     # update request_updates
     try:
         write_query(request_update_query,'prod_db_write')
     except:
         mailer.send_exception_mail()
         return  'Failed to add request update', False
-
-    # update requests
-    try:
-        write_query(requests_query,'prod_db_write')
-    except:
-        mailer.send_exception_mail()
-        return 'Failed to update request status', False
-
+    update_requests_db({'uuid':r_uuid},{'status':reqStatus})
+#     requests_query = f""" update requests set status = {reqStatus} where uuid = '{r_uuid}'; """
+      # update requests
+#     try:
+#         write_query(requests_query,'prod_db_write')
+#     except:
+#         mailer.send_exception_mail()
+#         return 'Failed to update request status', False
     # update request_matching
     if status == 'cancelled':
         r_id_query = f""" select id from requests where uuid = {r_uuid}"""
         r_id = pd.read_sql(r_id_query, connections('prod_db_read')).loc[0, 'id']
-        query = f""" update request_macthing set is_active=False where request_id={r_id}"""
+        query = f""" update request_matching set is_active=False where request_id={r_id}"""
         try:
             write_query(requests_query,'prod_db_write')
         except:
             mailer.send_exception_mail()
             return 'Failed to cancel request matching', False
     return 'Updated request status', True
+
+
+# In[ ]:
+
+
+
+
 
 # In[ ]:
 
@@ -437,12 +455,6 @@ def update_request_status(r_uuid, status, status_message):
 #             return {'Response':{},'string_response': 'Request Updated','status':True}
 #     except e:
 #         return  {'Response':{},'string_response': 'Volunteer updation failed' ,'status':False}
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:
