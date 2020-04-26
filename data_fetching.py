@@ -271,6 +271,20 @@ def accept_request_page(uuid):
     df['why']=df['why'].fillna('Senior Citizen')
     df['financial_assistance']=df['financial_assistance'].fillna(0)
     return df
+
+def accept_request_page_secure(uuid):
+    query = """Select r.id as r_id,r.name as name,r.mob_number, r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
+            rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance
+            from requests r left join request_verification rv on r.id=rv.r_id
+            where r.uuid='{uuid}'""".format(uuid=uuid)
+    df = pd.read_sql(query,connections('prod_db_read'))
+    df = df[~df['verification_status'].isna()]
+    if(df.shape[0]>1):
+        df = df[0:0]
+    df['what']=df['what'].fillna('Please call senior citizen to discuss')
+    df['why']=df['why'].fillna('Senior Citizen')
+    df['financial_assistance']=df['financial_assistance'].fillna(0)
+    return df
     
     
 def request_data_by_uuid(uuid):
