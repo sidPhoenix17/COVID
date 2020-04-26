@@ -12,6 +12,7 @@ import requests
 from sqlalchemy.sql import text
 import datetime as dt
 from settings import sms_key, sms_sid, sms_url, otp_url, EARTH_RADIUS,server_type,org_request_list
+from settings import server_type, whatsapp_api_url, whatsapp_api_password,auth_code
 import mailer_fn as mailer
 import json
 import requests
@@ -104,7 +105,6 @@ def contact_us_form_add(df):
 # In[ ]:
 
 
-# TODO: santitise df data for single quotes
 def add_request_verification_db(df):
     expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance']
     #If Request ID does not exist in verification table, create a new row
@@ -162,7 +162,7 @@ def verify_user(username,password):
 # In[ ]:
 
 
-# TODO: santitise df data for single quotes
+
 def add_user(df):
     expected_columns=['creation_date', 'name', 'mob_number', 'email_id', 'organisation', 'password', 'access_type','created_by','verification_team']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
@@ -177,7 +177,7 @@ def add_user(df):
 # In[ ]:
 
 
-# TODO: santitise df data for single quotes
+
 def request_matching(df):
     expected_columns=['request_id','volunteer_id','matching_by','timestamp']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
@@ -187,18 +187,6 @@ def request_matching(df):
     else:
         return  {'Response':{},'string_response': 'Volunteer assignment failed due to incorrect data format' ,'status':False}
         
-
-
-# In[ ]:
-
-
-def sanitise_for_sql(obj):
-    if not isinstance(obj, dict):
-        return {}
-    for i,j in obj.items():
-        if isinstance(j, str) and "'" in j:
-            obj[i] = j.replace("'", "''")
-    return obj
 
 
 # In[ ]:
@@ -226,7 +214,6 @@ def check_user(table_name,user_id):
 
 def update_requests_db(r_dict_where,r_dict_set):
     try:
-        r_dict_where, r_dict_set = sanitise_for_sql(r_dict_where), sanitise_for_sql(r_dict_set)
         set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = r_dict_set[x]) for x in r_dict_set))
         where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = r_dict_where[x]) for x in r_dict_where))
         query = """update requests set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
@@ -238,7 +225,6 @@ def update_requests_db(r_dict_where,r_dict_set):
 
 def update_nearby_volunteers_db(nv_dict_where,nv_dict_set):
     try:
-        nv_dict_where,nv_dict_set = sanitise_for_sql(nv_dict_where), sanitise_for_sql(nv_dict_set)
         set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = nv_dict_set[x]) for x in nv_dict_set))
         where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = nv_dict_where[x]) for x in nv_dict_where))
         query = """update nearby_volunteers set {set_str} where {where_str};""".format(set_str= set_sql_format,where_str=where_sql_format)
@@ -250,7 +236,6 @@ def update_nearby_volunteers_db(nv_dict_where,nv_dict_set):
 
 def update_volunteers_db(v_dict_where,v_dict_set):
     try:
-        v_dict_where,v_dict_set = sanitise_for_sql(v_dict_where), sanitise_for_sql(v_dict_set)
         set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = v_dict_set[x]) for x in v_dict_set))
         where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = v_dict_where[x]) for x in v_dict_where))
         query = """update volunteers set {set_str} where {where_str};""".format(set_str= set_sql_format,where_str=where_sql_format)
@@ -263,7 +248,6 @@ def update_volunteers_db(v_dict_where,v_dict_set):
     
 def update_request_v_db(rv_dict_where,rv_dict_set):
     try:
-        rv_dict_where,rv_dict_set = sanitise_for_sql(rv_dict_where), sanitise_for_sql(rv_dict_set)
         set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = rv_dict_set[x]) for x in rv_dict_set))
         where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = rv_dict_where[x]) for x in rv_dict_where))
         query = """update request_verification set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
@@ -297,9 +281,8 @@ def blacklist_token(token):
 # In[ ]:
 
 
-
-def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
-    sid = sms_sid
+def send_normal_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
+        sid = sms_sid
     key = sms_key
     url = sms_url
     if(sms_type=='transactional'):
@@ -320,6 +303,77 @@ def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
             print('SMS API error')
             mailer.send_exception_mail()
             return None
+        
+# In[ ]:
+
+
+
+#Whatsapp business API authkey
+def get_auth_key():
+    url=whatsapp_api_url+"/v1/users/login"
+    payload = {"new_password": whatsapp_api_password}
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Basic <base64(username:password)>',
+        'Authorization': 'Basic YWRtaW46S2hhaXJuYXJAMTIz'
+            }
+    response = requests.request("POST", url, headers=headers, data = json.dumps(payload),verify=False)
+    rs=response.text
+    json_data=json.loads(rs)
+    return json_data["users"][0]["token"]
+
+
+
+
+def send_whatsapp_message(url,to,message,preview_url=False):
+    url_register = url + "/v1/contacts/"
+    
+    authkey=get_auth_key()
+    ## register contact
+    payload = "{\n   \"blocking\": \"wait\",\n   \"contacts\": [\""+to[2:]+"\"] \n}"
+    headers = {
+        'Content-Type': "application/json",
+        'Authorization': "Bearer "+authkey,
+        'cache-control': "no-cache",
+        'Postman-Token': "d1e7e7ca-c958-42f9-acbd-06055f599a32"
+        }
+    response = requests.request("POST", url_register, data=payload, headers=headers, verify=False)
+    print(response.text)
+    
+    # check validity for whatsapp number
+    if "invalid" in response.text:
+        # send normal sms
+        sms_text = message
+        sms_to = to
+        send_normal_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True)
+        
+    else:
+        # send message
+        url_message = url+'/v1/messages'
+        authkey = get_auth_key()
+        ##print("Inside message")
+        data = {"to": to,"type": "text","recipient_type":"individual","text":{"body":message},"preview_url":preview_url}
+        headers = {'Content-type': 'application/json', 'Authorization': "Bearer "+authkey}
+        print(data)
+        try:
+            response = requests.request("POST", url_message, data=json.dumps(data), headers=headers,verify = False)
+            print("message sent")
+        except Exception as e:
+            print(e)
+        return response 
+    
+
+# In[ ]:
+
+
+def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True, mode='wap'):
+    if mode == 'norm':
+        send_normal_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True)
+        return True
+    
+    send_whatsapp_message(whatsapp_api_url,sms_to,sms_text,preview_url=False)
+    return True
+        
 
 
 # In[ ]:
