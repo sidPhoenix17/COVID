@@ -324,16 +324,16 @@ def volunteer_data_by_id(v_id):
 
 # In[ ]:
 
-
 def get_volunteers_assigned_to_request(r_id):
     query = f"""Select volunteer_id from request_matching where request_id={r_id}"""
     data = pd.read_sql(query, connections('prod_db_read'))
     if data.shape[0]==0:
         return 0
     return data['volunteer_id'].nunique()
-#     data = data.to_dict()
-#     volunteers = data['volunteer_id']
-#     volunteers = [volunteer for (index, volunteer) in volunteers.items()]
-#     unique_volunteers = set(volunteers)
-#     return len(unique_volunteers)
 
+
+def get_requests_assigned_to_volunteer(v_id):
+    query = f"""Select r.uuid as uuid, r.status as status, r.name as name, r.address as address, rm.last_updated as last_updated \
+        from request_matching rm left join requests r on rm.request_id=r.id where rm.volunteer_id={v_id} and rm.is_active=True;"""
+    data = pd.read_sql(query, connections('prod_db_read'))
+    return data.to_dict('records')
