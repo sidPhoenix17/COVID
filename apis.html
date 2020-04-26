@@ -13098,7 +13098,7 @@ div#notebook {
                         <span class="n">accept_request_page</span><span class="p">,</span><span class="n">request_data_by_uuid</span><span class="p">,</span><span class="n">request_data_by_id</span><span class="p">,</span><span class="n">volunteer_data_by_id</span><span class="p">,</span>\
                         <span class="n">website_requests_display</span><span class="p">,</span><span class="n">get_requests_list</span><span class="p">,</span><span class="n">get_source_list</span><span class="p">,</span> <span class="n">website_success_stories</span><span class="p">,</span>\
                         <span class="n">verify_volunteer_exists</span><span class="p">,</span><span class="n">check_past_verification</span><span class="p">,</span><span class="n">get_volunteers_assigned_to_request</span><span class="p">,</span>\
-                        <span class="n">get_type_list</span><span class="p">,</span><span class="n">get_moderator_list</span><span class="p">,</span><span class="n">get_unverified_requests</span><span class="p">,</span> <span class="n">get_requests_assigned_to_volunteer</span>
+                        <span class="n">get_type_list</span><span class="p">,</span><span class="n">get_moderator_list</span><span class="p">,</span><span class="n">get_unverified_requests</span><span class="p">,</span> <span class="n">get_requests_assigned_to_volunteer</span><span class="p">,</span><span class="n">accept_request_page_secure</span>
 <span class="kn">from</span> <span class="nn">partner_assignment</span> <span class="kn">import</span> <span class="n">generate_uuid</span><span class="p">,</span><span class="n">message_all_volunteers</span>
 <span class="kn">from</span> <span class="nn">auth</span> <span class="kn">import</span> <span class="n">encode_auth_token</span><span class="p">,</span> <span class="n">decode_auth_token</span><span class="p">,</span> <span class="n">login_required</span><span class="p">,</span> <span class="n">volunteer_login_req</span>
 
@@ -13970,7 +13970,7 @@ div#notebook {
 
 <span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/request-info&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
 <span class="nd">@volunteer_login_req</span>
-<span class="k">def</span> <span class="nf">get_request_info</span><span class="p">():</span>
+<span class="k">def</span> <span class="nf">get_request_info</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">request_uuid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;uuid&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
     <span class="n">request_data</span> <span class="o">=</span> <span class="n">accept_request_page_secure</span><span class="p">(</span><span class="n">request_uuid</span><span class="p">)</span>
     <span class="n">request_data</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">)</span>
