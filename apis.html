@@ -13098,7 +13098,7 @@ div#notebook {
                         <span class="n">accept_request_page</span><span class="p">,</span><span class="n">request_data_by_uuid</span><span class="p">,</span><span class="n">request_data_by_id</span><span class="p">,</span><span class="n">volunteer_data_by_id</span><span class="p">,</span>\
                         <span class="n">website_requests_display</span><span class="p">,</span><span class="n">get_requests_list</span><span class="p">,</span><span class="n">get_source_list</span><span class="p">,</span> <span class="n">website_success_stories</span><span class="p">,</span>\
                         <span class="n">verify_volunteer_exists</span><span class="p">,</span><span class="n">check_past_verification</span><span class="p">,</span><span class="n">get_volunteers_assigned_to_request</span><span class="p">,</span>\
-                        <span class="n">get_type_list</span><span class="p">,</span><span class="n">get_moderator_list</span>
+                        <span class="n">get_type_list</span><span class="p">,</span><span class="n">get_moderator_list</span><span class="p">,</span><span class="n">get_unverified_requests</span>
 <span class="kn">from</span> <span class="nn">partner_assignment</span> <span class="kn">import</span> <span class="n">generate_uuid</span><span class="p">,</span><span class="n">message_all_volunteers</span>
 <span class="kn">from</span> <span class="nn">auth</span> <span class="kn">import</span> <span class="n">encode_auth_token</span><span class="p">,</span> <span class="n">decode_auth_token</span><span class="p">,</span> <span class="n">login_required</span><span class="p">,</span> <span class="n">volunteer_login_req</span>
 
@@ -13224,7 +13224,8 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/create_request&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1">#For Request/Help form submission.</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/create_request&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
 <span class="k">def</span> <span class="nf">create_request</span><span class="p">():</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
     <span class="n">mob_number</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mob_number&#39;</span><span class="p">)</span>
@@ -13867,6 +13868,26 @@ div#notebook {
 <span class="k">def</span> <span class="nf">pending_requests</span><span class="p">():</span>
     <span class="n">response</span> <span class="o">=</span> <span class="n">website_requests_display</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">response</span><span class="p">,</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Request data extracted&#39;</span><span class="p">},</span><span class="n">default</span><span class="o">=</span><span class="n">datetime_converter</span><span class="p">)</span>
+</pre></div>
+
+    </div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/unverified_requests&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@login_required</span>
+<span class="k">def</span> <span class="nf">unverified_requests</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">get_unverified_requests</span><span class="p">()</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">df</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">),</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Request data extracted&#39;</span><span class="p">},</span><span class="n">default</span><span class="o">=</span><span class="n">datetime_converter</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:{},</span><span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span><span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;No unverified requests found&#39;</span><span class="p">},</span><span class="n">default</span><span class="o">=</span><span class="n">datetime_converter</span><span class="p">)</span>
 </pre></div>
 
     </div>
