@@ -376,9 +376,42 @@ def verify_otp(otp, otp_from):
 
 # In[ ]:
 
+def update_request_status(r_uuid, status, status_message):
 
+    reqStatus = status
+    if status == 'completed externally':
+        reqStatus, status_message = 'completed', 'completed externally'
+    if status == 'cancelled':
+        reqStatus = 'verified'
+    status_message = sanitise_for_sql({'message': status_message}).get('message', '')
+    requests_query = f""" update requests set status = {reqStatus} where uuid = '{r_uuid}'; """
+    request_update_query = f""" insert into request_updates (request_uuid, status, status_message) values ('{r_uuid}', '{status}', '{status_message}'); """
 
+    # update request_updates
+    try:
+        write_query(request_update_query,'prod_db_write')
+    except:
+        mailer.send_exception_mail()
+        return  'Failed to add request update', False
 
+    # update requests
+    try:
+        write_query(requests_query,'prod_db_write')
+    except:
+        mailer.send_exception_mail()
+        return 'Failed to update request status', False
+
+    # update request_matching
+    if status == 'cancelled':
+        r_id_query = f""" select id from requests where uuid = {r_uuid}"""
+        r_id = pd.read_sql(r_id_query, connections('prod_db_read')).loc[0, 'id']
+        query = f""" update request_macthing set is_active=False where request_id={r_id}"""
+        try:
+            write_query(requests_query,'prod_db_write')
+        except:
+            mailer.send_exception_mail()
+            return 'Failed to cancel request matching', False
+    return 'Updated request status', True
 
 # In[ ]:
 
