@@ -678,12 +678,13 @@ def volunteer_tickets(*args,**kwargs):
     volunteer_reqs = get_requests_assigned_to_volunteer(volunteer_id)
     return json.dumps({'Response':volunteer_reqs, 'status':True, 'string_response':'Data sent'})
 
-# @app.route('/request-info',methods=['GET'])
-# def get_request_info():
-#     request_uuid = request.form.get('uuid', '')
-#     request_data = request_data_by_uuid(request_uuid)
-#     request_data = request_data.to_dict('records')
-#     return json.dumps({'Response':request_data, 'status':True, 'string_response':'Data sent'})
+@app.route('/request-info',methods=['GET'])
+@volunteer_login_req
+def get_request_info():
+    request_uuid = request.form.get('uuid', '')
+    request_data = accept_request_page_secure(request_uuid)
+    request_data = request_data.to_dict('records')
+    return json.dumps({'Response':request_data, 'status':True, 'string_response':'Data sent'})
 
 
 

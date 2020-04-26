@@ -13968,12 +13968,13 @@ div#notebook {
     <span class="n">volunteer_reqs</span> <span class="o">=</span> <span class="n">get_requests_assigned_to_volunteer</span><span class="p">(</span><span class="n">volunteer_id</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">volunteer_reqs</span><span class="p">,</span> <span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Data sent&#39;</span><span class="p">})</span>
 
-<span class="c1"># @app.route(&#39;/request-info&#39;,methods=[&#39;GET&#39;])</span>
-<span class="c1"># def get_request_info():</span>
-<span class="c1">#     request_uuid = request.form.get(&#39;uuid&#39;, &#39;&#39;)</span>
-<span class="c1">#     request_data = request_data_by_uuid(request_uuid)</span>
-<span class="c1">#     request_data = request_data.to_dict(&#39;records&#39;)</span>
-<span class="c1">#     return json.dumps({&#39;Response&#39;:request_data, &#39;status&#39;:True, &#39;string_response&#39;:&#39;Data sent&#39;})</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/request-info&#39;</span><span class="p">,</span><span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@volunteer_login_req</span>
+<span class="k">def</span> <span class="nf">get_request_info</span><span class="p">():</span>
+    <span class="n">request_uuid</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;uuid&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">request_data</span> <span class="o">=</span> <span class="n">accept_request_page_secure</span><span class="p">(</span><span class="n">request_uuid</span><span class="p">)</span>
+    <span class="n">request_data</span> <span class="o">=</span> <span class="n">request_data</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="s1">&#39;records&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;Response&#39;</span><span class="p">:</span><span class="n">request_data</span><span class="p">,</span> <span class="s1">&#39;status&#39;</span><span class="p">:</span><span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;string_response&#39;</span><span class="p">:</span><span class="s1">&#39;Data sent&#39;</span><span class="p">})</span>
 
 
 
