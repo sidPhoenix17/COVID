@@ -244,6 +244,7 @@ def get_unverified_requests():
         df = pd.read_sql(query,connections('prod_db_read'))
         df = df[~df['uuid'].isna()]
         df = df.sort_values(by=['id'],ascending=[False])
+        df = df.fillna('')
         if(server_type=='prod'):
             df['verify_link'] = df['uuid'].apply(lambda x:'https://covidsos.org/verify/'+x)
         else:
@@ -324,6 +325,7 @@ def volunteer_data_by_id(v_id):
 
 # In[ ]:
 
+
 def get_volunteers_assigned_to_request(r_id):
     query = f"""Select volunteer_id from request_matching where request_id={r_id}"""
     data = pd.read_sql(query, connections('prod_db_read'))
@@ -332,8 +334,12 @@ def get_volunteers_assigned_to_request(r_id):
     return data['volunteer_id'].nunique()
 
 
+# In[ ]:
+
+
 def get_requests_assigned_to_volunteer(v_id):
-    query = f"""Select r.uuid as uuid, r.status as status, r.name as name, r.address as address, rm.last_updated as last_updated \
-        from request_matching rm left join requests r on rm.request_id=r.id where rm.volunteer_id={v_id} and rm.is_active=True;"""
+    query = f"""Select r.uuid as uuid, r.status as status, r.name as name, r.address as address, rm.last_updated as last_updated
+    from request_matching rm left join requests r on rm.request_id=r.id where rm.volunteer_id={v_id} and rm.is_active=True;"""
     data = pd.read_sql(query, connections('prod_db_read'))
     return data.to_dict('records')
+
