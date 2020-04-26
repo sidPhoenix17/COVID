@@ -238,6 +238,25 @@ def check_past_verification(r_id):
 # In[ ]:
 
 
+def get_unverified_requests():
+    try:
+        query = """Select * from requests r where status='received'"""
+        df = pd.read_sql(query,connections('prod_db_read'))
+        df = df[~df['uuid'].isna()]
+        df = df.sort_values(by=['id'],ascending=[False])
+        if(server_type=='prod'):
+            df['verify_link'] = df['uuid'].apply(lambda x:'https://covidsos.org/verify/'+x)
+        else:
+            df['verify_link'] = df['uuid'].apply(lambda x:'https://stg.covidsos.org/verify/'+x)
+        return df
+    except:
+        mailer.send_exception_mail()
+        return pd.DataFrame()
+
+
+# In[ ]:
+
+
 def accept_request_page(uuid):
     query = """Select r.id as r_id,r.name as name, r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
             rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance

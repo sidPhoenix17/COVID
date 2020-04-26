@@ -16,7 +16,7 @@ from connections import connections
 
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db,                add_request_verification_db,update_request_v_db
 
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,get_source_list, website_success_stories,                        verify_volunteer_exists,check_past_verification,get_volunteers_assigned_to_request,                        get_type_list,get_moderator_list
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,get_source_list, website_success_stories,                        verify_volunteer_exists,check_past_verification,get_volunteers_assigned_to_request,                        get_type_list,get_moderator_list,get_unverified_requests
 from partner_assignment import generate_uuid,message_all_volunteers
 from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
 
@@ -101,6 +101,7 @@ app.config['SECRET_KEY'] = SECRET_KEY
 # In[ ]:
 
 
+#For Request/Help form submission.
 @app.route('/create_request',methods=['POST'])
 def create_request():
     name = request.form.get('name')
@@ -604,6 +605,19 @@ def verify_request(*args,**kwargs):
 def pending_requests():
     response = website_requests_display()
     return json.dumps({'Response':response,'status':True,'string_response':'Request data extracted'},default=datetime_converter)
+
+
+# In[ ]:
+
+
+@app.route('/unverified_requests',methods=['GET'])
+@login_required
+def unverified_requests(*args,**kwargs):
+    df = get_unverified_requests()
+    if(df.shape[0]>0):
+        return json.dumps({'Response':df.to_dict('records'),'status':True,'string_response':'Request data extracted'},default=datetime_converter)
+    else:
+        return json.dumps({'Response':{},'status':True,'string_response':'No unverified requests found'},default=datetime_converter)
 
 
 # In[ ]:
