@@ -14,9 +14,18 @@ import uuid
     
 from connections import connections
 
-from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,                 add_user, request_matching, check_user, update_requests_db, update_volunteers_db,                 blacklist_token,send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db,                add_request_verification_db,update_request_v_db, update_request_status
+from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user,\
+    add_user, request_matching, check_user, update_requests_db, update_volunteers_db,\
+    blacklist_token,send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db,\
+    add_request_verification_db,update_request_v_db, update_request_status
 
-from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,                        accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,                        website_requests_display,get_requests_list,get_source_list, website_success_stories,                        verify_volunteer_exists,check_past_verification,get_volunteers_assigned_to_request,                        get_type_list,get_moderator_list,get_unverified_requests, get_requests_assigned_to_volunteer,accept_request_page_secure
+from data_fetching import get_ticker_counts,get_private_map_data,get_public_map_data, get_user_id,\
+    accept_request_page,request_data_by_uuid,request_data_by_id,volunteer_data_by_id,\
+    website_requests_display,get_requests_list,get_source_list, website_success_stories,\
+    verify_volunteer_exists,check_past_verification,get_volunteers_assigned_to_request,\
+    get_type_list,get_moderator_list,get_unverified_requests, get_requests_assigned_to_volunteer,\
+    accept_request_page_secure,get_assigned_requests
+
 from partner_assignment import generate_uuid,message_all_volunteers
 from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
 
@@ -621,6 +630,19 @@ def unverified_requests(*args,**kwargs):
 
 
 # In[ ]:
+
+@app.route('/accepted_requests',methods=['GET'])
+@login_required
+def assigned_requests(*args,**kwargs):
+    df = get_assigned_requests()
+    if(df.shape[0]>0):
+        return json.dumps({'Response':df.to_dict('records'),'status':True,'string_response':'Request data extracted'},default=datetime_converter)
+    else:
+        return json.dumps({'Response':{},'status':True,'string_response':'No open requests found'},default=datetime_converter)
+
+
+# In[ ]:
+
 
 
 @app.route('/success_stories',methods=['GET'])

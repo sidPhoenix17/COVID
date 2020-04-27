@@ -357,3 +357,18 @@ def get_requests_assigned_to_volunteer(v_id):
     data = pd.read_sql(query, connections('prod_db_read'))
     return data.to_dict('records')
 
+def get_assigned_requests():
+    query = """Select r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd,r.timestamp as `request_time`,
+                r.source,r.status as `request_status`, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
+                v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`
+                from requests r
+            left join request_verification rv on rv.r_id=r.id
+            left join request_matching rm on rm.request_id=r.id
+            left join volunteers v on v.id=rm.volunteer_id
+            where rm.is_active=True"""
+    requests_data = pd.read_sql(query,connections('prod_db_read'))
+    requests_data = requests_data[requests_data['request_status'].isin(['assigned','matched'])]
+    requests_data = requests_data.fillna('')
+    requests_data['requestor_chat']=requests_data['requestor_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
+    requests_data['volunteer_chat']=requests_data['volunteer_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
+    return requests_data
