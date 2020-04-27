@@ -414,11 +414,11 @@ def update_request_status(r_uuid, status, status_message, volunteer_id):
 #         return 'Failed to update request status', False
     # update request_matching
     if status == 'cancelled':
-        r_id_query = f""" select id from requests where uuid = {r_uuid}"""
+        r_id_query = f""" select id from requests where uuid = '{r_uuid}'"""
         r_id = pd.read_sql(r_id_query, connections('prod_db_read')).loc[0, 'id']
-        query = f""" update request_matching set is_active=False where request_id={r_id}"""
+        request_matching_query = f""" update request_matching set is_active=False where request_id={r_id}"""
         try:
-            write_query(requests_query,'prod_db_write')
+            write_query(request_matching_query,'prod_db_write')
         except:
             mailer.send_exception_mail()
             return 'Failed to cancel request matching', False
