@@ -703,7 +703,7 @@ def volunteer_tickets(*args,**kwargs):
 @app.route('/request-info',methods=['GET'])
 @volunteer_login_req
 def get_request_info(*args,**kwargs):
-    request_uuid = request.form.get('uuid', '')
+    request_uuid = request.args.get('uuid', '')
     request_data = accept_request_page_secure(request_uuid)
     request_data = request_data.to_dict('records')
     return json.dumps({'Response':request_data, 'status':True, 'string_response':'Data sent'})
