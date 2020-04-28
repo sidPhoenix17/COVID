@@ -15,7 +15,7 @@ import uuid
 from connections import connections
 
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user, \
-    add_user, request_matching, check_user, update_requests_db, update_volunteers_db, \
+    add_user, request_matching, update_requests_db, update_volunteers_db, \
     blacklist_token, send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db, \
     add_request_verification_db, update_request_v_db, update_request_status
 
@@ -28,7 +28,7 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
 
 from partner_assignment import generate_uuid, message_all_volunteers
 from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
-from message_templates import old_reg_sms, new_reg_sms,new_request_sms,new_request_mod_sms
+from message_templates import old_reg_sms, new_reg_sms,new_request_sms,new_request_mod_sms, request_verified_sms, request_accepted_v_sms, request_accepted_r_sms, request_accepted_m_sms, request_rejected_sms
 
 from settings import server_type, SECRET_KEY, neighbourhood_radius, search_radius
 import cred_config as cc
@@ -363,20 +363,14 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by):
                 if r_df.loc[0, 'volunteers_reqd'] == volunteers_assigned:
                     response_2 = update_requests_db({'id': request_id}, {'status': 'matched'})
                     response_3 = update_nearby_volunteers_db({'r_id': request_id}, {'status': 'expired'})
-            # Move to message_templates.py file
             # Send to Volunteer
-            v_sms_text = '[COVID SOS] Thank you agreeing to help. Name:' + r_df.loc[0, 'name'] + ' Mob:' + str(
-                r_df.loc[0, 'mob_number']) + ' Request:' + r_df.loc[0, 'request'] + ' Address:' + r_df.loc[
-                             0, 'geoaddress']
+            v_sms_text = request_accepted_v_sms.format(r_name=r_df.loc[0, 'name'],mob_number=r_df.loc[0, 'mob_number'],request=r_df.loc[0, 'request'],address=r_df.loc[0, 'geoaddress'])
             send_sms(v_sms_text, int(v_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
             # Send to Requestor
-            r_sms_text = '[COVID SOS] Volunteer ' + v_df.loc[0, 'name'] + ' will help you. Mob: ' + str(
-                v_df.loc[0, 'mob_number'])
+            r_sms_text = request_accepted_r_sms.format(v_name=v_df.loc[0,'name'],mob_number=v_df.loc[0,'mob_number'])
             send_sms(r_sms_text, int(r_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
             # Send to Moderator
-            m_sms_text = '[COVID SOS] Volunteer ' + v_df.loc[0, 'name'] + ' Mob: ' + str(
-                v_df.loc[0, 'mob_number']) + ' assigned to ' + r_df.loc[0, 'name'] + ' Mob:' + str(
-                r_df.loc[0, 'mob_number'])
+            m_sms_text = request_accepted_m_sms.format(v_name=v_df.loc[0,'name'],mob_number=v_df.loc[0,'v_mob_number'],r_name=r_df.loc[0, 'name'],r_mob_number=r_df.loc[0, 'mob_number'])
             moderator_list = get_moderator_list()
             for i_number in moderator_list:
                 send_sms(m_sms_text, int(i_number), sms_type='transactional', send=True)
@@ -411,16 +405,12 @@ def auto_assign_volunteer():
             response = request_matching(df)
             response_2 = update_requests_db({'id': r_id}, {'status': 'matched'})
             response_3 = update_nearby_volunteers_db({'r_id': r_id}, {'status': 'expired'})
-            # Move to message_templates.py file
             # Send to Volunteer
-            v_sms_text = '[COVID SOS] Thank you agreeing to help. Name:' + r_df.loc[0, 'name'] + ' Mob:' + str(
-                r_df.loc[0, 'mob_number']) + ' Request:' + r_df.loc[0, 'request'] + ' Address:' + r_df.loc[
-                             0, 'geoaddress']
+            v_sms_text = request_accepted_v_sms.format(r_name=r_df.loc[0, 'name'],mob_number=r_df.loc[0, 'mob_number'],request=r_df.loc[0, 'request'],address=r_df.loc[0, 'geoaddress'])
             send_sms(v_sms_text, int(v_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
             # Send to Requestor
-            v_sms_text = '[COVID SOS] Volunteer ' + v_df.loc[0, 'name'] + ' will help you. Mob: ' + str(
-                v_df.loc[0, 'mob_number'])
-            send_sms(v_sms_text, int(r_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
+            r_sms_text = request_accepted_r_sms.format(v_name=v_df.loc[0, 'name'], mob_number=v_df.loc[0, 'mob_number'])
+            send_sms(r_sms_text, int(r_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
             return json.dumps(response)
         elif ((r_df.loc[0, 'status'] == 'received') or (r_df.loc[0, 'status'] == 'verified') or (
                 r_df.loc[0, 'status'] == 'pending')):
@@ -509,11 +499,16 @@ def update_volunteer_info(*args, **kwargs):
 # In[ ]:
 
 
-@app.route('/logout', methods=['POST'])
-@login_required
-def logout_request(*args, **kwargs):
-    token = request.headers['Authorization'].split(" ")[1]
-    success = blacklist_token(token)
+@app.route('/logout',methods=['POST'])
+def logout_request():
+    auth_header = request.headers.get('Authorization')
+    auth_token = auth_header.split(" ")[1] if auth_header else ''
+    if not auth_token:
+        return json.dumps({'Response':{},'status':False,'string_response': 'No valid login found'})
+    resp, success = decode_auth_token(auth_token)
+    if not success:
+        return json.dumps({'Response':{},'status':False,'string_response': 'No valid login found'})
+    success = blacklist_token(auth_token)
     message = 'Logged out successfully' if success else 'Failed to logout'
     return json.dumps({'Response': {}, 'status': success, 'string_response': message})
 
@@ -669,13 +664,11 @@ def verify_request(*args, **kwargs):
         else:
             x, y = add_request_verification_db(df)
         if (verification_status == 'verified'):
-            # Move to message_templates.py file
-            requestor_text = '[COVIDSOS] Your request has been verified. We will look for volunteers in your neighbourhood.'
+            requestor_text = request_verified_sms
             send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
             message_all_volunteers(uuid, neighbourhood_radius, search_radius)
         else:
-            # Move to message_templates.py file
-            requestor_text = '[COVIDSOS] Your request has been cancelled/rejected. If you still need help, please submit request again.'
+            requestor_text = request_rejected_sms
             send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
         return json.dumps(
             {'Response': {}, 'status': response_2['status'], 'string_response': response_2['string_response']})
