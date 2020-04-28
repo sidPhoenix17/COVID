@@ -29,20 +29,18 @@ import requests
 # In[ ]:
 
 
-def remove_existing_volunteers(df):
+def check_volunteer_exists(df):
     try:
         server_con = connections('prod_db_read')
-        query = """Select mob_number from volunteers"""
+        query = """Select id from volunteers where `mob_number`='{mob_number}'""".format(mob_number=df.loc[0,'mob_number'])
         volunteer_list = pd.read_sql(query,server_con)
-        df['mob_number']=df['mob_number'].str.replace(" ",'')
-        df['mob_number']=df['mob_number'].str.replace(",",'')
-        df['mob_number']=df['mob_number'].str.replace("\+91",'')
-        df['mob_number']=df['mob_number'].apply(lambda x: int(x))
-        df_new = df[df['mob_number'].isin(volunteer_list['mob_number'].unique())==False]
-        return df_new
+        if(volunteer_list.shape[0]>0):
+            return True,volunteer_list.loc[0,'id']
+        else:
+            return False,None
     except:
         mailer.send_exception_mail()
-        return df
+        return False,None
     
 def last_entry_timestamp(source):
     server_con = connections('prod_db_read')
@@ -56,23 +54,31 @@ def last_entry_timestamp(source):
 
 
 
-def add_volunteers_to_db(df_full):
-    df = remove_existing_volunteers(df_full)
-    df['timestamp']=pd.to_datetime(df['timestamp'])
-    if(df.shape[0]>0):
-        print(df.shape[0], ' New volunteers to be added')
-    else:
-        return_str = 'Volunteer already exists. No New Volunteers to be added'
-        return True, return_str
-    #df with columns [timestamp, name, mob_number, email_id, country, address, geoaddress,latitude, longitude, source]
-    expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status','support_type']
-    if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
-        engine = connections('prod_db_write')
-        df.to_sql(name = 'volunteers', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
-        return_str = 'Volunteer Data Submitted'
-        return True,return_str
-    else:
-        return_str = 'Data format not matching'
+def add_volunteers_to_db(df):
+    expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude','longitude', 'source', 'status', 'support_type']
+    try:
+        #Review next line
+        df['mob_number'] = df['mob_number'].astype(str)
+        if (len(df.columns.intersection(expected_columns)) == len(expected_columns)):
+            exists,v_id = check_volunteer_exists(df)
+            df['timestamp']=pd.to_datetime(df['timestamp'])
+            if(exists):
+                req_dict = df.loc[0,[expected_columns]].to_dict()
+                update_volunteers_db({'id':v_id},req_dict)
+                return_str = 'Volunteer already exists. Your information has been updated'
+                return True, return_str
+            else:
+                engine = connections('prod_db_write')
+                df.to_sql(name='volunteers', con=engine, schema='covidsos', if_exists='append', index=False,
+                          index_label=None)
+                return_str = 'Volunteer Data Submitted'
+                return True, return_str
+        else:
+            return_str = 'Data format not matching'
+            return False,return_str
+    except Exception as e:
+        print(e)
+        return_str = 'Error'
         return False,return_str
 
 def add_requests(df):
@@ -104,14 +110,15 @@ def contact_us_form_add(df):
 # In[ ]:
 
 
-# TODO: santitise df data for single quotes
 def add_request_verification_db(df):
+    df.loc[0,'what'] = sanitise_for_sql({'message': df.loc[0,'what']}).get('message', '')
+    df.loc[0,'why'] = sanitise_for_sql({'message': df.loc[0,'why']}).get('message', '')
+    df.loc[0,'where'] = sanitise_for_sql({'message': df.loc[0,'where']}).get('message', '')
     expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance']
-    #If Request ID does not exist in verification table, create a new row
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('prod_db_write')
         df.to_sql(name = 'request_verification', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
-        return_str = 'Request verification data submitted successfully'
+        return_str = 'Request verification data added successfully'
         return True,return_str
     else:
         return_str = 'Data Format not matching'
@@ -138,7 +145,25 @@ def geocoding(address_str,country_str,key):
         mailer.send_exception_mail()
         return None
 
-
+#TODO - extract city from location
+def get_city(lat, lon):
+# - check if places ID is sent via Google address API
+# Else extract using reverse Geocoding API
+#     geolocator = GoogleV3(api_key='')
+#     locations = geolocator.reverse("{},{} ".format(lat, lon), exactly_one=False)
+#     location = None
+#     if locations is not None and isinstance(locations, list):
+#         for loc in locations:
+#             if len(loc.address.split(",")) == 3:
+#                 location = loc.address
+#                 break
+#         if location is None:
+#             try:
+#                 location = locations[0]
+#             except IndexError:
+#                 location = None
+#     return location if location is not None else location
+    return None
 # In[ ]:
 
 
@@ -162,7 +187,7 @@ def verify_user(username,password):
 # In[ ]:
 
 
-# TODO: santitise df data for single quotes
+# TODO: sanitise df data for single quotes
 def add_user(df):
     expected_columns=['creation_date', 'name', 'mob_number', 'email_id', 'organisation', 'password', 'access_type','created_by','verification_team']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
@@ -177,7 +202,7 @@ def add_user(df):
 # In[ ]:
 
 
-# TODO: santitise df data for single quotes
+# TODO: sanitise df data for single quotes
 def request_matching(df):
     expected_columns=['request_id','volunteer_id','matching_by','timestamp']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):

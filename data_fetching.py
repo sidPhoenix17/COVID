@@ -224,15 +224,16 @@ def verify_volunteer_exists(mob_number, v_id=None, country=None):
 
 def check_past_verification(r_id):
     try:
-        query = f"""Select id,r_id from request_verification where r_id='{r_id}'"""
+        query = f"""Select `id`,`r_id`,`why`,`what`,`where` as request_address,`verification_status`, `urgent`,`financial_assistance`
+                    from request_verification where r_id='{r_id}'"""
         df_check = pd.read_sql(query,connections('prod_db_read'))
         if(df_check.shape[0]>0):
-            return df_check.loc[0,'id'],True
+            return df_check,True
         else:
-            return None,False
+            return pd.DataFrame(),False
     except:
         mailer.send_exception_mail()
-        return None,False
+        return pd.DataFrame(),False
 
 
 # In[ ]:
