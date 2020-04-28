@@ -502,10 +502,15 @@ def update_volunteer_info(*args,**kwargs):
 
 
 @app.route('/logout',methods=['POST'])
-@login_required
-def logout_request(*args,**kwargs):
-    token = request.headers['Authorization'].split(" ")[1]
-    success = blacklist_token(token)
+def logout_request():
+    auth_header = request.headers.get('Authorization')
+    auth_token = auth_header.split(" ")[1] if auth_header else ''
+    if not auth_token:
+        return json.dumps({'Response':{},'status':False,'string_response': 'No valid login found'})
+    resp, success = decode_auth_token(auth_token)
+    if not success:
+        return json.dumps({'Response':{},'status':False,'string_response': 'No valid login found'})
+    success = blacklist_token(auth_token)
     message = 'Logged out successfully' if success else 'Failed to logout'
     return json.dumps({'Response': {}, 'status': success, 'string_response': message}) 
 
