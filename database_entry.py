@@ -44,7 +44,7 @@ def add_volunteers_to_db(df):
             exists,v_id = check_volunteer_exists(df)
             df['timestamp']=pd.to_datetime(df['timestamp'])
             if(exists):
-                req_dict = df.loc[0,[expected_columns]].to_dict()
+                req_dict = df.loc[0,expected_columns].to_dict()
                 update_volunteers_db({'id':v_id},req_dict)
                 return_str = 'Volunteer already exists. Your information has been updated'
                 return True, return_str
