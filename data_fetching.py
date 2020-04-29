@@ -224,15 +224,16 @@ def verify_volunteer_exists(mob_number, v_id=None, country=None):
 
 def check_past_verification(r_id):
     try:
-        query = f"""Select id,r_id from request_verification where r_id='{r_id}'"""
+        query = f"""Select `id`,`r_id`,`why`,`what`,`where` as request_address,`verification_status`, `urgent`,`financial_assistance`
+                    from request_verification where r_id='{r_id}'"""
         df_check = pd.read_sql(query,connections('prod_db_read'))
         if(df_check.shape[0]>0):
-            return df_check.loc[0,'id'],True
+            return df_check,True
         else:
-            return None,False
+            return pd.DataFrame(),False
     except:
         mailer.send_exception_mail()
-        return None,False
+        return pd.DataFrame(),False
 
 
 # In[ ]:
@@ -358,9 +359,9 @@ def get_requests_assigned_to_volunteer(v_id):
     return data.to_dict('records')
 
 def get_assigned_requests():
-    query = """Select r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd,r.timestamp as `request_time`,
+    query = """Select r.id as r_id, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd,r.timestamp as `request_time`,
                 r.source,r.status as `request_status`, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
-                v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`
+                v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`
                 from requests r
             left join request_verification rv on rv.r_id=r.id
             left join request_matching rm on rm.request_id=r.id
