@@ -366,9 +366,8 @@ def get_assigned_requests():
             left join request_verification rv on rv.r_id=r.id
             left join request_matching rm on rm.request_id=r.id
             left join volunteers v on v.id=rm.volunteer_id
-            where rm.is_active=True"""
+            where rm.is_active=True and r.status in ('assigned','matched')"""
     requests_data = pd.read_sql(query,connections('prod_db_read'))
-    requests_data = requests_data[requests_data['request_status'].isin(['assigned','matched'])]
     requests_data = requests_data.fillna('')
     requests_data['requestor_chat']=requests_data['requestor_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
     requests_data['volunteer_chat']=requests_data['volunteer_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
