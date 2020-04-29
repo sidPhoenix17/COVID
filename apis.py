@@ -28,7 +28,7 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
 
 from partner_assignment import generate_uuid, message_all_volunteers
 from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
-from message_templates import old_reg_sms, new_reg_sms,new_request_sms,new_request_mod_sms, request_verified_sms, request_accepted_v_sms, request_accepted_r_sms, request_accepted_m_sms, request_rejected_sms
+from message_templates import old_reg_sms, new_reg_sms,new_request_sms,new_request_mod_sms, request_verified_sms, request_accepted_v_sms, request_accepted_r_sms, request_accepted_m_sms, request_rejected_sms, request_closed_v_sms, request_closed_r_sms, request_closed_m_sms
 
 from settings import server_type, SECRET_KEY, neighbourhood_radius, search_radius
 import cred_config as cc
@@ -530,7 +530,7 @@ def request_accept_page():
 
 
 # In[ ]:
-@app.route('/ngo_request_form', methods=['POST'])
+@app.route('/create_ngo_request', methods=['POST'])
 @login_required
 def ngo_request_form(*args, **kwargs):
     name = request.form.get('name')
@@ -543,10 +543,14 @@ def ngo_request_form(*args, **kwargs):
     latitude = request.form.get('latitude', 0.0)
     longitude = request.form.get('longitude', 0.0)
     source = request.form.get('source', 'covidsos')
+    if((source=='undefined')or(source=='')):
+        source='covidsos'
     status = request.form.get('status', 'received')
+    if(status==''):
+        status='received'
     country = request.form.get('country', 'India')
     uuid = generate_uuid()
-    what = request.form.get('geoaddress')
+    what = request.form.get('what')
     why = request.form.get('why')
     financial_assistance = request.form.get('financial_assistance', 0)
     verification_status = 'pending'
@@ -566,7 +570,7 @@ def ngo_request_form(*args, **kwargs):
                         'longitude', 'source', 'request', 'age', 'status', 'uuid']
     x1, y1 = add_requests(df[expected_columns])
     r_df = request_data_by_uuid(uuid)
-    r_v_dict = {'r_id': [r_df.loc[0, 'id']], 'why': [why], 'what': [what], 'where': [where],
+    r_v_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [why], 'what': [what], 'where': [where],
                 'verification_status': [verification_status], 'verified_by': [verified_by], 'timestamp': [current_time],
                 'financial_assistance': [financial_assistance], 'urgent': [urgent_status]}
     df = pd.DataFrame(r_v_dict)
@@ -594,14 +598,14 @@ def verify_request_page(*args, **kwargs):
     r_df = request_data_by_uuid(uuid)
     c_1 = ['r_id', 'name', 'mob_number', 'geoaddress', 'latitude', 'longitude', 'request', 'status', 'timestamp', 'source']
     # Check if request verification table already has a row, then also send info from request verification data along with it.
+    if (r_df.shape[0] == 0):
+        return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
     past_df, past_status = check_past_verification(str(r_df.loc[0,'r_id']))
     c_2 = ['id','r_id','why','what','request_address','verification_status','urgent','financial_assistance']
     if(past_status):
         ngo_request = {'status':True,'additional_data':past_df.loc[0].to_dict()}
     else:
         ngo_request = {'status':False,'additional_data':{}}
-    if (r_df.shape[0] == 0):
-        return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
     if (r_df.loc[0, 'status'] == 'received'):
         return json.dumps(
             {'Response': r_df.to_dict('records'), 'status': True, 'string_response': 'Request data extracted','ngo_request':ngo_request},
@@ -792,9 +796,21 @@ def task_completed(*args, **kwargs):
     request_uuid = request.form.get('request_uuid')
     status = request.form.get('status')
     status_message = request.form.get('status_message', '')
+    v_df = volunteer_data_by_id(volunteer_id)
+    r_df = request_data_by_uuid(request_uuid)
     if status not in ['completed', 'completed externally', 'cancelled', 'reported']:
         return json.dumps({'Response': {}, 'status': False, 'string_response': 'invalid status value'})
     response, success = update_request_status(request_uuid, status, status_message, volunteer_id)
+    # Send SMS to Volunteer, Requestor and Moderator - request_closed_v_sms,request_closed_r_sms,request_closed_m_sms
+    send_sms(request_closed_v_sms(status=status),v_df.loc[0,'mob_number'])
+    moderator_list = get_moderator_list()
+    for i_number in moderator_list:
+        send_sms(request_closed_m_sms(r_id=r_df.loc[0,'r_id'],r_name=r_df.loc[0,'name'], r_mob_number=r_df.loc[0,'mob_number'],
+                                  status=status, v_name=v_df.loc[0,'name'],v_mob_number=v_df.loc[0,'mob_number'],
+                                  status_message=status_message),i_number)
+    send_sms(request_closed_r_sms(status=status),r_df.loc[0,'mob_number'])
+    if(status == 'cancelled'):
+        message_all_volunteers(request_uuid, neighbourhood_radius, search_radius)
     return json.dumps({'Response': {}, 'status': success, 'string_response': response})
 
 

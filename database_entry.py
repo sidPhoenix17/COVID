@@ -40,8 +40,6 @@ def last_entry_timestamp(source):
 def add_volunteers_to_db(df):
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude','longitude', 'source', 'status', 'support_type']
     try:
-        #Review next line
-        df['mob_number'] = df['mob_number'].astype(str)
         if (len(df.columns.intersection(expected_columns)) == len(expected_columns)):
             exists,v_id = check_volunteer_exists(df)
             df['timestamp']=pd.to_datetime(df['timestamp'])
@@ -62,6 +60,7 @@ def add_volunteers_to_db(df):
     except Exception as e:
         print(e)
         return_str = 'Error'
+        mailer.send_exception_mail()
         return False,return_str
 
 def add_requests(df):
@@ -130,6 +129,7 @@ def geocoding(address_str,country_str,key):
 
 #TODO - extract city from location
 def get_city(lat, lon):
+# - check if places ID is sent via Google address API
 # - check if places ID is sent via Google address API
 # Else extract using reverse Geocoding API
 #     geolocator = GoogleV3(api_key='')
@@ -380,7 +380,7 @@ def verify_otp(otp, otp_from):
 # In[ ]:
 
 
-def update_request_status(r_uuid, status, status_message, volunteer_id):
+def update_request_status(r_uuid,status, status_message, volunteer_id):
     reqStatus = status
     if status == 'completed externally':
         reqStatus, status_message = 'completed', 'completed externally'
@@ -393,15 +393,8 @@ def update_request_status(r_uuid, status, status_message, volunteer_id):
         write_query(request_update_query,'prod_db_write')
     except:
         mailer.send_exception_mail()
-        return  'Failed to add request update', False
-    update_requests_db({'uuid':r_uuid},{'status':reqStatus})
-#     requests_query = f""" update requests set status = {reqStatus} where uuid = '{r_uuid}'; """
-      # update requests
-#     try:
-#         write_query(requests_query,'prod_db_write')
-#     except:
-#         mailer.send_exception_mail()
-#         return 'Failed to update request status', False
+        return 'Failed to add request update', False
+    update_requests_db({'uuid':r_uuid},{'status': reqStatus})
     # update request_matching
     if status == 'cancelled':
         r_id_query = f""" select id from requests where uuid = '{r_uuid}'"""

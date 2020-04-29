@@ -83,7 +83,7 @@ def volunteer_login_req(f):
 def encode_auth_token(key):
     try:
         payload = {
-            'exp': dt.datetime.utcnow() + dt.timedelta(days=1),
+            'exp': dt.datetime.utcnow() + dt.timedelta(days=7),
             'iat': dt.datetime.utcnow(),
             'sub': str(key)
         }

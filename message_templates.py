@@ -72,6 +72,14 @@ request_accepted_r_sms = key_word+" Volunteer {v_name} will help you. Mob: {mob_
 #Request Accepted - to moderator
 request_accepted_m_sms = key_word+" Volunteer {v_name} Mob:{v_mob_number} assigned to {r_name} Mob: {r_mob_number}"
 
+#Request Updated by Volunteer
+request_closed_v_sms = key_word+" Thank you. This request has been {status} as per your feedback"
+request_closed_m_sms = key_word+" Request {r_id} from {r_name}, {r_mob_number} has been marked as {status} by {v_name},{v_mob_number}. Feedback given is {status_message}"
+url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('I have a new request')
+link = url_shortener_fn(url)
+request_closed_r_sms = key_word+" Your request has been {status} as per the feedback from volunteer. If you have any further requests, click "+link
+
+
 #Bot templates
 
 a = """Hi {v_name}, thank you for messaging COVIDSOS.
