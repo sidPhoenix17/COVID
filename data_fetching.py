@@ -359,9 +359,9 @@ def get_requests_assigned_to_volunteer(v_id):
     return data.to_dict('records')
 
 def get_assigned_requests():
-    query = """Select r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd,r.timestamp as `request_time`,
+    query = """Select r.id as r_id, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd,r.timestamp as `request_time`,
                 r.source,r.status as `request_status`, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
-                v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`
+                v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`
                 from requests r
             left join request_verification rv on rv.r_id=r.id
             left join request_matching rm on rm.request_id=r.id
