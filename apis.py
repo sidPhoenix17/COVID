@@ -802,13 +802,13 @@ def task_completed(*args, **kwargs):
         return json.dumps({'Response': {}, 'status': False, 'string_response': 'invalid status value'})
     response, success = update_request_status(request_uuid, status, status_message, volunteer_id)
     # Send SMS to Volunteer, Requestor and Moderator - request_closed_v_sms,request_closed_r_sms,request_closed_m_sms
-    send_sms(request_closed_v_sms(status=status),v_df.loc[0,'mob_number'])
+    send_sms(request_closed_v_sms.format(status=status),v_df.loc[0,'mob_number'])
     moderator_list = get_moderator_list()
     for i_number in moderator_list:
-        send_sms(request_closed_m_sms(r_id=r_df.loc[0,'r_id'],r_name=r_df.loc[0,'name'], r_mob_number=r_df.loc[0,'mob_number'],
+        send_sms(request_closed_m_sms.format(r_id=r_df.loc[0,'r_id'],r_name=r_df.loc[0,'name'], r_mob_number=r_df.loc[0,'mob_number'],
                                   status=status, v_name=v_df.loc[0,'name'],v_mob_number=v_df.loc[0,'mob_number'],
                                   status_message=status_message),i_number)
-    send_sms(request_closed_r_sms(status=status),r_df.loc[0,'mob_number'])
+    send_sms(request_closed_r_sms.format(status=status),r_df.loc[0,'mob_number'])
     if(status == 'cancelled'):
         message_all_volunteers(request_uuid, neighbourhood_radius, search_radius)
     return json.dumps({'Response': {}, 'status': success, 'string_response': response})
