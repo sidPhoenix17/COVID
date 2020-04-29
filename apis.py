@@ -137,7 +137,7 @@ def create_request():
     response = {'Response': {}, 'status': x, 'string_response': y}
     if (x):
         # move to async
-        sms_text = new_request_sms.format(source=source, name=name)
+        sms_text = new_request_sms.format(name=name,source=source)
         send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
         mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
         moderator_list = get_moderator_list()
@@ -173,10 +173,10 @@ def add_volunteer():
     x, y = add_volunteers_to_db(df)
     if (x):
         if (y == 'Volunteer already exists. Your information has been updated'):
-            sms_text = old_reg_sms
+            v_sms_text = old_reg_sms
         else:
-            sms_text = new_reg_sms
-        send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
+            v_sms_text = new_reg_sms
+        send_sms(v_sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
     response = {'Response': {}, 'status': x, 'string_response': y}
     return json.dumps(response)
 
@@ -370,7 +370,7 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by):
             r_sms_text = request_accepted_r_sms.format(v_name=v_df.loc[0,'name'],mob_number=v_df.loc[0,'mob_number'])
             send_sms(r_sms_text, int(r_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
             # Send to Moderator
-            m_sms_text = request_accepted_m_sms.format(v_name=v_df.loc[0,'name'],mob_number=v_df.loc[0,'v_mob_number'],r_name=r_df.loc[0, 'name'],r_mob_number=r_df.loc[0, 'mob_number'])
+            m_sms_text = request_accepted_m_sms.format(v_name=v_df.loc[0,'name'],v_mob_number=v_df.loc[0,'v_mob_number'],r_name=r_df.loc[0, 'name'],r_mob_number=r_df.loc[0, 'mob_number'])
             moderator_list = get_moderator_list()
             for i_number in moderator_list:
                 send_sms(m_sms_text, int(i_number), sms_type='transactional', send=True)

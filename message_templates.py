@@ -44,8 +44,7 @@ new_request_whatsapp = "We have received a help request from you. If you have no
 
 #New Request - to admin
 
-mod_url = url_start+"verify/{uuid}"
-new_request_mod_sms = key_word+" New query received from {source}. Verify lead by clicking here: " + mod_url
+new_request_mod_sms = key_word+" New query received from {source}. Verify lead by clicking here: "+url_start+"verify/{uuid}"
 
 #Request Verified - to requestor
 url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('My request is verified.')
