@@ -102,7 +102,7 @@ def message_all_volunteers(uuid,radius,search_radius):
     if((server_type=='prod')):
         engine = connections('prod_db_write')
         df.to_sql(name = 'nearby_volunteers', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
-    mod_sms_text = request_verified_m_sms1.format(r_id=str(r_df.loc[0,'r_id']),name=r_df.loc[0,'name'],address=r_df.loc[0,'geoaddress'][0:50],mob_number=str(r_df.loc[0,'mob_number']),v_count_1=str(df.shape[0]),v_count_2=str(df2.shape[0]))
+    mod_sms_text = request_verified_m_sms1.format(r_id=str(r_df.loc[0,'r_id']),name=r_df.loc[0,'name'],geoaddress=r_df.loc[0,'geoaddress'][0:50],mob_number=str(r_df.loc[0,'mob_number']),v_count_1=str(df.shape[0]),v_count_2=str(df2.shape[0]))
     str_broadcast = "For request #"+str(r_df.loc[0,'r_id'])+ " "
     counter_broadcast = 0
     for i in v_list.index:
