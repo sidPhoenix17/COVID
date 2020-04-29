@@ -370,7 +370,7 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by):
             r_sms_text = request_accepted_r_sms.format(v_name=v_df.loc[0,'name'],mob_number=v_df.loc[0,'mob_number'])
             send_sms(r_sms_text, int(r_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
             # Send to Moderator
-            m_sms_text = request_accepted_m_sms.format(v_name=v_df.loc[0,'name'],v_mob_number=v_df.loc[0,'v_mob_number'],r_name=r_df.loc[0, 'name'],r_mob_number=r_df.loc[0, 'mob_number'])
+            m_sms_text = request_accepted_m_sms.format(v_name=v_df.loc[0,'name'],v_mob_number=v_df.loc[0,'mob_number'],r_name=r_df.loc[0, 'name'],r_mob_number=r_df.loc[0, 'mob_number'])
             moderator_list = get_moderator_list()
             for i_number in moderator_list:
                 send_sms(m_sms_text, int(i_number), sms_type='transactional', send=True)
