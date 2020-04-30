@@ -369,6 +369,7 @@ def get_assigned_requests():
             where rm.is_active=True and r.status in ('assigned','matched')"""
     requests_data = pd.read_sql(query,connections('prod_db_read'))
     requests_data = requests_data.fillna('')
+    requests_data = requests_data.sort_values(by=['assignment_time'],ascending=[False])
     requests_data['requestor_chat']=requests_data['requestor_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
     requests_data['volunteer_chat']=requests_data['volunteer_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
     return requests_data
