@@ -10,6 +10,7 @@ from flask import Flask, request, jsonify, json
 from flask_cors import CORS
 from celery import Celery
 import urllib
+import os
 import uuid
 
 from connections import connections
@@ -32,7 +33,6 @@ from message_templates import old_reg_sms, new_reg_sms,new_request_sms,new_reque
 
 from settings import server_type, SECRET_KEY, neighbourhood_radius, search_radius
 import cred_config as cc
-
 
 # In[ ]:
 
@@ -816,14 +816,11 @@ def task_completed(*args, **kwargs):
 
 
 # In[ ]:
-
-
-if (server_type == 'local'):
-    if __name__ == '__main__':
-        app.run(debug=True, use_reloader=False)
-
-if (server_type == 'prod'):
-    if __name__ == '__main__':
+if(server_type=='local'):
+    if __name__ == '__main__':    
+        app.run(host = os.getenv('HOST') or 'localhost', debug=True,use_reloader=True)
+if(server_type=='prod'):
+    if __name__ =='__main__':
         app.run()
 if (server_type == 'staging'):
     if __name__ == '__main__':
