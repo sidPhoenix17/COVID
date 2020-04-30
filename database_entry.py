@@ -6,48 +6,29 @@
 
 import requests, json
 import pandas as pd
-import datetime as dt
-from connections import connections,keys,write_query
-import requests
-from sqlalchemy.sql import text
-import datetime as dt
-from settings import sms_key, sms_sid, sms_url, otp_url, EARTH_RADIUS,server_type,org_request_list
+from connections import connections,write_query
+from settings import sms_key, sms_sid, sms_url, otp_url,server_type,org_request_list
 import mailer_fn as mailer
-import json
-import requests
-
 
 # In[ ]:
 
-
-
-#todo - AddUser
-#Check if User Exists
-#password encryption
-
-
-# In[ ]:
-
-
-def remove_existing_volunteers(df):
+def check_volunteer_exists(df):
     try:
         server_con = connections('prod_db_read')
-        query = """Select mob_number from volunteers"""
+        query = """Select id from volunteers where `mob_number`='{mob_number}'""".format(mob_number=df.loc[0,'mob_number'])
         volunteer_list = pd.read_sql(query,server_con)
-        df['mob_number']=df['mob_number'].str.replace(" ",'')
-        df['mob_number']=df['mob_number'].str.replace(",",'')
-        df['mob_number']=df['mob_number'].str.replace("\+91",'')
-        df['mob_number']=df['mob_number'].apply(lambda x: int(x))
-        df_new = df[df['mob_number'].isin(volunteer_list['mob_number'].unique())==False]
-        return df_new
+        if(volunteer_list.shape[0]>0):
+            return True,volunteer_list.loc[0,'id']
+        else:
+            return False,None
     except:
         mailer.send_exception_mail()
-        return df
-    
+        return False,None
+
 def last_entry_timestamp(source):
     server_con = connections('prod_db_read')
     query = """Select max(timestamp) as timestamp from requests where source='{source}'""".format(source=source)
-    max_timestamp = pd.read_sql(query,server_con,parse_dates=['timestamp'])    
+    max_timestamp = pd.read_sql(query,server_con,parse_dates=['timestamp'])
     max_timestamp['source']=source
     return max_timestamp
 
@@ -56,23 +37,30 @@ def last_entry_timestamp(source):
 
 
 
-def add_volunteers_to_db(df_full):
-    df = remove_existing_volunteers(df_full)
-    df['timestamp']=pd.to_datetime(df['timestamp'])
-    if(df.shape[0]>0):
-        print(df.shape[0], ' New volunteers to be added')
-    else:
-        return_str = 'Volunteer already exists. No New Volunteers to be added'
-        return True, return_str
-    #df with columns [timestamp, name, mob_number, email_id, country, address, geoaddress,latitude, longitude, source]
-    expected_columns=['timestamp', 'name','mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude','source','status','support_type']
-    if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
-        engine = connections('prod_db_write')
-        df.to_sql(name = 'volunteers', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
-        return_str = 'Volunteer Data Submitted'
-        return True,return_str
-    else:
-        return_str = 'Data format not matching'
+def add_volunteers_to_db(df):
+    expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude','longitude', 'source', 'status', 'support_type']
+    try:
+        if (len(df.columns.intersection(expected_columns)) == len(expected_columns)):
+            exists,v_id = check_volunteer_exists(df)
+            df['timestamp']=pd.to_datetime(df['timestamp'])
+            if(exists):
+                req_dict = df.loc[0,expected_columns].to_dict()
+                update_volunteers_db({'id':v_id},req_dict)
+                return_str = 'Volunteer already exists. Your information has been updated'
+                return True, return_str
+            else:
+                engine = connections('prod_db_write')
+                df.to_sql(name='volunteers', con=engine, schema='covidsos', if_exists='append', index=False,
+                          index_label=None)
+                return_str = 'Volunteer Data Submitted'
+                return True, return_str
+        else:
+            return_str = 'Data format not matching'
+            return False,return_str
+    except Exception as e:
+        print(e)
+        return_str = 'Error'
+        mailer.send_exception_mail()
         return False,return_str
 
 def add_requests(df):
@@ -104,14 +92,15 @@ def contact_us_form_add(df):
 # In[ ]:
 
 
-# TODO: santitise df data for single quotes
 def add_request_verification_db(df):
+    df.loc[0,'what'] = sanitise_for_sql({'message': df.loc[0,'what']}).get('message', '')
+    df.loc[0,'why'] = sanitise_for_sql({'message': df.loc[0,'why']}).get('message', '')
+    df.loc[0,'where'] = sanitise_for_sql({'message': df.loc[0,'where']}).get('message', '')
     expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance']
-    #If Request ID does not exist in verification table, create a new row
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('prod_db_write')
         df.to_sql(name = 'request_verification', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
-        return_str = 'Request verification data submitted successfully'
+        return_str = 'Request verification data added successfully'
         return True,return_str
     else:
         return_str = 'Data Format not matching'
@@ -128,7 +117,7 @@ def geocoding(address_str,country_str,key):
         r = requests.get(url=url)
         data = r.json()
         if data["status"]=="OK":
-            return (data['results'][0]['geometry']['location']['lng'], 
+            return (data['results'][0]['geometry']['location']['lng'],
                     data['results'][0]['geometry']['location']['lat'])
         else:
             print(data["status"] + " for "+ address_str)
@@ -138,7 +127,26 @@ def geocoding(address_str,country_str,key):
         mailer.send_exception_mail()
         return None
 
-
+#TODO - extract city from location
+def get_city(lat, lon):
+# - check if places ID is sent via Google address API
+# - check if places ID is sent via Google address API
+# Else extract using reverse Geocoding API
+#     geolocator = GoogleV3(api_key='')
+#     locations = geolocator.reverse("{},{} ".format(lat, lon), exactly_one=False)
+#     location = None
+#     if locations is not None and isinstance(locations, list):
+#         for loc in locations:
+#             if len(loc.address.split(",")) == 3:
+#                 location = loc.address
+#                 break
+#         if location is None:
+#             try:
+#                 location = locations[0]
+#             except IndexError:
+#                 location = None
+#     return location if location is not None else location
+    return None
 # In[ ]:
 
 
@@ -162,7 +170,7 @@ def verify_user(username,password):
 # In[ ]:
 
 
-# TODO: santitise df data for single quotes
+# TODO: sanitise df data for single quotes
 def add_user(df):
     expected_columns=['creation_date', 'name', 'mob_number', 'email_id', 'organisation', 'password', 'access_type','created_by','verification_team']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
@@ -171,13 +179,13 @@ def add_user(df):
         return  {'Response':{},'string_response': 'User Added Successfully','status':True}
     else:
         return  {'Response':{},'string_response': 'User addition failed due to incorrect data format' ,'status':False}
-    
+
 
 
 # In[ ]:
 
 
-# TODO: santitise df data for single quotes
+# TODO: sanitise df data for single quotes
 def request_matching(df):
     expected_columns=['request_id','volunteer_id','matching_by','timestamp']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
@@ -186,7 +194,7 @@ def request_matching(df):
         return  {'Response':{},'string_response': 'Volunteer Assigned','status':True}
     else:
         return  {'Response':{},'string_response': 'Volunteer assignment failed due to incorrect data format' ,'status':False}
-        
+
 
 
 # In[ ]:
@@ -202,27 +210,6 @@ def sanitise_for_sql(obj):
 
 
 # In[ ]:
-
-
-
-def check_user(table_name,user_id):
-    server_con = connections('prod_db_read')
-    errorResponse = {'Response':{},'string_response': 'Requesting user ID does not exist in database','status':False}
-    try:
-        query = """Select id from {table_name} where id={user_id}""".format(table_name=table_name,user_id=user_id)
-        data = pd.read_sql(query,server_con)
-        if (data.shape[0]>0):
-            return {'Response':{},'string_response': 'User Existence validated','status':True}
-        else:
-            return errorResponse
-    except:
-        mailer.send_exception_mail()
-        return errorResponse
-
-
-# In[ ]:
-
-
 
 def update_requests_db(r_dict_where,r_dict_set):
     try:
@@ -260,7 +247,7 @@ def update_volunteers_db(v_dict_where,v_dict_set):
         mailer.send_exception_mail()
         return  {'Response':{},'string_response': 'Volunteer info updation failed' ,'status':False}
 
-    
+
 def update_request_v_db(rv_dict_where,rv_dict_set):
     try:
         rv_dict_where,rv_dict_set = sanitise_for_sql(rv_dict_where), sanitise_for_sql(rv_dict_set)
@@ -273,7 +260,7 @@ def update_request_v_db(rv_dict_where,rv_dict_set):
         mailer.send_exception_mail()
         return  {'Response':{},'string_response': 'Request Verification info updation failed' ,'status':False}
 
-    
+
 def update_request_updates_db(ru_dict_where,ru_dict_set):
     try:
         ru_dict_where,ru_dict_set = sanitise_for_sql(ru_dict_where), sanitise_for_sql(ru_dict_set)
@@ -297,7 +284,7 @@ def update_request_updates_db(ru_dict_where,ru_dict_set):
 
 
 
-def blacklist_token(token): 
+def blacklist_token(token):
     query = f"""insert into token_blacklist (token) values ('{token}');"""
     try:
         write_query(query,'prod_db_write')
@@ -324,7 +311,10 @@ def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
     if ((send)&(server_type!='local')):
         try:
             r = requests.post(url, data=json.dumps(data), headers=headers)
-            sms_dict = {'sms_text':[sms_text],'sms_type':[sms_type],'sms_to':[sms_to],'sms_status_type':[r.status_code],'sms_json_response':[str(r.json())]}
+            if(r.status_code==200):
+                sms_dict = {'sms_text':[sms_text],'sms_type':[sms_type],'sms_to':[sms_to],'sms_status_type':[r.status_code],'sms_json_response':[str(r.json())]}
+            else:
+                sms_dict = {'sms_text': [sms_text], 'sms_type': [sms_type], 'sms_to': [sms_to],'sms_status_type': [r.status_code], 'sms_json_response': ['{}']}
             new_sms_df = pd.DataFrame(sms_dict)
             engine = connections('prod_db_write')
             new_sms_df.to_sql(name = 'sms_log', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
@@ -390,10 +380,10 @@ def verify_otp(otp, otp_from):
 # In[ ]:
 
 
-def update_request_status(r_uuid, status, status_message, volunteer_id):
+def update_request_status(r_uuid,status, status_message, volunteer_id):
     reqStatus = status
     if status == 'completed externally':
-        reqStatus, status_message = 'completed', 'completed externally' 
+        reqStatus, status_message = 'completed', 'completed externally'
     if status == 'cancelled':
         reqStatus = 'verified'
     status_message = sanitise_for_sql({'message': status_message}).get('message', '')
@@ -403,15 +393,8 @@ def update_request_status(r_uuid, status, status_message, volunteer_id):
         write_query(request_update_query,'prod_db_write')
     except:
         mailer.send_exception_mail()
-        return  'Failed to add request update', False
-    update_requests_db({'uuid':r_uuid},{'status':reqStatus})
-#     requests_query = f""" update requests set status = {reqStatus} where uuid = '{r_uuid}'; """
-      # update requests
-#     try:
-#         write_query(requests_query,'prod_db_write')
-#     except:
-#         mailer.send_exception_mail()
-#         return 'Failed to update request status', False
+        return 'Failed to add request update', False
+    update_requests_db({'uuid':r_uuid},{'status': reqStatus})
     # update request_matching
     if status == 'cancelled':
         r_id_query = f""" select id from requests where uuid = '{r_uuid}'"""
@@ -423,48 +406,5 @@ def update_request_status(r_uuid, status, status_message, volunteer_id):
             mailer.send_exception_mail()
             return 'Failed to cancel request matching', False
     return 'Updated request status', True
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-# def volunteer_updation(v_id,column,new_value,timestamp):
-#     engine = connections('prod_db_write')
-#     try:
-#         with engine.connect() as con:
-#             query = text("""update volunteers set {column_name}='{new_value}',last_updated='{timestamp}' 
-#             where id={v_id};""".format(column_name=column,new_value=new_value, timestamp =dt.datetime.strftime(timestamp,'%Y-%m-%d %H:%M:%S'),v_id=v_id))
-#             con.execute(query)
-#             return {'Response':{},'string_response': 'Volunteer Data Updated','status':True}
-#     except:
-#         return  {'Response':{},'string_response': 'Volunteer updation failed' ,'status':False}
-
-# def request_updation(r_id,column,new_value,timestamp):
-#     engine = connections('prod_db_write')
-#     try:
-#         with engine.connect() as con:
-#             query = text("""update requests set {column_name}='{new_value}',last_updated='{timestamp}' 
-#             where id={r_id};""".format(column_name=column,new_value=new_value, timestamp =dt.datetime.strftime(timestamp,'%Y-%m-%d %H:%M:%S'),r_id=r_id))
-#             con.execute(query)
-#             return {'Response':{},'string_response': 'Request Updated','status':True}
-#     except e:
-#         return  {'Response':{},'string_response': 'Volunteer updation failed' ,'status':False}
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
 
 

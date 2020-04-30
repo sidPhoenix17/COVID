@@ -83,7 +83,7 @@ def volunteer_login_req(f):
 def encode_auth_token(key):
     try:
         payload = {
-            'exp': dt.datetime.utcnow() + dt.timedelta(days=1),
+            'exp': dt.datetime.utcnow() + dt.timedelta(days=7),
             'iat': dt.datetime.utcnow(),
             'sub': str(key)
         }
@@ -108,7 +108,7 @@ def decode_auth_token(auth_token):
         data = pd.read_sql(query, server_con)
         token_blacklisted = data.shape[0] > 0
         if token_blacklisted:
-            return 'Invalid token. Please log in again.', False
+            return 'Token not allowed. Please log in again.', False
         payload = jwt.decode(auth_token, app.config.get('SECRET_KEY'))
         return payload['sub'], True
     except jwt.ExpiredSignatureError:
