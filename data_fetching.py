@@ -139,7 +139,7 @@ def website_requests_display():
     try:
         server_con = connections('prod_db_read')
         query = """Select r.id as r_id,r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
-                    rv.verification_status, r.status as status,r.timestamp as timestamp from requests r 
+                    rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp from requests r 
                     left join request_verification rv on rv.r_id=r.id where rv.r_id is not NULL"""
         query_df = pd.read_sql(query,server_con)
         query_df = query_df.sort_values(by=['r_id'],ascending=[False])
@@ -224,15 +224,16 @@ def verify_volunteer_exists(mob_number, v_id=None, country=None):
 
 def check_past_verification(r_id):
     try:
-        query = f"""Select id,r_id from request_verification where r_id='{r_id}'"""
+        query = f"""Select `id`,`r_id`,`why`,`what`,`where` as request_address,`verification_status`, `urgent`,`financial_assistance`
+                    from request_verification where r_id='{r_id}'"""
         df_check = pd.read_sql(query,connections('prod_db_read'))
         if(df_check.shape[0]>0):
-            return df_check.loc[0,'id'],True
+            return df_check,True
         else:
-            return None,False
+            return pd.DataFrame(),False
     except:
         mailer.send_exception_mail()
-        return None,False
+        return pd.DataFrame(),False
 
 
 # In[ ]:
@@ -244,6 +245,7 @@ def get_unverified_requests():
         df = pd.read_sql(query,connections('prod_db_read'))
         df = df[~df['uuid'].isna()]
         df = df.sort_values(by=['id'],ascending=[False])
+        df = df.fillna('')
         if(server_type=='prod'):
             df['verify_link'] = df['uuid'].apply(lambda x:'https://covidsos.org/verify/'+x)
         else:
@@ -259,6 +261,20 @@ def get_unverified_requests():
 
 def accept_request_page(uuid):
     query = """Select r.id as r_id,r.name as name, r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
+            rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance
+            from requests r left join request_verification rv on r.id=rv.r_id
+            where r.uuid='{uuid}'""".format(uuid=uuid)
+    df = pd.read_sql(query,connections('prod_db_read'))
+    df = df[~df['verification_status'].isna()]
+    if(df.shape[0]>1):
+        df = df[0:0]
+    df['what']=df['what'].fillna('Please call senior citizen to discuss')
+    df['why']=df['why'].fillna('Senior Citizen')
+    df['financial_assistance']=df['financial_assistance'].fillna(0)
+    return df
+
+def accept_request_page_secure(uuid):
+    query = """Select r.id as r_id,r.name as name,r.mob_number, r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
             rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance
             from requests r left join request_verification rv on r.id=rv.r_id
             where r.uuid='{uuid}'""".format(uuid=uuid)
@@ -324,6 +340,7 @@ def volunteer_data_by_id(v_id):
 
 # In[ ]:
 
+
 def get_volunteers_assigned_to_request(r_id):
     query = f"""Select volunteer_id from request_matching where request_id={r_id}"""
     data = pd.read_sql(query, connections('prod_db_read'))
@@ -332,8 +349,27 @@ def get_volunteers_assigned_to_request(r_id):
     return data['volunteer_id'].nunique()
 
 
+# In[ ]:
+
+
 def get_requests_assigned_to_volunteer(v_id):
-    query = f"""Select r.uuid as uuid, r.status as status, r.name as name, r.address as address, rm.last_updated as last_updated \
-        from request_matching rm left join requests r on rm.request_id=r.id where rm.volunteer_id={v_id} and rm.is_active=True;"""
+    query = f"""Select r.uuid as uuid, r.status as status, r.name as name, r.address as address, rm.last_updated as last_updated
+    from request_matching rm left join requests r on rm.request_id=r.id where rm.volunteer_id={v_id} and rm.is_active=True;"""
     data = pd.read_sql(query, connections('prod_db_read'))
     return data.to_dict('records')
+
+def get_assigned_requests():
+    query = """Select r.id as r_id, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd,r.timestamp as `request_time`,
+                r.source,r.status as `request_status`, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
+                v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`
+                from requests r
+            left join request_verification rv on rv.r_id=r.id
+            left join request_matching rm on rm.request_id=r.id
+            left join volunteers v on v.id=rm.volunteer_id
+            where rm.is_active=True and r.status in ('assigned','matched')"""
+    requests_data = pd.read_sql(query,connections('prod_db_read'))
+    requests_data = requests_data.fillna('')
+    requests_data = requests_data.sort_values(by=['assignment_time'],ascending=[False])
+    requests_data['requestor_chat']=requests_data['requestor_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
+    requests_data['volunteer_chat']=requests_data['volunteer_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
+    return requests_data

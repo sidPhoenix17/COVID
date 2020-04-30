@@ -15,3 +15,12 @@ About the Files:
 6. partner_assignment.py - This file contains code related to request assignment to a volunteer.
 7. whatsapp_fn.py - WhatsApp related APIs/functions to be added here.
 8. settings.py - contains values of constants/configurations
+
+
+For setting up the project:
+1. Download docker-compose 
+2. "cd docker && docker-compose build && docker-compose up"
+3. You are good to go, just point your curl requests to localhost:5000. The server will automatically be reloaded every time you make a code change
+4. To manually execute sql use "docker exec -it bash" then use the username "test" and password "test" to drop into the docker mysql and use database covidsos
+5. Raise an issue if you face any problems
+
