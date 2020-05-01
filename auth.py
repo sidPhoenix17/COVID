@@ -50,10 +50,6 @@ def login_required(f):
     return decorated_function
 
 
-
-
-
-
 def volunteer_login_req(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -117,16 +113,3 @@ def decode_auth_token(auth_token):
         return 'Signature expired. Please log in again.', False
     except jwt.InvalidTokenError:
         return 'Invalid token. Please log in again.', False
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
