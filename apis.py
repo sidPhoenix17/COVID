@@ -845,7 +845,7 @@ def task_completed(*args, **kwargs):
 @app.route('/admin-update-request', methods=['POST'])
 @login_required
 def admin_task_completed(*args, **kwargs):
-    admin_id = kwargs['admin_id']
+    user_id = kwargs['user_id']
     volunteer_id = request.form.get('volunteer_id')
     request_uuid = request.form.get('request_uuid')
     status = request.form.get('status')
