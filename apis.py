@@ -207,11 +207,14 @@ def new_user(*args, **kwargs):
     email_id = request.form.get('email_id')
     password = request.form.get('password')
     organisation = request.form.get('organisation')
+    auth_user_org = kwargs.get('organisation')
     creator_access_type = request.form.get('creator_access_type')
     user_access_type = request.form.get('user_access_type')
     creator_user_id = request.form.get('creator_user_id')
     verification_team = request.form.get('verification_team', 1)
     current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
+    if auth_user_org != 'covidsos' and auth_user_org != organisation:
+        return {'Response': {}, 'status': False, 'string_response': 'You cannot create a user of another organisation.'}
     if (user_access_type == 'moderator'):
         access_type = 2
     elif (user_access_type == 'viewer'):
@@ -305,7 +308,8 @@ def support_type_list():
 @app.route('/private_map_data', methods=['GET'])
 @login_required
 def private_map_data(*args, **kwargs):
-    response = get_private_map_data()
+    org = kwargs.get('organisation', '')
+    response = get_private_map_data(org)
     return json.dumps({'Response': response, 'status': True, 'string_response': 'Full data sent'},
                       default=datetime_converter)
 
@@ -325,10 +329,14 @@ def public_map_data():
 @app.route('/assign_volunteer', methods=['POST'])
 @login_required
 def assign_volunteer(*args, **kwargs):
+    org = kwargs.get('organisation', '')
     volunteer_id = request.form.get('volunteer_id')
     request_id = request.form.get('request_id')
+    #TODO:
+    # Change matched_by to use user_id/volunteer_id from kwargs instead of form data
+    # change matched_by datatype to int and convert all existing values to be numeric
     matched_by = request.form.get('matched_by')
-    response = assign_request_to_volunteer(volunteer_id, request_id, matched_by)
+    response = assign_request_to_volunteer(volunteer_id, request_id, matched_by, org)
     return json.dumps(response)
 
 
@@ -336,13 +344,14 @@ def assign_volunteer(*args, **kwargs):
 @volunteer_login_req
 def assign_request(*args, **kwargs):
     volunteer_id = kwargs.get('volunteer_id')
+    org = kwargs.get('organisation', '')
     request_id = request.form.get('request_id')
     matched_by = request.form.get('matched_by', 'thebangaloreguy')
-    response = assign_request_to_volunteer(volunteer_id, request_id, matched_by)
+    response = assign_request_to_volunteer(volunteer_id, request_id, matched_by, org)
     return json.dumps(response)
 
 
-def assign_request_to_volunteer(volunteer_id, request_id, matched_by):
+def assign_request_to_volunteer(volunteer_id, request_id, matched_by, org):
     r_df = request_data_by_id(request_id)
     v_df = volunteer_data_by_id(volunteer_id)
     if (r_df.shape[0] == 0):
@@ -350,6 +359,8 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by):
     if (v_df.shape[0] == 0):
         return {'status': False, 'string_response': 'Volunteer does not exist', 'Response': {}}
     else:
+        if org != 'covidsos' and not (r_df.loc[0, 'source'] == v_df.loc[0, 'source'] == org):
+            return {'status': False, 'string_response': 'organisation not same for all: requester, volunteer and matchmaker', 'Response': {}}
         if (r_df.loc[0, 'status'] in ['received', 'verified', 'pending']):
             current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
             req_dict = {'volunteer_id': [volunteer_id], 'request_id': [r_df.loc[0, 'r_id']],
@@ -437,11 +448,14 @@ def update_request_info(*args, **kwargs):
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
     source = request.form.get('source')
+    auth_user_org = kwargs.get('organisation')
     status = request.form.get('status')
     country = request.form.get('country')
     r_df = request_data_by_id(r_id)
     if (r_df.shape[0] == 0):
         return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
+    if auth_user_org != 'covidsos' and r_df.loc[0, 'source'] != auth_user_org:
+        return json.dumps({'status': False, 'string_response': 'Your organisation does not match that of this request.', 'Response': {}})
     req_dict = {'name': name, 'mob_number': mob_number, 'email_id': email_id,
                 'country': country, 'address': address, 'geoaddress': geoaddress, 'latitude': latitude,
                 'longitude': longitude,
@@ -480,6 +494,7 @@ def update_volunteer_info(*args, **kwargs):
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
     source = request.form.get('source')
+    auth_user_org = kwargs.get('organisation', '')
     status = request.form.get('status')
     country = request.form.get('country')
     req_dict = {'name': name, 'mob_number': mob_number, 'email_id': email_id,
@@ -489,6 +504,8 @@ def update_volunteer_info(*args, **kwargs):
     v_df = volunteer_data_by_id(v_id)
     if (v_df.shape[0] == 0):
         return json.dumps({'status': False, 'string_response': 'Volunteer does not exist', 'Response': {}})
+    if auth_user_org != 'covidsos' and v_df.loc[0, 'source'] != auth_user_org:
+        return json.dumps({'status': False, 'string_response': 'Your organisation does not match that of this volunteer.', 'Response': {}})
     if (v_id is None):
         return {'Response': {}, 'status': False, 'string_response': 'Volunteer ID mandatory'}
     v_dict = {x: req_dict[x] for x in req_dict if req_dict[x] is not None}
@@ -590,16 +607,20 @@ def ngo_request_form(*args, **kwargs):
     return response
 
 
-# get all requests to be verified/rejected by moderator
+# Get request data by uuid along with its existing verification data
+# TODO: Change method to GET
 @app.route('/verify_request_page', methods=['POST'])
 @login_required
 def verify_request_page(*args, **kwargs):
     uuid = request.form.get('uuid')
+    auth_user_org = kwargs.get('organisation', '')
     r_df = request_data_by_uuid(uuid)
     c_1 = ['r_id', 'name', 'mob_number', 'geoaddress', 'latitude', 'longitude', 'request', 'status', 'timestamp', 'source']
     # Check if request verification table already has a row, then also send info from request verification data along with it.
     if (r_df.shape[0] == 0):
         return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
+    if auth_user_org != 'covidsos' and r_df.loc[0, 'source'] != auth_user_org:
+        return json.dumps({'status': False, 'string_response': 'Your organisation and that of the request dont match.', 'Response': {}})
     past_df, past_status = check_past_verification(str(r_df.loc[0,'r_id']))
     c_2 = ['id','r_id','why','what','request_address','verification_status','urgent','financial_assistance']
     if(past_status):
@@ -632,6 +653,7 @@ def verify_request(*args, **kwargs):
     where = request.form.get('geoaddress')
     mob_number = request.form.get('mob_number')
     urgent_status = request.form.get('urgent', 'no')
+    auth_user_org = kwargs.get('organisation', '')
     source = request.form.get('source', 'covidsos')
     if (source == 'undefined'):
         source = 'covidsos'
@@ -642,6 +664,8 @@ def verify_request(*args, **kwargs):
     if ((r_id is None) or (uuid is None)):
         return json.dumps({'Response': {}, 'status': False, 'string_response': 'Please send UUID/request ID'})
     r_df = request_data_by_uuid(uuid)
+    if auth_user_org != 'covidsos' and r_df.loc[0, 'source'] != auth_user_org:
+        return json.dumps({'status': False, 'string_response': 'Your organisation and that of the request dont match.', 'Response': {}})
     if (r_df.shape[0] == 0):
         return json.dumps({'Response': {}, 'status': False, 'string_response': 'Invalid UUID/request ID'})
     if (r_df.loc[0, 'source'] != source):
@@ -696,7 +720,8 @@ def pending_requests():
 @app.route('/unverified_requests', methods=['GET'])
 @login_required
 def unverified_requests(*args, **kwargs):
-    df = get_unverified_requests()
+    org = kwargs.get('organisation', '')
+    df = get_unverified_requests(org)
     if (df.shape[0] > 0):
         return json.dumps(
             {'Response': df.to_dict('records'), 'status': True, 'string_response': 'Request data extracted'},
@@ -711,7 +736,8 @@ def unverified_requests(*args, **kwargs):
 @app.route('/accepted_requests', methods=['GET'])
 @login_required
 def assigned_requests(*args, **kwargs):
-    df = get_assigned_requests()
+    org = kwargs.get('organisation', '')
+    df = get_assigned_requests(org)
     if (df.shape[0] > 0):
         return json.dumps(
             {'Response': df.to_dict('records'), 'status': True, 'string_response': 'Request data extracted'},
@@ -776,6 +802,7 @@ def verify_otp_request():
 @volunteer_login_req
 def volunteer_tickets(*args, **kwargs):
     volunteer_id = kwargs['volunteer_id']
+    # TODO: Check if there is a need to check volunteer organisation even for requests assigned to volunteer
     volunteer_reqs = get_requests_assigned_to_volunteer(volunteer_id)
     return json.dumps({'Response': volunteer_reqs, 'status': True, 'string_response': 'Data sent'})
 
@@ -784,7 +811,10 @@ def volunteer_tickets(*args, **kwargs):
 @volunteer_login_req
 def get_request_info(*args, **kwargs):
     request_uuid = request.args.get('uuid', '')
+    volunteer_org = kwargs.get('organisation', '')
     request_data = accept_request_page_secure(request_uuid)
+    if volunteer_org != 'covidsos' and request_data.shape[0] > 0 and request_data.loc[0, 'source'] != volunteer_org:
+        return json.dumps({'Response': {}, 'status': True, 'string_response': 'This request does not belong to your organisation.'}) 
     request_data = request_data.to_dict('records')
     return json.dumps({'Response': request_data, 'status': True, 'string_response': 'Data sent'})
 
@@ -794,10 +824,13 @@ def get_request_info(*args, **kwargs):
 def task_completed(*args, **kwargs):
     volunteer_id = kwargs['volunteer_id']
     request_uuid = request.form.get('request_uuid')
+    volunteer_org = kwargs.get('organisation', '')
     status = request.form.get('status')
     status_message = request.form.get('status_message', '')
     v_df = volunteer_data_by_id(volunteer_id)
     r_df = request_data_by_uuid(request_uuid)
+    if volunteer_org != 'covidsos' and r_df.loc[0, 'source'] != volunteer_org:
+        return json.dumps({'Response': {}, 'status': True, 'string_response': 'This request does not belong to your organisation.'}) 
     if status not in ['completed', 'completed externally', 'cancelled', 'reported']:
         return json.dumps({'Response': {}, 'status': False, 'string_response': 'invalid status value'})
     if(status == r_df.loc[0,'status']):
