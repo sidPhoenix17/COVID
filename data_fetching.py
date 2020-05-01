@@ -88,14 +88,18 @@ def get_ticker_counts():
 # In[ ]:
 
 
-def get_private_map_data():
+def get_private_map_data(org):
     try:
         server_con = connections('prod_db_read')
         v_q = """Select timestamp,id as v_id, name,source,latitude,longitude,geoaddress,address,mob_number,email_id,status from volunteers"""
+        if org != 'covidsos':
+            v_q += f" where source='{org}'"
         v_df = pd.read_sql(v_q,server_con)
         v_df['timestamp']=pd.to_datetime(v_df['timestamp'])#.dt.tz_localize(tz='Asia/kolkata')
         v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)&(v_df['status']==1)]
         r_q = """Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number,uuid from requests"""
+        if org != 'covidsos':
+            r_q += f" where source='{org}'"
         r_df = pd.read_sql(r_q,server_con)
         r_df['timestamp']=pd.to_datetime(r_df['timestamp'])#.dt.tz_localize(tz='Asia/kolkata')
         r_df = r_df[(r_df['latitude']!=0.0)&(r_df['longitude']!=0.0)]
@@ -196,23 +200,24 @@ def get_user_id(username, password):
 
 def verify_user_exists(user_id, access_type):
     server_con = connections('prod_db_read')
-    query = f"""Select id from users where id='{user_id}' and access_type='{access_type}' order by id desc limit 1"""
+    query = f"""Select id, organisation from users where id='{user_id}' and access_type='{access_type}' order by id desc limit 1"""
     try:
         data = pd.read_sql(query, server_con)
-        return (True if data.shape[0] > 0 else False)
+        return ((data.loc[0, 'organisation'], True)  if data.shape[0] > 0 else '', False)
     except:
         mailer.send_exception_mail()
-        return False
+        return '', False
 
 def verify_volunteer_exists(mob_number, v_id=None, country=None):
     server_con = connections('prod_db_read')
-    query = f"""Select id, name, country from volunteers where mob_number='{mob_number}'"""
+    query = f"""Select id, name, country, source from volunteers where mob_number='{mob_number}'"""
     if v_id and country:
-        query = f"""Select id, name, country from volunteers where id='{v_id}' and country='{country}'"""
+        query = f"""Select id, name, country, source from volunteers where id='{v_id}' and country='{country}'"""
     try:
         data = pd.read_sql(query, server_con)
         if data.shape[0] > 0:
-            return {'status': True, 'volunteer_id': data.loc[0, 'id'],'name':data.loc[0,'name'], 'country': data.loc[0, 'country']}
+            return {'status': True, 'volunteer_id': data.loc[0, 'id'],'name':data.loc[0,'name'],
+                    'country': data.loc[0, 'country'], 'source': data.loc[0, 'source'] }
         return {'status': False, 'volunteer_id': None}
     except:
         mailer.send_exception_mail()
@@ -239,9 +244,11 @@ def check_past_verification(r_id):
 # In[ ]:
 
 
-def get_unverified_requests():
+def get_unverified_requests(org):
     try:
         query = """Select * from requests r where status='received'"""
+        if org != 'covidsos':
+            query += f" and source='{org}'"
         df = pd.read_sql(query,connections('prod_db_read'))
         df = df[~df['uuid'].isna()]
         df = df.sort_values(by=['id'],ascending=[False])
@@ -274,7 +281,7 @@ def accept_request_page(uuid):
     return df
 
 def accept_request_page_secure(uuid):
-    query = """Select r.id as r_id,r.name as name,r.mob_number, r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
+    query = """Select r.id as r_id,r.name as name,r.mob_number, r.status as status, r.source as source, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
             rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance
             from requests r left join request_verification rv on r.id=rv.r_id
             where r.uuid='{uuid}'""".format(uuid=uuid)
@@ -299,7 +306,7 @@ def request_data_by_uuid(uuid):
     
 
 def request_data_by_id(r_id):
-    r_id_q = """Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp,volunteers_reqd from requests where id='{r_id}'""".format(r_id=r_id)
+    r_id_q = """Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp,source,volunteers_reqd from requests where id='{r_id}'""".format(r_id=r_id)
     try:
         r_id_df = pd.read_sql(r_id_q,connections('prod_db_read'))
         return r_id_df
@@ -309,7 +316,7 @@ def request_data_by_id(r_id):
 
 
 def volunteer_data_by_id(v_id):
-    v_id_q = """Select id as v_id,name,mob_number from volunteers where id='{v_id}'""".format(v_id=v_id)
+    v_id_q = """Select id as v_id,name,mob_number,source from volunteers where id='{v_id}'""".format(v_id=v_id)
     try:
         v_id_df = pd.read_sql(v_id_q,connections('prod_db_read'))
         return v_id_df
@@ -358,15 +365,16 @@ def get_requests_assigned_to_volunteer(v_id):
     data = pd.read_sql(query, connections('prod_db_read'))
     return data.to_dict('records')
 
-def get_assigned_requests():
-    query = """Select r.id as r_id, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd,r.timestamp as `request_time`,
-                r.source,r.status as `request_status`, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
+def get_assigned_requests(org):
+    org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
+    query = f"""Select r.id as r_id, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd,r.timestamp as `request_time`,
+                r.source as `source`, r.status as `request_status`, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
                 v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`
                 from requests r
             left join request_verification rv on rv.r_id=r.id
             left join request_matching rm on rm.request_id=r.id
             left join volunteers v on v.id=rm.volunteer_id
-            where rm.is_active=True and r.status in ('assigned','matched')"""
+            where rm.is_active=True and r.status in ('assigned','matched') {org_condition}"""
     requests_data = pd.read_sql(query,connections('prod_db_read'))
     requests_data = requests_data.fillna('')
     requests_data = requests_data.sort_values(by=['assignment_time'],ascending=[False])

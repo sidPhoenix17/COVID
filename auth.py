@@ -39,12 +39,13 @@ def login_required(f):
             data = resp.split(' ', 1)
             user_id = data[0]
             access_type = data[1]
-            user_exists = verify_user_exists(user_id, access_type)
+            org, user_exists = verify_user_exists(user_id, access_type)
             if not user_exists:
                 return json.dumps({'Response':{},'status':False,'string_response': 'no valid user found'})
         except Exception:
             return json.dumps({'Response':{},'status':False,'string_response': 'no valid user found'})
         kwargs['user_id'] = user_id
+        kwargs['organisation'] = org
         return f(*args, **kwargs)
     return decorated_function
 
@@ -73,6 +74,7 @@ def volunteer_login_req(f):
         except Exception:
             return json.dumps({'Response':{},'status':False,'string_response': 'no volunteer found'})
         kwargs['volunteer_id'] = v_id
+        kwargs['organisation'] = volunteer_exists['source']
         return f(*args, **kwargs)
     return decorated_function
 
