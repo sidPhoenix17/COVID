@@ -203,7 +203,10 @@ def verify_user_exists(user_id, access_type):
     query = f"""Select id, organisation from users where id='{user_id}' and access_type='{access_type}' order by id desc limit 1"""
     try:
         data = pd.read_sql(query, server_con)
-        return ((data.loc[0, 'organisation'], True)  if data.shape[0] > 0 else '', False)
+        if data.shape[0] > 0:
+            return data.loc[0, 'organisation'], True
+        else:
+            return '', False
     except:
         mailer.send_exception_mail()
         return '', False
