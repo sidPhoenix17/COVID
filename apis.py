@@ -32,6 +32,8 @@ from auth import encode_auth_token, decode_auth_token, login_required, volunteer
 from message_templates import old_reg_sms, new_reg_sms,new_request_sms,new_request_mod_sms, request_verified_sms, request_accepted_v_sms, request_accepted_r_sms, request_accepted_m_sms, request_rejected_sms, request_closed_v_sms, request_closed_r_sms, request_closed_m_sms
 
 from settings import server_type, SECRET_KEY, neighbourhood_radius, search_radius
+
+import mailer_fn as mailer
 import cred_config as cc
 
 # In[ ]:
@@ -146,6 +148,7 @@ def create_request():
                 send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
         return json.dumps(response)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -184,6 +187,7 @@ def add_volunteer():
         response = {'Response': {}, 'status': x, 'string_response': y}
         return json.dumps(response)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -202,6 +206,7 @@ def login_request():
         response['Response']['auth_token'] = encode_auth_token(f'{user_id} {access_type}').decode()
         return json.dumps(response)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 # In[ ]:
@@ -249,6 +254,7 @@ def new_user(*args, **kwargs):
                         'string_response': 'User does not have permission to create new users'}
         return json.dumps(response)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 # In[ ]:
@@ -272,6 +278,7 @@ def add_org_request():
         response = {'Response': {}, 'status': x, 'string_response': y}
         return json.dumps(response)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -284,6 +291,7 @@ def ticker_counts():
         response = get_ticker_counts()
         return json.dumps(response)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 # In[ ]:
@@ -295,6 +303,7 @@ def request_status_list():
         response = get_requests_list()
         return json.dumps(response)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -307,6 +316,7 @@ def request_source_list():
         response = get_source_list()
         return json.dumps(response)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -323,6 +333,7 @@ def support_type_list():
         else:
             return json.dumps({'Response': {}, 'status': False, 'string_response': 'Incorrect response'})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 # In[ ]:
@@ -337,6 +348,7 @@ def private_map_data(*args, **kwargs):
         return json.dumps({'Response': response, 'status': True, 'string_response': 'Full data sent'},
                           default=datetime_converter)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -349,6 +361,7 @@ def public_map_data():
         response = get_public_map_data()
         return json.dumps({'Response': response, 'status': True, 'string_response': 'Public data sent'})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -369,6 +382,7 @@ def assign_volunteer(*args, **kwargs):
         response = assign_request_to_volunteer(volunteer_id, request_id, matched_by, org)
         return json.dumps(response)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -382,6 +396,7 @@ def assign_request(*args, **kwargs):
         response = assign_request_to_volunteer(volunteer_id, request_id, matched_by,'covidsos')
         return json.dumps(response)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -424,6 +439,7 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by,org):
                 return {'status': False, 'string_response': 'Request already assigned/closed/completed', 'Response': {}}
         return response
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -468,6 +484,7 @@ def auto_assign_volunteer():
             else:
                 return json.dumps({'status': False, 'string_response': 'Request already assigned', 'Response': {}})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -509,6 +526,7 @@ def update_request_info(*args, **kwargs):
         response = json.dumps(update_requests_db({'id': r_id}, r_dict))
         return response
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -556,6 +574,7 @@ def update_volunteer_info(*args, **kwargs):
         response = json.dumps(update_volunteers_db({'id': v_id}, v_dict))
         return response
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -576,6 +595,7 @@ def logout_request():
         message = 'Logged out successfully' if success else 'Failed to logout'
         return json.dumps({'Response': {}, 'status': success, 'string_response': message})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -595,6 +615,7 @@ def request_accept_page():
             return json.dumps(
                 {'Response': df.to_dict('records'), 'status': True, 'string_response': 'Request related data extracted'})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -659,6 +680,7 @@ def ngo_request_form(*args, **kwargs):
         response = {'Response': {}, 'status': x1, 'string_response': y1}
         return response
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -690,6 +712,7 @@ def verify_request_page(*args, **kwargs):
         else:
             return json.dumps({'Response': {}, 'status': False, 'string_response': 'Request already verified/rejected'})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 # In[ ]:
@@ -761,6 +784,7 @@ def verify_request(*args, **kwargs):
         else:
             return json.dumps({'Response': {}, 'status': False, 'string_response': 'Request already verified/rejected'})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -774,6 +798,7 @@ def pending_requests():
         return json.dumps({'Response': response, 'status': True, 'string_response': 'Request data extracted'},
                           default=datetime_converter)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -794,6 +819,7 @@ def unverified_requests(*args, **kwargs):
             return json.dumps({'Response': {}, 'status': True, 'string_response': 'No unverified requests found'},
                               default=datetime_converter)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -813,6 +839,7 @@ def assigned_requests(*args, **kwargs):
             return json.dumps({'Response': {}, 'status': True, 'string_response': 'No open requests found'},
                               default=datetime_converter)
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -825,6 +852,7 @@ def success_stories():
         response = website_success_stories()
         return json.dumps({'Response': response, 'status': True, 'string_response': 'Success stories data extracted'})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -840,6 +868,7 @@ def send_otp_request():
         response, success = send_otp(mob_number)
         return json.dumps({'Response': {}, 'status': success, 'string_response': response})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 @app.route('/resend_otp', methods=['POST'])
@@ -851,6 +880,7 @@ def resend_otp_request():
         response, success = resend_otp(mob_number)
         return json.dumps({'Response': {}, 'status': success, 'string_response': response})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -872,6 +902,7 @@ def verify_otp_request():
             responseObj = {'auth_token': encode_auth_token(encodeKey).decode(), 'name': name, 'volunteer_id': user_id}
         return json.dumps({'Response': responseObj, 'status': success, 'string_response': response})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -886,6 +917,7 @@ def volunteer_tickets(*args, **kwargs):
         volunteer_reqs = get_requests_assigned_to_volunteer(volunteer_id)
         return json.dumps({'Response': volunteer_reqs, 'status': True, 'string_response': 'Data sent'})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -898,6 +930,7 @@ def get_request_info(*args, **kwargs):
         request_data = request_data.to_dict('records')
         return json.dumps({'Response': request_data, 'status': True, 'string_response': 'Data sent'})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -929,6 +962,7 @@ def task_completed(*args, **kwargs):
             message_all_volunteers(request_uuid, neighbourhood_radius, search_radius)
         return json.dumps({'Response': {}, 'status': success, 'string_response': response})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
@@ -963,6 +997,7 @@ def admin_task_completed(*args, **kwargs):
             message_all_volunteers(request_uuid, neighbourhood_radius, search_radius)
         return json.dumps({'Response': {}, 'status': success, 'string_response': response})
     except:
+        mailer.send_exception_mail()
         return {'Response': {}, 'status': False, 'string_response': 'Api Failure Occurred'}
 
 
