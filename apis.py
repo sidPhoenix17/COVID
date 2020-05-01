@@ -850,6 +850,36 @@ def task_completed(*args, **kwargs):
     return json.dumps({'Response': {}, 'status': success, 'string_response': response})
 
 
+@app.route('/admin-update-request', methods=['POST'])
+@login_required
+def task_completed(*args, **kwargs):
+    volunteer_id = kwargs['volunteer_id']
+    request_uuid = request.form.get('request_uuid')
+    status = request.form.get('status')
+    status_message = request.form.get('status_message', '')
+    v_df = volunteer_data_by_id(volunteer_id)
+    r_df = request_data_by_uuid(request_uuid)
+    if status not in ['completed', 'completed externally', 'cancelled', 'reported']:
+        return json.dumps({'Response': {}, 'status': False, 'string_response': 'invalid status value'})
+    if (status == r_df.loc[0, 'status']):
+        return json.dumps({'Response': {}, 'status': False, 'string_response': 'Request Status Already updated'})
+    response, success = update_request_status(request_uuid, status, status_message, volunteer_id)
+    # Send SMS to Volunteer, Requestor and Moderator - request_closed_v_sms,request_closed_r_sms,request_closed_m_sms
+    if ((v_df.shape[0] > 0) & (r_df.shape[0] > 0)):
+        send_sms(request_closed_v_sms.format(status=status), int(v_df.loc[0, 'mob_number']))
+        moderator_list = get_moderator_list()
+        for i_number in moderator_list:
+            send_sms(request_closed_m_sms.format(r_id=r_df.loc[0, 'r_id'], r_name=r_df.loc[0, 'name'],
+                                                 r_mob_number=r_df.loc[0, 'mob_number'],
+                                                 status=status, v_name=v_df.loc[0, 'name'],
+                                                 v_mob_number=v_df.loc[0, 'mob_number'],
+                                                 status_message=status_message), i_number)
+        send_sms(request_closed_r_sms.format(status=status), int(r_df.loc[0, 'mob_number']))
+    if (status == 'cancelled'):
+        message_all_volunteers(request_uuid, neighbourhood_radius, search_radius)
+    return json.dumps({'Response': {}, 'status': success, 'string_response': response})
+
+
 # In[ ]:
 if(server_type=='local'):
     if __name__ == '__main__':    
