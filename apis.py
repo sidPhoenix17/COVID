@@ -344,14 +344,13 @@ def assign_volunteer(*args, **kwargs):
 @volunteer_login_req
 def assign_request(*args, **kwargs):
     volunteer_id = kwargs.get('volunteer_id')
-    org = kwargs.get('organisation', '')
     request_id = request.form.get('request_id')
-    matched_by = request.form.get('matched_by', 'thebangaloreguy')
-    response = assign_request_to_volunteer(volunteer_id, request_id, matched_by, org)
+    matched_by = request.form.get('matched_by', 0)
+    response = assign_request_to_volunteer(volunteer_id, request_id, matched_by,'covidsos')
     return json.dumps(response)
 
 
-def assign_request_to_volunteer(volunteer_id, request_id, matched_by, org):
+def assign_request_to_volunteer(volunteer_id, request_id, matched_by,org):
     r_df = request_data_by_id(request_id)
     v_df = volunteer_data_by_id(volunteer_id)
     if (r_df.shape[0] == 0):
@@ -360,7 +359,7 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by, org):
         return {'status': False, 'string_response': 'Volunteer does not exist', 'Response': {}}
     else:
         if org != 'covidsos' and not (r_df.loc[0, 'source'] == v_df.loc[0, 'source'] == org):
-            return {'status': False, 'string_response': 'organisation not same for all: requester, volunteer and matchmaker', 'Response': {}}
+            return {'status': False, 'string_response': 'Organisation not same for all: requester, volunteer and matchmaker', 'Response': {}}
         if (r_df.loc[0, 'status'] in ['received', 'verified', 'pending']):
             current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
             req_dict = {'volunteer_id': [volunteer_id], 'request_id': [r_df.loc[0, 'r_id']],
@@ -802,7 +801,6 @@ def verify_otp_request():
 @volunteer_login_req
 def volunteer_tickets(*args, **kwargs):
     volunteer_id = kwargs['volunteer_id']
-    # TODO: Check if there is a need to check volunteer organisation even for requests assigned to volunteer
     volunteer_reqs = get_requests_assigned_to_volunteer(volunteer_id)
     return json.dumps({'Response': volunteer_reqs, 'status': True, 'string_response': 'Data sent'})
 
@@ -811,10 +809,7 @@ def volunteer_tickets(*args, **kwargs):
 @volunteer_login_req
 def get_request_info(*args, **kwargs):
     request_uuid = request.args.get('uuid', '')
-    volunteer_org = kwargs.get('organisation', '')
     request_data = accept_request_page_secure(request_uuid)
-    if volunteer_org != 'covidsos' and request_data.shape[0] > 0 and request_data.loc[0, 'source'] != volunteer_org:
-        return json.dumps({'Response': {}, 'status': True, 'string_response': 'This request does not belong to your organisation.'}) 
     request_data = request_data.to_dict('records')
     return json.dumps({'Response': request_data, 'status': True, 'string_response': 'Data sent'})
 
@@ -824,13 +819,10 @@ def get_request_info(*args, **kwargs):
 def task_completed(*args, **kwargs):
     volunteer_id = kwargs['volunteer_id']
     request_uuid = request.form.get('request_uuid')
-    volunteer_org = kwargs.get('organisation', '')
     status = request.form.get('status')
     status_message = request.form.get('status_message', '')
     v_df = volunteer_data_by_id(volunteer_id)
     r_df = request_data_by_uuid(request_uuid)
-    if volunteer_org != 'covidsos' and r_df.loc[0, 'source'] != volunteer_org:
-        return json.dumps({'Response': {}, 'status': True, 'string_response': 'This request does not belong to your organisation.'}) 
     if status not in ['completed', 'completed externally', 'cancelled', 'reported']:
         return json.dumps({'Response': {}, 'status': False, 'string_response': 'invalid status value'})
     if(status == r_df.loc[0,'status']):
