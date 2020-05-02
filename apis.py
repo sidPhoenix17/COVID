@@ -599,6 +599,7 @@ def ngo_request_form(*args, **kwargs):
     verified_by = kwargs.get('user_id', 0)
     urgent_status = request.form.get('urgent', 'no')
     volunteers_reqd = request.form.get('volunteer_count', 1)
+    members_impacted = request.form.get('volunteer_count', 2)
     current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
     req_dict = {'timestamp': [current_time], 'name': [name], 'mob_number': [mob_number], 'email_id': [email_id],
                 'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
@@ -608,10 +609,10 @@ def ngo_request_form(*args, **kwargs):
     df = pd.DataFrame(req_dict)
     df['email_id'] = df['email_id'].fillna('')
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
-                        'longitude', 'source', 'request', 'age', 'status', 'uuid']
+                        'longitude', 'source', 'request', 'age', 'status', 'members_impacted', 'uuid']
     x1, y1 = add_requests(df[expected_columns])
     r_df = request_data_by_uuid(uuid)
-    r_v_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [why], 'what': [what], 'where': [where],
+    r_v_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [why], 'what': [what], 'where': [where], 'members_impacted':[members_impacted],
                 'verification_status': [verification_status], 'verified_by': [verified_by], 'timestamp': [current_time],
                 'financial_assistance': [financial_assistance], 'urgent': [urgent_status]}
     df = pd.DataFrame(r_v_dict)
@@ -685,6 +686,7 @@ def verify_request(*args, **kwargs):
         source = 'covidsos'
     volunteers_reqd = request.form.get('volunteer_count', 1)
     current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
+    members_impacted = request.form.get('volunteer_count', 2)
     if (verification_status is None):
         return json.dumps({'Response': {}, 'status': False, 'string_response': 'Please send verification status'})
     if ((r_id is None) or (uuid is None)):
@@ -705,7 +707,7 @@ def verify_request(*args, **kwargs):
         expected_columns = ['timestamp', 'r_id', 'what', 'why', 'where', 'verification_status', 'verified_by',
                             'financial_assistance', 'urgent']
         response_2 = update_requests_db({'uuid': uuid},
-                                        {'status': verification_status, 'volunteers_reqd': volunteers_reqd})
+                                        {'status': verification_status, 'volunteers_reqd': volunteers_reqd,'members_impacted':members_impacted})
         print('updated the status')
         past_df, past_status = check_past_verification(str(r_id))
         if (past_status == True):
@@ -719,12 +721,10 @@ def verify_request(*args, **kwargs):
             x, y = add_request_verification_db(df)
         if (verification_status == 'verified'):
             requestor_text = request_verified_sms
-            #TODO: check if the url from this message is to be saved too
             send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
             message_all_volunteers(uuid, neighbourhood_radius, search_radius)
         else:
             requestor_text = request_rejected_sms
-            #TODO: check if the url from this message is to be saved too
             send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
         return json.dumps(
             {'Response': {}, 'status': response_2['status'], 'string_response': response_2['string_response']})
