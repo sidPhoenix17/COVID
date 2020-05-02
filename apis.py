@@ -18,14 +18,14 @@ from connections import connections
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user, \
     add_user, request_matching, update_requests_db, update_volunteers_db, \
     blacklist_token, send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db, \
-    add_request_verification_db, update_request_v_db, update_request_status, save_request_sms_url
+    add_request_verification_db, update_request_v_db, update_request_status, save_request_sms_url, add_message
 
 from data_fetching import get_ticker_counts, get_private_map_data, get_public_map_data, get_user_id, \
     accept_request_page, request_data_by_uuid, request_data_by_id, volunteer_data_by_id, \
     website_requests_display, get_requests_list, get_source_list, website_success_stories, \
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
-    accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure
+    accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, get_messages
 
 from partner_assignment import generate_uuid, message_all_volunteers
 
@@ -927,6 +927,36 @@ def admin_task_completed(*args, **kwargs):
     if (status == 'cancelled'):
         message_all_volunteers(request_uuid, neighbourhood_radius, search_radius)
     return json.dumps({'Response': {}, 'status': success, 'string_response': response})
+
+
+@app.route('/message', methods=['GET'])
+@capture_api_exception
+@login_required
+def get_user_conversation(*args, **kwargs):
+    message_id = request.args.get('message_id', '')
+    df = get_messages(message_id)
+    if (df.shape[0] > 0):
+        return json.dumps(
+            {'Response': df.to_dict('records'), 'status': True, 'string_response': 'Request data extracted'},
+            default=datetime_converter)
+    else:
+        return json.dumps({'Response': {}, 'status': True, 'string_response': 'No open requests found'},
+                            default=datetime_converter)
+
+
+@app.route('/message', methods=['POST'])
+@capture_api_exception
+@login_required
+def add_user_message(*args, **kwargs):
+    message_id = request.form.get('message_id')
+    from_number = request.form.get('from')
+    to_number = request.form.get('to')
+    message = request.form.get('message')
+    message_format = request.form.get('type')
+    channel = request.form.get('channel')
+    message_type = request.form.get('message_type')
+    response = add_message(message_id, from_number, to_number, message, message_format, channel, message_type)
+    return json.dumps(response)
 
 # In[ ]:
 if(server_type=='local'):
