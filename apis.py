@@ -910,7 +910,7 @@ def admin_task_completed(*args, **kwargs):
     return json.dumps({'Response': {}, 'status': success, 'string_response': response})
 
 
-@app.route('/conversation', methods=['GET'])
+@app.route('/message', methods=['GET'])
 @capture_api_exception
 @login_required
 def get_user_conversation(*args, **kwargs):
@@ -925,7 +925,7 @@ def get_user_conversation(*args, **kwargs):
                             default=datetime_converter)
 
 
-@app.route('/conversation', methods=['POST'])
+@app.route('/message', methods=['POST'])
 @capture_api_exception
 @login_required
 def add_user_message(*args, **kwargs):
