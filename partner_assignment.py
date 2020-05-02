@@ -9,11 +9,12 @@ import pandas as pd
 import numpy as np
 from settings import EARTH_RADIUS,server_type
 from connections import connections
-from database_entry import send_sms
+from database_entry import send_sms, save_request_sms_url
 from data_fetching import request_data_by_uuid,get_moderator_list
 import mailer_fn as mailer
 import urllib.parse as p
-from message_templates import url_shortener_fn, nearby_v_sms_text, far_v_sms_text, request_verified_m_sms1, request_verified_m_sms2
+from message_templates import url_shortener_fn, nearby_v_sms_text, far_v_sms_text, \
+    request_verified_m_sms1, request_verified_m_sms2, url_start
 
 
 # In[ ]:
@@ -62,18 +63,15 @@ def message_all_volunteers(uuid,radius,search_radius):
     df = pd.DataFrame()
     df2 = pd.DataFrame()
     count=0
-    if(server_type=='prod'):
-        url_start = "https://covidsos.org/"
-    else:
-        url_start = "https://stg.covidsos.org/"
+    orig_link = url_start+"accept/"+uuid
+    link = url_shortener_fn(orig_link)
+    print(link)
+    save_request_sms_url(uuid, 'accept_link', link)
     for i in v_list.index:
         if(v_list.loc[i,'dist']<radius):
-            orig_link = url_start+"accept/"+uuid
-            link = url_shortener_fn(orig_link)
             sms_text = nearby_v_sms_text.format(v_name=v_list.loc[i,'name'],link=link)
             sms_to = int(v_list.loc[i,'mob_number'])
             df = df.append(v_list.loc[i,['v_id']])
-            print(link)
             if((server_type=='prod')):
                 send_sms(sms_text,sms_to,sms_type='transactional',send=True)
                 print('SMS sent')
@@ -83,9 +81,6 @@ def message_all_volunteers(uuid,radius,search_radius):
             count = count +1
             if(count>20):
                 break
-            orig_link = url_start+"accept/"+uuid
-            link = url_shortener_fn(orig_link)
-            print(link)
             sms_text = far_v_sms_text.format(address=r_df.loc[0,'geoaddress'][0:40],link=link)
             sms_to=int(v_list.loc[i,'mob_number'])
             df2 = df2.append(v_list.loc[i,['v_id']])
@@ -111,6 +106,7 @@ def message_all_volunteers(uuid,radius,search_radius):
             break
         str_broadcast = str_broadcast + v_list.loc[i,'name']+" m: wa.me/91"+str(v_list.loc[i,'mob_number'])+" "
     link = url_shortener_fn("https://wa.me/918618948661?text="+p.quote(str_broadcast))
+    save_request_sms_url(uuid, 'broadcast_link', link)
     mod_sms_text_2 = request_verified_m_sms2.format(link=link)
     moderator_list = get_moderator_list()
     for i_number in moderator_list:
