@@ -939,8 +939,9 @@ def add_manager(*args, **kwargs):
     update_user_id = user_id
     request_uuid = request.form.get('request_uuid')
     user_access_type = get_user_access_type(user_id)
-    if user_access_type == 1:
-        update_user_id = request.form.get('user_id')
+    form_user_id = request.form.get('user_id')
+    if user_access_type == 1 and form_user_id is not None:
+        update_user_id = form_user_id
     ru_dict_where = {'uuid': request_uuid}
     ru_dict_set = {'managed_by': update_user_id}
     response = update_requests_db(ru_dict_where, ru_dict_set)
