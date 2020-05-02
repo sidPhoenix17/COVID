@@ -25,7 +25,7 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
     website_requests_display, get_requests_list, get_source_list, website_success_stories, \
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
-    accept_request_page_secure, get_assigned_requests, user_data_by_id
+    accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure
 
 from partner_assignment import generate_uuid, message_all_volunteers
 
@@ -741,6 +741,20 @@ def pending_requests():
     response = website_requests_display()
     return json.dumps({'Response': response, 'status': True, 'string_response': 'Request data extracted'},
                         default=datetime_converter)
+
+@app.route('/admin_pending_requests', methods=['GET'])
+@capture_api_exception
+@login_required
+def admin_pending_requests(*args,**kwargs):
+    org = kwargs.get('organisation', '')
+    if(org=='covidsos'):
+        response = website_requests_display_secure()
+        return json.dumps({'Response': response, 'status': True, 'string_response': 'Request data extracted'},
+                          default=datetime_converter)
+    else:
+        response = website_requests_display()
+        return json.dumps({'Response': response, 'status': True, 'string_response': 'Request data extracted'},
+                          default=datetime_converter)
 
 
 # In[ ]:
