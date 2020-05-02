@@ -19,7 +19,6 @@ from database_entry import add_requests, add_volunteers_to_db, contact_us_form_a
     add_user, request_matching, update_requests_db, update_volunteers_db, \
     blacklist_token, send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db, \
     add_request_verification_db, update_request_v_db, update_request_status, save_request_sms_url, \
-    update_request_updates_db
 
 from data_fetching import get_ticker_counts, get_private_map_data, get_public_map_data, get_user_id, \
     accept_request_page, request_data_by_uuid, request_data_by_id, volunteer_data_by_id, \
@@ -576,6 +575,7 @@ def request_accept_page():
 @capture_api_exception
 @login_required
 def ngo_request_form(*args, **kwargs):
+    user_id = kwargs["user_id"]
     name = request.form.get('name')
     mob_number = request.form.get('mob_number')
     email_id = request.form.get('email_id', '')
@@ -606,11 +606,11 @@ def ngo_request_form(*args, **kwargs):
                 'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
                 'longitude': [longitude],
                 'source': [source], 'age': [age], 'request': [user_request], 'status': [status], 'uuid': [uuid],
-                'volunteers_reqd': [volunteers_reqd]}
+                'volunteers_reqd': [volunteers_reqd], 'managed_by': [user_id]}
     df = pd.DataFrame(req_dict)
     df['email_id'] = df['email_id'].fillna('')
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
-                        'longitude', 'source', 'request', 'age', 'status', 'uuid']
+                        'longitude', 'source', 'request', 'age', 'status', 'uuid', 'managed_by']
     x1, y1 = add_requests(df[expected_columns])
     r_df = request_data_by_uuid(uuid)
     r_v_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [why], 'what': [what], 'where': [where],
@@ -670,6 +670,7 @@ def verify_request_page(*args, **kwargs):
 @capture_api_exception
 @login_required
 def verify_request(*args, **kwargs):
+    user_id = kwargs["user_id"]
     uuid = request.form.get('uuid')
     what = request.form.get('what')
     why = request.form.get('why')
@@ -724,6 +725,9 @@ def verify_request(*args, **kwargs):
             #TODO: check if the url from this message is to be saved too
             send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
             message_all_volunteers(uuid, neighbourhood_radius, search_radius)
+            ru_dict_where = {'uuid': uuid}
+            ru_dict_set = {'managed_by': user_id}
+            update_requests_db(ru_dict_where, ru_dict_set)
         else:
             requestor_text = request_rejected_sms
             #TODO: check if the url from this message is to be saved too
