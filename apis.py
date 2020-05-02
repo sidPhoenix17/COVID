@@ -575,7 +575,6 @@ def request_accept_page():
 @capture_api_exception
 @login_required
 def ngo_request_form(*args, **kwargs):
-    user_id = kwargs["user_id"]
     name = request.form.get('name')
     mob_number = request.form.get('mob_number')
     email_id = request.form.get('email_id', '')
@@ -607,7 +606,7 @@ def ngo_request_form(*args, **kwargs):
                 'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
                 'longitude': [longitude],
                 'source': [source], 'age': [age], 'request': [user_request], 'status': [status], 'uuid': [uuid],
-                'volunteers_reqd': [volunteers_reqd], 'managed_by': [user_id]}
+                'volunteers_reqd': [volunteers_reqd], 'managed_by': [verified_by]}
     df = pd.DataFrame(req_dict)
     df['email_id'] = df['email_id'].fillna('')
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
