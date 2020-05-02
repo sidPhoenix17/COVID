@@ -6,6 +6,7 @@
 
 import requests, json
 import pandas as pd
+from lib.redis import redis
 from connections import connections,write_query
 from settings import sms_key, sms_sid, sms_url, otp_url,server_type,org_request_list
 import mailer_fn as mailer
@@ -299,6 +300,20 @@ def blacklist_token(token):
 
 
 def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
+    try:
+        redis_key = "sms_channel"
+        info = {
+            "text": sms_text,
+            "phone_number": sms_to,
+            "type": sms_type
+        }
+        jsonInfo = json.dumps(info)
+        redis.lpush(redis_key, jsonInfo)
+    except Exception as e:
+        print("Problem in storing sms, sending directly", str(e))
+        return send_sms_to_phone(sms_text, sms_to, sms_type, send)
+
+def send_sms_to_phone(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
     sid = sms_sid
     key = sms_key
     url = sms_url
