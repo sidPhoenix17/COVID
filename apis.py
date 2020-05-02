@@ -25,7 +25,7 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
     website_requests_display, get_requests_list, get_source_list, website_success_stories, \
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
-    accept_request_page_secure, get_assigned_requests, get_messages_user
+    accept_request_page_secure, get_assigned_requests, get_user_messages
 
 from partner_assignment import generate_uuid, message_all_volunteers
 
@@ -912,7 +912,7 @@ def admin_task_completed(*args, **kwargs):
 @login_required
 def get_user_message(*args, **kwargs):
     user_id =  kwargs['user_id']
-    df = get_messages_user(user_id)
+    df = get_user_messages(user_id)
     if (df.shape[0] > 0):
         return json.dumps(
             {'Response': df.to_dict('records'), 'status': True, 'string_response': 'Request data extracted'},
