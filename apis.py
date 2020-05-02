@@ -670,7 +670,6 @@ def verify_request_page(*args, **kwargs):
 @capture_api_exception
 @login_required
 def verify_request(*args, **kwargs):
-    user_id = kwargs["user_id"]
     uuid = request.form.get('uuid')
     what = request.form.get('what')
     why = request.form.get('why')
@@ -726,7 +725,7 @@ def verify_request(*args, **kwargs):
             send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
             message_all_volunteers(uuid, neighbourhood_radius, search_radius)
             ru_dict_where = {'uuid': uuid}
-            ru_dict_set = {'managed_by': user_id}
+            ru_dict_set = {'managed_by': verified_by}
             update_requests_db(ru_dict_where, ru_dict_set)
         else:
             requestor_text = request_rejected_sms
