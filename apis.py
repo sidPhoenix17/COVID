@@ -25,11 +25,11 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
     website_requests_display, get_requests_list, get_source_list, website_success_stories, \
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
-    accept_request_page_secure, get_assigned_requests
+    accept_request_page_secure, get_assigned_requests, user_data_by_id
 
 from partner_assignment import generate_uuid, message_all_volunteers
 from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
-from message_templates import old_reg_sms, new_reg_sms,new_request_sms,new_request_mod_sms, request_verified_sms, request_accepted_v_sms, request_accepted_r_sms, request_accepted_m_sms, request_rejected_sms, request_closed_v_sms, request_closed_r_sms, request_closed_m_sms
+from message_templates import old_reg_sms, new_reg_sms,new_request_sms,new_request_mod_sms, request_verified_sms, request_accepted_v_sms, request_accepted_r_sms, request_accepted_m_sms, request_rejected_sms, request_closed_v_sms, request_closed_r_sms, request_closed_m_sms,a_request_closed_v_sms, a_request_closed_r_sms, a_request_closed_m_sms
 
 from settings import server_type, SECRET_KEY, neighbourhood_radius, search_radius
 
@@ -977,6 +977,9 @@ def admin_task_completed(*args, **kwargs):
         status_message = request.form.get('status_message', '')
         v_df = volunteer_data_by_id(volunteer_id)
         r_df = request_data_by_uuid(request_uuid)
+        user_df = user_data_by_id(user_id)
+        if(user_df.shape[0]==0):
+            return json.dumps({'Response': {}, 'status': False, 'string_response': 'invalid admin user'})
         if status not in ['completed', 'completed externally', 'cancelled', 'reported']:
             return json.dumps({'Response': {}, 'status': False, 'string_response': 'invalid status value'})
         if (status == r_df.loc[0, 'status']):
@@ -984,15 +987,15 @@ def admin_task_completed(*args, **kwargs):
         response, success = update_request_status(request_uuid, status, status_message, volunteer_id)
         # Send SMS to Volunteer, Requestor and Moderator - request_closed_v_sms,request_closed_r_sms,request_closed_m_sms
         if ((v_df.shape[0] > 0) & (r_df.shape[0] > 0)):
-            send_sms(request_closed_v_sms.format(status=status), int(v_df.loc[0, 'mob_number']))
+            send_sms(a_request_closed_v_sms.format(status=status,user_name=user_df.loc[0,'name']), int(v_df.loc[0, 'mob_number']))
             moderator_list = get_moderator_list()
             for i_number in moderator_list:
-                send_sms(request_closed_m_sms.format(r_id=r_df.loc[0, 'r_id'], r_name=r_df.loc[0, 'name'],
+                send_sms(a_request_closed_m_sms.format(r_id=r_df.loc[0, 'r_id'], r_name=r_df.loc[0, 'name'],
                                                      r_mob_number=r_df.loc[0, 'mob_number'],
-                                                     status=status, v_name=v_df.loc[0, 'name'],
-                                                     v_mob_number=v_df.loc[0, 'mob_number'],
+                                                     v_name=v_df.loc[0, 'name'],
+                                                     v_mob_number=v_df.loc[0, 'mob_number'],status=status, user_name=user_df.loc[0,'name'],
                                                      status_message=status_message), i_number)
-            send_sms(request_closed_r_sms.format(status=status), int(r_df.loc[0, 'mob_number']))
+            send_sms(a_request_closed_r_sms.format(status=status), int(r_df.loc[0, 'mob_number']))
         if (status == 'cancelled'):
             message_all_volunteers(request_uuid, neighbourhood_radius, search_radius)
         return json.dumps({'Response': {}, 'status': success, 'string_response': response})
