@@ -10,7 +10,7 @@ from connections import connections,keys
 import requests
 import mailer_fn as mailer
 from settings import server_type
-
+import urllib
 
 # In[ ]:
 
@@ -138,11 +138,36 @@ def get_public_map_data():
 
 # In[ ]:
 
+def website_requests_display_secure():
+    try:
+        server_con = connections('prod_db_read')
+        query = """Select r.id as r_id,r.name as name, r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
+                    rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp,
+                    rsu.url as broadcast_link
+                     from requests r 
+                    left join request_verification rv on rv.r_id=r.id 
+                    left join request_sms_urls rsu on rsu.r_uuid=r.uuid and rsu.url_type='broadcast_link'
+                    where rv.r_id is not NULL"""
+        query_df = pd.read_sql(query,server_con)
+        query_df = query_df.sort_values(by=['r_id'],ascending=[False])
+        query_df['verification_status'] = query_df['verification_status'].fillna('verified')
+        link = "https://wa.me/918618948661?text=" + urllib.parse.quote('Broadcast list for this request is not available. Please message to admin group for details')
+        query_df['broadcast_link'] = query_df['broadcast_link'].fillna(link)
+        if(server_type=='prod'):
+            query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://covidsos.org/accept/'+x)
+        else:
+            query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://stg.covidsos.org/accept/'+x)
+        pending_queries = query_df[(query_df['verification_status']=='verified')&(query_df['status'].isin(['received','verified','pending']))]
+        completed_queries = query_df[(query_df['verification_status']=='verified')&(query_df['status'].isin(['completed','matched','assigned']))]
+        return {'pending':pending_queries.to_dict('records'),'completed':completed_queries.to_dict('records')}
+    except:
+        mailer.send_exception_mail()
+        return {'pending':{},'completed':{}}
 
 def website_requests_display():
     try:
         server_con = connections('prod_db_read')
-        query = """Select r.id as r_id,r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
+        query = """Select r.id as r_id,r.name as name, r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
                     rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp from requests r 
                     left join request_verification rv on rv.r_id=r.id where rv.r_id is not NULL"""
         query_df = pd.read_sql(query,server_con)
