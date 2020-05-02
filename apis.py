@@ -18,14 +18,16 @@ from connections import connections
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user, \
     add_user, request_matching, update_requests_db, update_volunteers_db, \
     blacklist_token, send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db, \
-    add_request_verification_db, update_request_v_db, update_request_status, save_request_sms_url
+    add_request_verification_db, update_request_v_db, update_request_status, save_request_sms_url, \
+    update_request_updates_db
 
 from data_fetching import get_ticker_counts, get_private_map_data, get_public_map_data, get_user_id, \
     accept_request_page, request_data_by_uuid, request_data_by_id, volunteer_data_by_id, \
     website_requests_display, get_requests_list, get_source_list, website_success_stories, \
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
-    accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure
+    accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, \
+    get_user_access_type
 
 from partner_assignment import generate_uuid, message_all_volunteers
 
@@ -927,6 +929,22 @@ def admin_task_completed(*args, **kwargs):
     if (status == 'cancelled'):
         message_all_volunteers(request_uuid, neighbourhood_radius, search_radius)
     return json.dumps({'Response': {}, 'status': success, 'string_response': response})
+
+
+@app.route('/add-request-manager', methods=['POST'])
+@capture_api_exception
+@login_required
+def add_manager(*args, **kwargs):
+    user_id = kwargs['user_id']
+    update_user_id = user_id
+    request_uuid = request.form.get('request_uuid')
+    user_access_type = get_user_access_type(user_id)
+    if user_access_type == 1:
+        update_user_id = request.form.get('user_id')
+    ru_dict_where = {'uuid': request_uuid}
+    ru_dict_set = {'managed_by': update_user_id}
+    response = update_requests_db(ru_dict_where, ru_dict_set)
+    return json.dumps(response)
 
 # In[ ]:
 if(server_type=='local'):
