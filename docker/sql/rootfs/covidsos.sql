@@ -335,6 +335,18 @@ CREATE TABLE `messages` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
 
+DROP TABLE IF EXISTS `conversation`;
+CREATE TABLE `conversation` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `conversation_id` bigint NOT NULL,
+  `incoming_message` int NOT NULL,
+  `outgoing_message` int NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (incoming_message) REFERENCES messages(id),
+  FOREIGN KEY (outgoing_message) REFERENCES messages(id)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
+
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
