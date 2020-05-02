@@ -6,6 +6,9 @@
 
 import requests
 import json
+
+from database_entry import add_message
+from local_settings import bot_number
 from settings import server_type, whatsapp_api_url, whatsapp_api_password,auth_code
 from flask import Flask,request
 from message_templates import a,a1,a2,b,b1,b2,c,c1,c2,mod_wait,inv
@@ -41,6 +44,7 @@ def get_auth_key():
 
 
 def send_whatsapp_message(url,to,message,preview_url=False):
+    add_message(to, bot_number, to, message, "text", "whatsapp", "outgoing")
     url = url+'/v1/messages'
     authkey = get_auth_key()
     ##print("Inside message")
@@ -54,6 +58,7 @@ def send_whatsapp_message(url,to,message,preview_url=False):
     return response
 
 def send_whatsapp_message_image(url,to,media_link,media_caption):
+    add_message(to, bot_number, to, media_link, "image", "whatsapp", "outgoing")
     url = url+'/v1/messages'
     authkey = get_auth_key()
     ##print("Inside message")
@@ -102,6 +107,7 @@ def Get_Message():
         if records_a.shape[0]>0:
             hist = 'v'
             name = records_a.loc[0,'name']
+            add_message(frm, frm, bot_number, text, "text", "whatsapp", "incoming")
             if text != '1' and text != '2' and text != 'a' and text != 'A':
                 send_whatsapp_message(whatsapp_api_url, frm, a.format(v_name=name))
 
@@ -130,6 +136,7 @@ def Get_Message():
         elif records_b.shape[0]>0:
             hist = 'r'
             name = records_b.loc[0,'name']
+            add_message(frm, frm, bot_number, text, "text", "whatsapp", "incoming")
             if text != '1' and text != '2' and text != 'a' and text != 'A':
                 send_whatsapp_message(whatsapp_api_url, frm, b.format(r_name=name))
 

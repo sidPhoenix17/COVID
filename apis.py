@@ -18,14 +18,14 @@ from connections import connections
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user, \
     add_user, request_matching, update_requests_db, update_volunteers_db, \
     blacklist_token, send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db, \
-    add_request_verification_db, update_request_v_db, update_request_status, save_request_sms_url \
+    add_request_verification_db, update_request_v_db, update_request_status, save_request_sms_url, add_message
 
 from data_fetching import get_ticker_counts, get_private_map_data, get_public_map_data, get_user_id, \
     accept_request_page, request_data_by_uuid, request_data_by_id, volunteer_data_by_id, \
     website_requests_display, get_requests_list, get_source_list, website_success_stories, \
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
-    accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, \
+    accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, get_messages, \
     get_user_access_type
 
 from partner_assignment import generate_uuid, message_all_volunteers
@@ -151,7 +151,7 @@ def create_request():
         sms_text = new_request_sms.format(name=name,source=source)
         send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
         mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
-        save_request_sms_url(uuid, 'verify_link', url_start+"verify/{uuid}")
+        save_request_sms_url(uuid, 'verify_link', url_start+"verify/{uuid}".format(uuid=uuid))
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
             send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
@@ -625,7 +625,7 @@ def ngo_request_form(*args, **kwargs):
         sms_text = new_request_sms.format(source=source, name=name)
         send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
         mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
-        save_request_sms_url(uuid, 'verify_link', url_start+"verify/{uuid}")
+        save_request_sms_url(uuid, 'verify_link', url_start+"verify/{uuid}".format(uuid=uuid))
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
             send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
@@ -947,6 +947,34 @@ def add_manager(*args, **kwargs):
     ru_dict_where = {'uuid': request_uuid}
     ru_dict_set = {'managed_by': update_user_id}
     response = update_requests_db(ru_dict_where, ru_dict_set)
+
+@app.route('/message', methods=['GET'])
+@capture_api_exception
+@login_required
+def get_user_conversation(*args, **kwargs):
+    message_id = request.args.get('message_id', '')
+    df = get_messages(message_id)
+    if (df.shape[0] > 0):
+        return json.dumps(
+            {'Response': df.to_dict('records'), 'status': True, 'string_response': 'Request data extracted'},
+            default=datetime_converter)
+    else:
+        return json.dumps({'Response': {}, 'status': True, 'string_response': 'No open requests found'},
+                            default=datetime_converter)
+
+
+@app.route('/message', methods=['POST'])
+@capture_api_exception
+@login_required
+def add_user_message(*args, **kwargs):
+    message_id = request.form.get('message_id')
+    from_number = request.form.get('from')
+    to_number = request.form.get('to')
+    message = request.form.get('message')
+    message_format = request.form.get('type')
+    channel = request.form.get('channel')
+    message_type = request.form.get('message_type')
+    response = add_message(message_id, from_number, to_number, message, message_format, channel, message_type)
     return json.dumps(response)
 
 # In[ ]:

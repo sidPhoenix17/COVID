@@ -424,3 +424,9 @@ def get_user_access_type(user_id):
     query = f"""Select access_type from users where id={user_id};"""
     data = pd.read_sql(query, connections('prod_db_read'))
     return data["access_type"].get(0)
+
+def get_messages(message_id):
+    server_con = connections('prod_db_read')
+    query = f"""Select * from messages where message_id={message_id}"""
+    data = pd.read_sql(query, server_con)
+    return data

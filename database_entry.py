@@ -181,6 +181,18 @@ def add_user(df):
         return  {'Response':{},'string_response': 'User addition failed due to incorrect data format' ,'status':False}
 
 
+def add_message(message_id, from_number, to_number, message, message_format, channel, message_type):
+    message_dict = {'message_id': [message_id], 'from': [from_number], 'to': [to_number],
+                         'message': [message], 'type': [message_format], 'channel': [channel],
+                         'message_type': [message_type]}
+    new_message_df = pd.DataFrame(message_dict)
+    try:
+        engine = connections('prod_db_write')
+        new_message_df.to_sql(name='messages', con=engine, schema='covidsos', if_exists='append', index=False, index_label=None)
+        return {'Response':{},'string_response': 'Message Added Successfully','status':True}
+    except:
+        return {'Response':{},'string_response': 'Message addition failed due to incorrect data format' ,'status':False}
+
 
 # In[ ]:
 
