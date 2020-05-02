@@ -384,3 +384,9 @@ def get_assigned_requests(org):
     requests_data['requestor_chat']=requests_data['requestor_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
     requests_data['volunteer_chat']=requests_data['volunteer_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
     return requests_data
+
+def get_messages_user(user_id):
+    server_con = connections('prod_db_read')
+    query = f"""Select message from messages where user_id={user_id}"""
+    data = pd.read_sql(query, server_con)
+    return data

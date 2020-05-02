@@ -323,16 +323,17 @@ CREATE TABLE `website_display` (
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=latin1;
 
 DROP TABLE IF EXISTS `messages`;
-CREATE TABLE `messgaes` (
-  `user_id` int(11) NOT NULL,
-  `from` int(11) NOT NULL,
-  `to` int(11) NOT NULL,
+CREATE TABLE `messages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(64) NOT NULL,
+  `from` bigint NOT NULL,
+  `to` bigint NOT NULL,
   `message` text NOT NULL,
   `type` varchar(255) NOT NULL,
   `channel` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
 
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
