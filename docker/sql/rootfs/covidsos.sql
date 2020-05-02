@@ -322,17 +322,6 @@ CREATE TABLE `website_display` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=latin1;
 
-DROP TABLE IF EXISTS `messages`;
-CREATE TABLE `messages` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `from` bigint NOT NULL,
-  `to` bigint NOT NULL,
-  `message` text NOT NULL,
-  `type` varchar(255) NOT NULL,
-  `channel` varchar(255) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
 
 DROP TABLE IF EXISTS `conversation`;
 CREATE TABLE `conversation` (
@@ -340,10 +329,10 @@ CREATE TABLE `conversation` (
   `conversation_id` bigint NOT NULL,
   `incoming_message` int NOT NULL,
   `outgoing_message` int NOT NULL,
+  `type` varchar(255) NOT NULL,
+  `channel` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  FOREIGN KEY (incoming_message) REFERENCES messages(id),
-  FOREIGN KEY (outgoing_message) REFERENCES messages(id)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
 
 /*!40101 SET character_set_client = @saved_cs_client */;

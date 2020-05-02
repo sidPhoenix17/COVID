@@ -181,23 +181,13 @@ def add_user(df):
         return  {'Response':{},'string_response': 'User addition failed due to incorrect data format' ,'status':False}
 
 
-def add_message(from_number, to_number, message, type, channel):
-    message_dict = {'from': [from_number], 'to': [to_number], 'message': [message], 'type': [type], 'channel': [channel]}
-    new_message_df = pd.DataFrame(message_dict)
-    try:
-        engine = connections('prod_db_write')
-        new_message_df.to_sql(name = 'messages', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
-        return {'Response':{},'string_response': 'Message Added Successfully','status':True}
-    except:
-        return {'Response':{},'string_response': 'Message addition failed due to incorrect data format' ,'status':False}
-
-
-def add_conversation(conversation_id, incoming_message, outgoing_message):
-    conversation_dict = {'conversation_id': [conversation_id], 'incoming_message': [incoming_message], 'outgoing_message': [outgoing_message]}
+def add_conversation(conversation_id, incoming_message, outgoing_message, type, channel):
+    conversation_dict = {'conversation_id': [conversation_id], 'incoming_message': [incoming_message],
+                         'outgoing_message': [outgoing_message], 'type': [type], 'channel': [channel]}
     new_conversation_df = pd.DataFrame(conversation_dict)
     try:
         engine = connections('prod_db_write')
-        new_conversation_df.to_sql(name = 'conversations', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
+        new_conversation_df.to_sql(name='conversations', con=engine, schema='covidsos', if_exists='append', index=False,index_label=None)
         return {'Response':{},'string_response': 'Conversation Added Successfully','status':True}
     except:
         return {'Response':{},'string_response': 'Conversation addition failed due to incorrect data format' ,'status':False}
