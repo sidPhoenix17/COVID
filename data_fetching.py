@@ -141,7 +141,7 @@ def get_public_map_data():
 def website_requests_display_secure():
     try:
         server_con = connections('prod_db_read')
-        query = """Select r.id as r_id,r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
+        query = """Select r.id as r_id,r.name as name, r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
                     rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp,
                     rsu.url as broadcast_link
                      from requests r 
@@ -167,7 +167,7 @@ def website_requests_display_secure():
 def website_requests_display():
     try:
         server_con = connections('prod_db_read')
-        query = """Select r.id as r_id,r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
+        query = """Select r.id as r_id,r.name as name, r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
                     rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp from requests r 
                     left join request_verification rv on rv.r_id=r.id where rv.r_id is not NULL"""
         query_df = pd.read_sql(query,server_con)
