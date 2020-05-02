@@ -408,3 +408,11 @@ def update_request_status(r_uuid,status, status_message, volunteer_id):
     return 'Updated request status', True
 
 
+def save_request_sms_url(request_uuid, url_type, url):
+    query = f"""insert into request_sms_urls (r_uuid, url_type, url) values ('{request_uuid}', '{url_type}', '{url}');"""
+    try:
+        write_query(query,'prod_db_write')
+        return True
+    except:
+        mailer.send_exception_mail()
+        return False

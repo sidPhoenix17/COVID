@@ -18,7 +18,7 @@ from connections import connections
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user, \
     add_user, request_matching, update_requests_db, update_volunteers_db, \
     blacklist_token, send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db, \
-    add_request_verification_db, update_request_v_db, update_request_status
+    add_request_verification_db, update_request_v_db, update_request_status, save_request_sms_url
 
 from data_fetching import get_ticker_counts, get_private_map_data, get_public_map_data, get_user_id, \
     accept_request_page, request_data_by_uuid, request_data_by_id, volunteer_data_by_id, \
@@ -35,7 +35,7 @@ from utils import capture_api_exception
 
 from message_templates import old_reg_sms, new_reg_sms,new_request_sms,new_request_mod_sms, request_verified_sms, \
     request_accepted_v_sms, request_accepted_r_sms, request_accepted_m_sms, request_rejected_sms, \
-    request_closed_v_sms, request_closed_r_sms, request_closed_m_sms
+    request_closed_v_sms, request_closed_r_sms, request_closed_m_sms, url_start
 
 from settings import server_type, SECRET_KEY, neighbourhood_radius, search_radius
 
@@ -149,6 +149,7 @@ def create_request():
         sms_text = new_request_sms.format(name=name,source=source)
         send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
         mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
+        save_request_sms_url(uuid, 'verify_link', url_start+"verify/{uuid}")
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
             send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
@@ -621,6 +622,7 @@ def ngo_request_form(*args, **kwargs):
         sms_text = new_request_sms.format(source=source, name=name)
         send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
         mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
+        save_request_sms_url(uuid, 'verify_link', url_start+"verify/{uuid}")
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
             send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
@@ -716,10 +718,12 @@ def verify_request(*args, **kwargs):
             x, y = add_request_verification_db(df)
         if (verification_status == 'verified'):
             requestor_text = request_verified_sms
+            #TODO: check if the url from this message is to be saved too
             send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
             message_all_volunteers(uuid, neighbourhood_radius, search_radius)
         else:
             requestor_text = request_rejected_sms
+            #TODO: check if the url from this message is to be saved too
             send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
         return json.dumps(
             {'Response': {}, 'status': response_2['status'], 'string_response': response_2['string_response']})
