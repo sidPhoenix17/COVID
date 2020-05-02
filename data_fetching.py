@@ -397,6 +397,6 @@ def get_assigned_requests(org):
 
 def get_conversation(conversation_id):
     server_con = connections('prod_db_read')
-    query = f"""Select * from messages where id={conversation_id}"""
+    query = f"""Select * from conversation where conversation_id={conversation_id}"""
     data = pd.read_sql(query, server_con)
     return data

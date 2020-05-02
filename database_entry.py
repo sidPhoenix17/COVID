@@ -181,9 +181,9 @@ def add_user(df):
         return  {'Response':{},'string_response': 'User addition failed due to incorrect data format' ,'status':False}
 
 
-def add_conversation(conversation_id, incoming_message, outgoing_message, type, channel):
+def add_conversation(conversation_id, incoming_message, outgoing_message, message_type, channel):
     conversation_dict = {'conversation_id': [conversation_id], 'incoming_message': [incoming_message],
-                         'outgoing_message': [outgoing_message], 'type': [type], 'channel': [channel]}
+                         'outgoing_message': [outgoing_message], 'type': [message_type], 'channel': [channel]}
     new_conversation_df = pd.DataFrame(conversation_dict)
     try:
         engine = connections('prod_db_write')

@@ -322,13 +322,12 @@ CREATE TABLE `website_display` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=latin1;
 
-
 DROP TABLE IF EXISTS `conversation`;
 CREATE TABLE `conversation` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `conversation_id` bigint NOT NULL,
-  `incoming_message` int NOT NULL,
-  `outgoing_message` int NOT NULL,
+  `incoming_message` text NOT NULL,
+  `outgoing_message` text NOT NULL,
   `type` varchar(255) NOT NULL,
   `channel` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -914,7 +914,8 @@ def admin_task_completed(*args, **kwargs):
 @capture_api_exception
 @login_required
 def get_user_conversation(*args, **kwargs):
-    user_id =  kwargs['user_id']
+    user_id = kwargs['user_id']
+    conversation_id = request.args.get('conversation_id', '')
     df = get_conversation(conversation_id)
     if (df.shape[0] > 0):
         return json.dumps(
