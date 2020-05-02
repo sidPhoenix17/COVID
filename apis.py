@@ -150,7 +150,7 @@ def create_request():
         sms_text = new_request_sms.format(name=name,source=source)
         send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
         mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
-        save_request_sms_url(uuid, 'verify_link', url_start+"verify/{uuid}")
+        save_request_sms_url(uuid, 'verify_link', url_start+"verify/{uuid}".format(uuid=uuid))
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
             send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
@@ -624,7 +624,7 @@ def ngo_request_form(*args, **kwargs):
         sms_text = new_request_sms.format(source=source, name=name)
         send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
         mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
-        save_request_sms_url(uuid, 'verify_link', url_start+"verify/{uuid}")
+        save_request_sms_url(uuid, 'verify_link', url_start+"verify/{uuid}".format(uuid=uuid))
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
             send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
