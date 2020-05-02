@@ -325,7 +325,6 @@ CREATE TABLE `website_display` (
 DROP TABLE IF EXISTS `messages`;
 CREATE TABLE `messages` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(64) NOT NULL,
   `from` bigint NOT NULL,
   `to` bigint NOT NULL,
   `message` text NOT NULL,
