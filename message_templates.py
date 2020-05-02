@@ -78,6 +78,12 @@ url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('I have a new r
 link = url_shortener_fn(url)
 request_closed_r_sms = key_word+" Your request has been {status} as per the feedback from volunteer. If you have any further requests, click "+link
 
+#Request Updated by admin
+a_request_closed_v_sms = key_word+" Thank you. Request assigned to you has been {status} by the {user_name}, COVIDSOS. "
+a_request_closed_m_sms = key_word+" Request {r_id} from {r_name}, {r_mob_number}, Volunteer {v_name},{v_mob_number} has been marked as {status} by {user_name}. Feedback given is {status_message}"
+url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('I have a new request')
+link = url_shortener_fn(url)
+a_request_closed_r_sms = key_word+" Your request has been {status} as per the feedback. If you have any further requests, click "+link
 
 #Bot templates
 
