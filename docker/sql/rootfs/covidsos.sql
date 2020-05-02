@@ -156,6 +156,8 @@ CREATE TABLE `requests` (
 ) ENGINE=MyISAM AUTO_INCREMENT=222 DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+ALTER TABLE requests add COLUMN members_impacted int(11) NOT NULL DEFAULT '2';
+
 --
 -- Table structure for table `sms_log`
 --

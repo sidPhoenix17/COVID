@@ -353,7 +353,7 @@ def volunteer_data_by_id(v_id):
         return pd.DataFrame()
 
 def user_data_by_id(user_id):
-    u_id_q = """Select id as user_id,name,mob_number from users where id='{user_id}'""".format(r_id=user_id)
+    u_id_q = """Select id as user_id,name,mob_number from users where id='{user_id}'""".format(user_id=user_id)
     try:
         u_id_df = pd.read_sql(u_id_q,connections('prod_db_read'))
         return u_id_df

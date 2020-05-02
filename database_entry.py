@@ -65,7 +65,7 @@ def add_volunteers_to_db(df):
 
 def add_requests(df):
     #df with columns [timestamp, name,mob_number, email_id, country, address, geoaddress, latitude, longitude, source, request,age]
-    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source', 'request', 'age','status','uuid', 'managed_by']
+    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source','members_impacted', 'request', 'age','status','uuid', 'managed_by']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('prod_db_write')
         df.to_sql(name = 'requests', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
@@ -153,11 +153,11 @@ def get_city(lat, lon):
 
 def verify_user(username,password):
     server_con = connections('prod_db_read')
-    query = """Select users.id as id,name as full_name, mob_number,email_id,password,user_access.type as type from users left join user_access on users.access_type=user_access.id"""
+    query = """Select users.id as id,name as full_name, mob_number,email_id,password,user_access.type as type, organisation as source from users left join user_access on users.access_type=user_access.id"""
     user_list = pd.read_sql(query,server_con)
     for i in user_list.index:
         if(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']==password)):
-            output = {'Response':{'access_level': user_list.loc[i,'type'],'username':username,'user_id':str(user_list.loc[i,'id']),'full_name':user_list.loc[i,'full_name']},'string_response': 'Login successful','status':True}
+            output = {'Response':{'access_level': user_list.loc[i,'type'],'username':username,'user_id':str(user_list.loc[i,'id']),'full_name':user_list.loc[i,'full_name'],'source':user_list.loc[i,'source']},'string_response': 'Login successful','status':True}
             break
         elif(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']!=password)):
             output = {'Response':{'username':username},'string_response': 'Incorrect Password','status':False}
