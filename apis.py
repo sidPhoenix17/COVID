@@ -134,17 +134,26 @@ def create_request():
     source = request.form.get('source', 'covidsos')
     status = request.form.get('status', 'received')
     country = request.form.get('country', 'India')
+    managed_by = request.form.get('managed_by')
+    members_impacted = request.form.get('members_impacted', 2)
     current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
     uuid = generate_uuid()
     req_dict = {'timestamp': [current_time], 'name': [name], 'mob_number': [mob_number], 'email_id': [email_id],
                 'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
-                'longitude': [longitude],
-                'source': [source], 'age': [age], 'request': [user_request], 'status': [status], 'uuid': [uuid]}
+                'longitude': [longitude], 'source': [source], 'age': [age], 'request': [user_request],
+                'status': [status], 'uuid': [uuid], 'managed_by': [managed_by], 'members_impacted': [members_impacted]}
     df = pd.DataFrame(req_dict)
     df['email_id'] = df['email_id'].fillna('')
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
                         'longitude', 'source', 'request', 'age', 'status', 'uuid']
     x, y = add_requests(df)
+    r_df = request_data_by_uuid(uuid)
+    if r_df is not None:
+        v_req_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [None], 'what': [None], 'where': [None],
+                      'verification_status': ["pending"], 'verified_by': [None],
+                      'timestamp': [current_time], 'financial_assistance': [None], 'urgent': [None]}
+        v_df = pd.DataFrame(v_req_dict)
+        W, Z = add_request_verification_db(v_df)
     response = {'Response': {}, 'status': x, 'string_response': y}
     if (x):
         # move to async
