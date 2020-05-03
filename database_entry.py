@@ -97,7 +97,7 @@ def add_request_verification_db(df):
     df.loc[0,'what'] = sanitise_for_sql({'message': df.loc[0,'what']}).get('message', '')
     df.loc[0,'why'] = sanitise_for_sql({'message': df.loc[0,'why']}).get('message', '')
     df.loc[0,'where'] = sanitise_for_sql({'message': df.loc[0,'where']}).get('message', '')
-    expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance']
+    expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance', 'urgent']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('prod_db_write')
         df.to_sql(name = 'request_verification', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
