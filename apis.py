@@ -26,7 +26,7 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
     accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, get_messages, \
-    get_user_access_type
+    get_user_access_type, request_verification_data_by_id
 
 from partner_assignment import generate_uuid, message_all_volunteers
 
@@ -472,6 +472,9 @@ def update_request_info(*args, **kwargs):
     auth_user_org = kwargs.get('organisation')
     status = request.form.get('status')
     country = request.form.get('country')
+    managed_by = request.form.get('managed_by')
+    geostamp = request.form.get('geostamp')
+    volunteers_reqd = request.form.get('volunteers_reqd')
     r_df = request_data_by_id(r_id)
     if (r_df.shape[0] == 0):
         return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
@@ -480,7 +483,8 @@ def update_request_info(*args, **kwargs):
     req_dict = {'name': name, 'mob_number': mob_number, 'email_id': email_id,
                 'country': country, 'address': address, 'geoaddress': geoaddress, 'latitude': latitude,
                 'longitude': longitude,
-                'source': source, 'age': age, 'request': user_request, 'status': status}
+                'source': source, 'age': age, 'request': user_request, 'status': status, 'managed_by': managed_by,
+                'geostamp': geostamp, 'volunteers_reqd': volunteers_reqd}
     if (r_df.shape[0] == 0):
         return json.dumps({'status': False, 'string_response': 'Request does not exist', 'Response': {}})
     if (r_id is None):
@@ -976,6 +980,32 @@ def add_user_message(*args, **kwargs):
     message_type = request.form.get('message_type')
     response = add_message(message_id, from_number, to_number, message, message_format, channel, message_type)
     return json.dumps(response)
+
+
+@app.route('/update_request_verification_info', methods=['POST'])
+@capture_api_exception
+@login_required
+def update_request_verification_info(*args, **kwargs):
+    r_id = request.form.get('request_id')
+    why = request.form.get('why')
+    what = request.form.get('what')
+    where = request.form.get('where')
+    verification_status = request.form.get('verification_status')
+    verified_by = request.form.get('verified_by')
+    financial_assistance = request.form.get('financial_assistance')
+    urgent = request.form.get('urgent')
+    r_df = request_verification_data_by_id(r_id)
+    if (r_df.shape[0] == 0):
+        return json.dumps({'status': False, 'string_response': 'Request Verification ID does not exist.', 'Response': {}})
+    req_dict = {'why': why, 'what': what, 'where': where, 'verification_status': verification_status,
+                'verified_by': verified_by, 'financial_assistance': financial_assistance, 'urgent': urgent}
+    if (r_df.shape[0] == 0):
+        return json.dumps({'status': False, 'string_response': 'Request Verification does not exist', 'Response': {}})
+    if (r_id is None):
+        return json.dumps({'Response': {}, 'status': False, 'string_response': 'Request ID mandatory'})
+    r_dict = {x: req_dict[x] for x in req_dict if req_dict[x] is not None}
+    response = json.dumps(update_request_v_db({'r_id': r_id}, r_dict))
+    return response
 
 # In[ ]:
 if(server_type=='local'):
