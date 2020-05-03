@@ -26,7 +26,7 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
     accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, get_messages, \
-    get_user_access_type, request_verification_data_by_id
+    get_user_access_type, request_verification_data_by_rid
 
 from partner_assignment import generate_uuid, message_all_volunteers
 
@@ -994,7 +994,7 @@ def update_request_verification_info(*args, **kwargs):
     verified_by = request.form.get('verified_by')
     financial_assistance = request.form.get('financial_assistance')
     urgent = request.form.get('urgent')
-    r_df = request_verification_data_by_id(r_id)
+    r_df = request_verification_data_by_rid(r_id)
     if (r_df.shape[0] == 0):
         return json.dumps({'status': False, 'string_response': 'Request Verification ID does not exist.', 'Response': {}})
     req_dict = {'why': why, 'what': what, 'where': where, 'verification_status': verification_status,
