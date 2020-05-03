@@ -405,7 +405,7 @@ def get_requests_assigned_to_volunteer(v_id):
 
 def get_assigned_requests(org):
     org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
-    query = f"""Select r.id as r_id, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd,r.timestamp as `request_time`,
+    query = f"""Select r.id as r_id, r.uuid as request_uuid, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd,r.timestamp as `request_time`,
                 r.source as `source`, r.status as `request_status`, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
                 v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`
                 from requests r
