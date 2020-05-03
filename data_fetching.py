@@ -429,6 +429,23 @@ def get_assigned_requests(org):
     requests_data['volunteer_chat']=requests_data['volunteer_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
     return requests_data
 
+
+def list_action_reasons(action):
+    query = """Select r.id as r_id,r.reason as reason, r.description as description, r.severity as severity
+            from reasons r where r.is_deleted=false and r.action='{action}'""".format(action=action)
+    reason_list = pd.read_sql(query,connections('prod_db_read'))
+    reason_list['description']=reason_list['description'].fillna('N/A')
+    return reason_list.to_dict('records')
+
+
+def get_reason(id):
+    query = """Select r.reason as reason, r.description as description, r.severity as severity, r.custom_message as message
+            from reasons r where r.id='{id}'""".format(id=id)
+    reason = pd.read_sql(query,connections('prod_db_read'))
+    reason['description']=reason['description'].fillna('N/A')
+    reason['message']=reason['message'].fillna('')
+    return reason
+
 def get_user_access_type(user_id):
     query = f"""Select access_type from users where id={user_id};"""
     data = pd.read_sql(query, connections('prod_db_read'))

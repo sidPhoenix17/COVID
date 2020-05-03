@@ -26,7 +26,7 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
     accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, get_messages, \
-    get_user_access_type, request_verification_data_by_id
+    get_user_access_type, request_verification_data_by_id, list_action_reasons, get_reason
 
 from partner_assignment import generate_uuid, message_all_volunteers
 
@@ -40,7 +40,7 @@ from message_templates import old_reg_sms, new_reg_sms,new_request_sms,new_reque
     a_request_closed_r_sms, a_request_closed_m_sms, url_start
 
 from settings import server_type, SECRET_KEY, neighbourhood_radius, search_radius
-
+from enum import Enum
 import mailer_fn as mailer
 import cred_config as cc
 
@@ -53,7 +53,9 @@ import cred_config as cc
 
 
 # In[ ]:
-
+class Action(Enum):
+    REQUEST_REJECTION = 1
+    REQUEST_ACCEPTANCE = 2
 
 def datetime_converter(o):
     if isinstance(o, dt.datetime):
@@ -668,6 +670,19 @@ def verify_request_page(*args, **kwargs):
 
 # In[ ]:
 
+# return all possible reasons for request rejection
+@app.route('/request_reject_reason', methods=['GET'])
+@capture_api_exception
+def get_request_reasons():
+    reason_list = list_action_reasons(Action.REQUEST_REJECTION)
+    if (reason_list.shape[0] == 0):
+        return json.dumps(
+            {'Response': {}, 'status': False, 'string_response': 'No reasons found'})
+    else:
+        return json.dumps(
+            {'Response': reason_list, 'status': True, 'string_response': 'Request related data extracted'})
+
+
 
 # mark verified/rejected and create a verification table entry with verification data
 @app.route('/verify_request', methods=['POST'])
@@ -679,6 +694,7 @@ def verify_request(*args, **kwargs):
     why = request.form.get('why')
     financial_assistance = request.form.get('financial_assistance', 0)
     verification_status = request.form.get('verification_status')
+    reason_id = request.form.get('reason')
     verified_by = kwargs.get('user_id', 0)
     r_id = request.form.get('r_id')
     name = request.form.get('name')
@@ -712,7 +728,7 @@ def verify_request(*args, **kwargs):
         expected_columns = ['timestamp', 'r_id', 'what', 'why', 'where', 'verification_status', 'verified_by',
                             'financial_assistance', 'urgent']
         response_2 = update_requests_db({'uuid': uuid},
-                                        {'status': verification_status, 'volunteers_reqd': volunteers_reqd,'members_impacted':members_impacted})
+                                        {'status': verification_status, 'volunteers_reqd': volunteers_reqd,'members_impacted':members_impacted, 'reason':reason_id})
         print('updated the status')
         past_df, past_status = check_past_verification(str(r_id))
         if (past_status == True):
@@ -732,7 +748,13 @@ def verify_request(*args, **kwargs):
             ru_dict_set = {'managed_by': verified_by}
             update_requests_db(ru_dict_where, ru_dict_set)
         else:
-            requestor_text = request_rejected_sms
+            #TODO: Custom message instead of request_rejected_sms based on severity of rejection reason
+            reason = get_reason(reason_id)
+            if (reason.shape[0] == 0):
+                requestor_text = request_rejected_sms
+            else:
+                requestor_text = "{} Reason for rejection: {}. Description: {}. {}"\
+                    .format(request_rejected_sms, reason[0, 'reason'], reason[0, 'description'], reason[0, 'message'])
             send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
         return json.dumps(
             {'Response': {}, 'status': response_2['status'], 'string_response': response_2['string_response']})
