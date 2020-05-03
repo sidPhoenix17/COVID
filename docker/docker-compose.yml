@@ -27,5 +27,11 @@ services:
             FLASK_ENV: "development"
             FLASK_APP: apis.py
             HOST: '0.0.0.0'
+            REDISHOST: redis
         depends_on: 
         - database
+    redis:
+        image: redis
+        container_name: redis
+        ports:
+            - 6379:6379

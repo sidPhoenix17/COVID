@@ -1,5 +1,5 @@
 import os
-from local_settings import server_type,SECRET_KEY,sms_key,sms_sid,whatsapp_api_url,whatsapp_api_password,auth_code
+from local_settings import server_type,SECRET_KEY,sms_key,sms_sid,whatsapp_api_url,whatsapp_api_password,auth_code, redis_host
 import numpy as np
 default_r=0.5
 
@@ -20,3 +20,4 @@ neighbourhood_radius = 1
 error_mailing_list=['jain.siddarth94@gmail.com','chiragb1994@gmail.com','shailysangwan@gmail.com']
 org_request_list =['shahraamisha@gmail.com','jain.siddarth94@gmail.com']
 search_radius=15
+redis_host = os.getenv("REDISHOST") if os.getenv("REDISHOST") else redis_host
