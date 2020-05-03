@@ -151,7 +151,7 @@ def create_request():
     if r_df is not None:
         v_req_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [None], 'what': [None], 'where': [None],
                       'verification_status': ["pending"], 'verified_by': [None],
-                      'timestamp': [current_time], 'financial_assistance': [None], 'urgent': [None]}
+                      'timestamp': [current_time], 'financial_assistance': [0], 'urgent': [None]}
         v_df = pd.DataFrame(v_req_dict)
         W, Z = add_request_verification_db(v_df)
     response = {'Response': {}, 'status': x, 'string_response': y}
