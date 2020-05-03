@@ -600,20 +600,20 @@ def ngo_request_form(*args, **kwargs):
     verified_by = kwargs.get('user_id', 0)
     urgent_status = request.form.get('urgent', 'no')
     volunteers_reqd = request.form.get('volunteer_count', 1)
-    members_impacted = request.form.get('volunteer_count', 2)
+    members_impacted = request.form.get('members_impacted', 2)
     current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
     req_dict = {'timestamp': [current_time], 'name': [name], 'mob_number': [mob_number], 'email_id': [email_id],
                 'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
                 'longitude': [longitude],
                 'source': [source], 'age': [age], 'request': [user_request], 'status': [status], 'uuid': [uuid],
-                'volunteers_reqd': [volunteers_reqd], 'managed_by': [verified_by]}
+                'volunteers_reqd': [volunteers_reqd], 'managed_by': [verified_by],'members_impacted':[members_impacted]}
     df = pd.DataFrame(req_dict)
     df['email_id'] = df['email_id'].fillna('')
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
                         'longitude', 'source', 'request', 'age', 'status', 'members_impacted', 'uuid', 'managed_by']
     x1, y1 = add_requests(df[expected_columns])
     r_df = request_data_by_uuid(uuid)
-    r_v_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [why], 'what': [what], 'where': [where], 'members_impacted':[members_impacted],
+    r_v_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [why], 'what': [what], 'where': [where],
                 'verification_status': [verification_status], 'verified_by': [verified_by], 'timestamp': [current_time],
                 'financial_assistance': [financial_assistance], 'urgent': [urgent_status]}
     df = pd.DataFrame(r_v_dict)
