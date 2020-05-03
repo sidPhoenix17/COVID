@@ -297,6 +297,19 @@ def update_request_updates_db(ru_dict_where,ru_dict_set):
         return  {'Response':{},'string_response': 'Request Update info updation failed' ,'status':False}
 
 
+def update_schedule_db(ru_dict_where,ru_dict_set):
+    try:
+        ru_dict_where,ru_dict_set = sanitise_for_sql(ru_dict_where), sanitise_for_sql(ru_dict_set)
+        set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = ru_dict_set[x]) for x in ru_dict_set))
+        where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = ru_dict_where[x]) for x in ru_dict_where))
+        query = """update schedule set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
+        write_query(query,'prod_db_write')
+        return {'Response':{},'string_response': 'Request Update info Updated','status':True}
+    except:
+        mailer.send_exception_mail()
+        return  {'Response':{},'string_response': 'Request Update info updation failed' ,'status':False}
+
+
 # In[ ]:
 
 

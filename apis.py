@@ -19,7 +19,7 @@ from database_entry import add_requests, add_volunteers_to_db, contact_us_form_a
     add_user, request_matching, update_requests_db, update_volunteers_db, \
     blacklist_token, send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db, \
     add_request_verification_db, update_request_v_db, update_request_status, save_request_sms_url, add_message, \
-    add_cron_job
+    add_cron_job, update_schedule_db
 
 from data_fetching import get_ticker_counts, get_private_map_data, get_public_map_data, get_user_id, \
     accept_request_page, request_data_by_uuid, request_data_by_id, volunteer_data_by_id, \
@@ -27,7 +27,7 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
     accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, get_messages, \
-    get_user_access_type, request_verification_data_by_id
+    get_user_access_type, request_verification_data_by_id, cron_job_by_id
 
 from partner_assignment import generate_uuid, message_all_volunteers
 
@@ -1026,6 +1026,55 @@ def new_cron_job(*args, **kwargs):
     df = pd.DataFrame(req_dict)
     response = add_cron_job(df)
     return json.dumps(response)
+
+
+@app.route('/update_cron', methods=['POST'])
+@capture_api_exception
+@login_required
+def update_cron_job(*args, **kwargs):
+    user_id = kwargs["user_id"]
+    c_id = request.form.get('job_id')
+    cron_expression = request.form.get('cron_expression')
+    task_ref = request.form.get('task_ref')
+    updated_by = request.form.get('updated_by')
+    is_deleted = request.form.get('is_deleted')
+    user_access_type = get_user_access_type(user_id)
+    if user_access_type != 1:
+        response = {'Response': {}, 'status': False, 'string_response': 'Invalid access type. Cannot update a cron'}
+        return json.dumps(response)
+    c_df = cron_job_by_id(c_id)
+    if c_df.shape[0] == 0:
+        return json.dumps(
+            {'status': False, 'string_response': 'Cron Job ID does not exist.', 'Response': {}})
+    req_dict = {'cron_expression': cron_expression, 'task_ref': task_ref, 'updated_by': updated_by,
+                'is_deleted': is_deleted}
+    if c_df.shape[0] == 0:
+        return json.dumps({'status': False, 'string_response': 'Cron Job does not exist', 'Response': {}})
+    if c_id is None:
+        return json.dumps({'Response': {}, 'status': False, 'string_response': 'Cron Job ID mandatory'})
+    c_dict = {x: req_dict[x] for x in req_dict if req_dict[x] is not None}
+    response = json.dumps(update_schedule_db({'id': c_id}, c_dict))
+    return response
+
+
+@app.route('/get_cron', methods=['GET'])
+@capture_api_exception
+@login_required
+def get_cron_job(*args, **kwargs):
+    user_id = kwargs["user_id"]
+    c_id = request.args.get('job_id')
+    user_access_type = get_user_access_type(user_id)
+    if user_access_type != 1:
+        response = {'Response': {}, 'status': False, 'string_response': 'Invalid access type. Cannot update a cron'}
+        return json.dumps(response)
+    df = cron_job_by_id(c_id)
+    if df.shape[0] > 0:
+        return json.dumps(
+            {'Response': df.to_dict('records'), 'status': True, 'string_response': 'Request data extracted'},
+            default=datetime_converter)
+    else:
+        return json.dumps({'Response': {}, 'status': True, 'string_response': 'No open requests found'},
+                          default=datetime_converter)
 
 
 # In[ ]:
