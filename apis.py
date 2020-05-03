@@ -18,7 +18,8 @@ from connections import connections
 from database_entry import add_requests, add_volunteers_to_db, contact_us_form_add, verify_user, \
     add_user, request_matching, update_requests_db, update_volunteers_db, \
     blacklist_token, send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db, \
-    add_request_verification_db, update_request_v_db, update_request_status, save_request_sms_url, add_message
+    add_request_verification_db, update_request_v_db, update_request_status, save_request_sms_url, add_message, \
+    add_cron_job
 
 from data_fetching import get_ticker_counts, get_private_map_data, get_public_map_data, get_user_id, \
     accept_request_page, request_data_by_uuid, request_data_by_id, volunteer_data_by_id, \
@@ -1006,6 +1007,26 @@ def update_request_verification_info(*args, **kwargs):
     r_dict = {x: req_dict[x] for x in req_dict if req_dict[x] is not None}
     response = json.dumps(update_request_v_db({'r_id': r_id}, r_dict))
     return response
+
+
+@app.route('/new_cron', methods=['POST'])
+@capture_api_exception
+@login_required
+def new_cron_job(*args, **kwargs):
+    user_id = kwargs["user_id"]
+    cron_expression = request.form.get('cron_expression')
+    task_ref = request.form.get('task_ref')
+    created_by = request.form.get('created_by')
+    user_access_type = get_user_access_type(user_id)
+    if user_access_type != 1:
+        response = {'Response': {}, 'status': False, 'string_response': 'Invalid access type. Cannot schedule a cron'}
+        return json.dumps(response)
+    req_dict = {'cron_expression': [cron_expression], 'task_ref': [task_ref], 'created_by': [created_by],
+                'updated_by': [created_by], 'is_deleted': [False]}
+    df = pd.DataFrame(req_dict)
+    response = add_cron_job(df)
+    return json.dumps(response)
+
 
 # In[ ]:
 if(server_type=='local'):
