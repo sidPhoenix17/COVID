@@ -472,6 +472,9 @@ def update_request_info(*args, **kwargs):
     auth_user_org = kwargs.get('organisation')
     status = request.form.get('status')
     country = request.form.get('country')
+    managed_by = request.form.get('managed_by')
+    geostamp = request.form.get('geostamp')
+    volunteers_reqd = request.form.get('volunteers_reqd')
     r_df = request_data_by_id(r_id)
     if (r_df.shape[0] == 0):
         return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
@@ -480,7 +483,8 @@ def update_request_info(*args, **kwargs):
     req_dict = {'name': name, 'mob_number': mob_number, 'email_id': email_id,
                 'country': country, 'address': address, 'geoaddress': geoaddress, 'latitude': latitude,
                 'longitude': longitude,
-                'source': source, 'age': age, 'request': user_request, 'status': status}
+                'source': source, 'age': age, 'request': user_request, 'status': status, 'managed_by': managed_by,
+                'geostamp': geostamp, 'volunteers_reqd': volunteers_reqd}
     if (r_df.shape[0] == 0):
         return json.dumps({'status': False, 'string_response': 'Request does not exist', 'Response': {}})
     if (r_id is None):
