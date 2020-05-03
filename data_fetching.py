@@ -342,6 +342,15 @@ def request_data_by_id(r_id):
         mailer.send_exception_mail()
         return pd.DataFrame()
 
+def request_verification_data_by_id(r_id):
+    r_id_q = """Select * from request_verification where r_id='{r_id}'""".format(r_id=r_id)
+    try:
+        r_id_df = pd.read_sql(r_id_q,connections('prod_db_read'))
+        return r_id_df
+    except:
+        mailer.send_exception_mail()
+        return pd.DataFrame()
+
 
 def volunteer_data_by_id(v_id):
     v_id_q = """Select id as v_id,name,mob_number,source from volunteers where id='{v_id}'""".format(v_id=v_id)
