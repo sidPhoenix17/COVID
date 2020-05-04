@@ -134,7 +134,7 @@ def create_request():
     source = request.form.get('source', 'covidsos')
     status = request.form.get('status', 'received')
     country = request.form.get('country', 'India')
-    managed_by = request.form.get('managed_by')
+    managed_by = request.form.get('managed_by',0)
     members_impacted = request.form.get('members_impacted', 2)
     current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
     uuid = generate_uuid()
@@ -149,9 +149,9 @@ def create_request():
     x, y = add_requests(df)
     r_df = request_data_by_uuid(uuid)
     if r_df is not None:
-        v_req_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [None], 'what': [None], 'where': [None],
-                      'verification_status': ["pending"], 'verified_by': [None],
-                      'timestamp': [current_time], 'financial_assistance': [0], 'urgent': [None]}
+        v_req_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [None], 'what': [None], 'where': [geoaddress],
+                      'verification_status': ['pending'], 'verified_by': [managed_by],
+                      'timestamp': [current_time], 'financial_assistance': [0], 'urgent': ['no']}
         v_df = pd.DataFrame(v_req_dict)
         W, Z = add_request_verification_db(v_df)
     response = {'Response': {}, 'status': x, 'string_response': y}
@@ -468,36 +468,35 @@ def auto_assign_volunteer():
 @login_required
 def update_request_info(*args, **kwargs):
     r_id = request.form.get('request_id')
+    r_df = request_data_by_id(r_id)
+    auth_user_org = kwargs.get('organisation')
+    if (r_df.shape[0] == 0):
+        return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
+    if (r_id is None):
+        return json.dumps({'Response': {}, 'status': False, 'string_response': 'Request ID mandatory'})
+    if auth_user_org != 'covidsos' and r_df.loc[0, 'source'] != auth_user_org:
+        return json.dumps({'status': False, 'string_response': 'Your organisation does not match that of this request.', 'Response': {}})
     name = request.form.get('name')
     mob_number = request.form.get('mob_number')
     email_id = request.form.get('email_id')
     age = request.form.get('age')
     address = request.form.get('address')
-    geoaddress = request.form.get('geoaddress', address)
+    geoaddress = request.form.get('geoaddress')
     user_request = request.form.get('request')
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
     source = request.form.get('source')
-    auth_user_org = kwargs.get('organisation')
     status = request.form.get('status')
     country = request.form.get('country')
     managed_by = request.form.get('managed_by')
     geostamp = request.form.get('geostamp')
     volunteers_reqd = request.form.get('volunteers_reqd')
-    r_df = request_data_by_id(r_id)
-    if (r_df.shape[0] == 0):
-        return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
-    if auth_user_org != 'covidsos' and r_df.loc[0, 'source'] != auth_user_org:
-        return json.dumps({'status': False, 'string_response': 'Your organisation does not match that of this request.', 'Response': {}})
     req_dict = {'name': name, 'mob_number': mob_number, 'email_id': email_id,
                 'country': country, 'address': address, 'geoaddress': geoaddress, 'latitude': latitude,
                 'longitude': longitude,
                 'source': source, 'age': age, 'request': user_request, 'status': status, 'managed_by': managed_by,
                 'geostamp': geostamp, 'volunteers_reqd': volunteers_reqd}
-    if (r_df.shape[0] == 0):
-        return json.dumps({'status': False, 'string_response': 'Request does not exist', 'Response': {}})
-    if (r_id is None):
-        return json.dumps({'Response': {}, 'status': False, 'string_response': 'Request ID mandatory'})
+    #only sends out the fields that were received
     r_dict = {x: req_dict[x] for x in req_dict if req_dict[x] is not None}
     response = json.dumps(update_requests_db({'id': r_id}, r_dict))
     return response
