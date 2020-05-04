@@ -655,21 +655,23 @@ def verify_request_page(*args, **kwargs):
     uuid = request.form.get('uuid')
     auth_user_org = kwargs.get('organisation', '')
     r_df = request_data_by_uuid(uuid)
-    c_1 = ['r_id', 'name', 'mob_number', 'geoaddress', 'latitude', 'longitude', 'request', 'status', 'timestamp', 'source']
+    c_1 = ['r_id', 'name', 'mob_number', 'geoaddress', 'latitude', 'longitude', 'request', 'status', 'timestamp', 'source','volunteers_reqd']
     # Check if request verification table already has a row, then also send info from request verification data along with it.
     if (r_df.shape[0] == 0):
         return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
     if auth_user_org != 'covidsos' and r_df.loc[0, 'source'] != auth_user_org:
         return json.dumps({'status': False, 'string_response': 'Your organisation and that of the request dont match.', 'Response': {}})
     past_df, past_status = check_past_verification(str(r_df.loc[0,'r_id']))
-    c_2 = ['id','r_id','why','what','request_address','verification_status','urgent','financial_assistance']
+    c_2 = ['r_id','why','what','request_address','urgent','financial_assistance']
     if(past_status):
-        ngo_request = {'status':True,'additional_data':past_df.loc[0].to_dict()}
+        full_df = r_df[c_1].merge(past_df[c_2], how='left', on='r_id')
     else:
-        ngo_request = {'status':False,'additional_data':{}}
-    if (r_df.loc[0, 'status'] == 'received'):
+        past_df=pd.DataFrame(columns=c_2)
+        past_df[c_2] = ""
+        full_df = r_df[c_1].merge(past_df[c_2], how='left', on='r_id').fillna('')
+    if (full_df.loc[0, 'status'] == 'received'):
         return json.dumps(
-            {'Response': r_df.to_dict('records'), 'status': True, 'string_response': 'Request data extracted','ngo_request':ngo_request},
+            {'Response': full_df.to_dict('records')[0], 'status': True, 'string_response': 'Request data extracted'},
             default=datetime_converter)
     else:
         return json.dumps({'Response': {}, 'status': False, 'string_response': 'Request already verified/rejected'})
