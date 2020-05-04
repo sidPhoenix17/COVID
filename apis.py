@@ -655,7 +655,7 @@ def verify_request_page(*args, **kwargs):
     uuid = request.form.get('uuid')
     auth_user_org = kwargs.get('organisation', '')
     r_df = request_data_by_uuid(uuid)
-    c_1 = ['r_id', 'name', 'mob_number', 'geoaddress', 'latitude', 'longitude', 'request', 'status', 'timestamp', 'source','volunteers_reqd']
+    c_1 = ['r_id', 'name', 'mob_number', 'geoaddress', 'latitude', 'longitude', 'request', 'status', 'timestamp', 'source','volunteers_reqd','members_impacted']
     # Check if request verification table already has a row, then also send info from request verification data along with it.
     if (r_df.shape[0] == 0):
         return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
