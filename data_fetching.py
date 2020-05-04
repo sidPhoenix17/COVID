@@ -191,7 +191,7 @@ def website_requests_display():
 def website_success_stories():
     try:
         server_con = connections('prod_db_read')
-        query = """Select * from success_stories"""
+        query = """Select * from success_stories order by id desc"""
         query_df = pd.read_sql(query,server_con)
         return {'instagram':query_df.to_dict('records')}
     except:
