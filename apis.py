@@ -8,6 +8,7 @@ import pandas as pd
 import datetime as dt
 from flask import Flask, request, jsonify, json
 from flask_cors import CORS
+from cron_utils import is_valid_cron
 from celery import Celery
 import urllib
 import os
@@ -1021,6 +1022,9 @@ def new_cron_job(*args, **kwargs):
     if user_access_type != 1:
         response = {'Response': {}, 'status': False, 'string_response': 'Invalid access type. Cannot schedule a cron'}
         return json.dumps(response)
+    if not is_valid_cron(cron_expression):
+        response = {'Response': {}, 'status': False, 'string_response': 'Invalid cron expression. Failed to update a cron'}
+        return json.dumps(response)
     req_dict = {'cron_expression': [cron_expression], 'task_ref': [task_ref], 'created_by': [created_by],
                 'updated_by': [created_by], 'is_deleted': [False]}
     df = pd.DataFrame(req_dict)
@@ -1041,6 +1045,9 @@ def update_cron_job(*args, **kwargs):
     user_access_type = get_user_access_type(user_id)
     if user_access_type != 1:
         response = {'Response': {}, 'status': False, 'string_response': 'Invalid access type. Cannot update a cron'}
+        return json.dumps(response)
+    if not is_valid_cron(cron_expression):
+        response = {'Response': {}, 'status': False, 'string_response': 'Invalid cron expression. Failed to update a cron'}
         return json.dumps(response)
     c_df = cron_job_by_id(c_id)
     if c_df.shape[0] == 0:

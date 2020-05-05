@@ -361,6 +361,16 @@ def cron_job_by_id(id):
         return pd.DataFrame()
 
 
+def list_cron_jobs():
+    c_id_q = """Select * from schedule where is_deleted=false"""
+    try:
+        c_id_df = pd.read_sql(c_id_q,connections('prod_db_read'))
+        return c_id_df.to_dict('records')
+    except:
+        mailer.send_exception_mail()
+        return pd.DataFrame()
+
+
 def volunteer_data_by_id(v_id):
     v_id_q = """Select id as v_id,name,mob_number,source from volunteers where id='{v_id}'""".format(v_id=v_id)
     try:
