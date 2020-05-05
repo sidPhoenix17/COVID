@@ -770,7 +770,7 @@ def admin_pending_requests(*args,**kwargs):
         return json.dumps({'Response': response, 'status': True, 'string_response': 'Request data extracted'},
                           default=datetime_converter)
     else:
-        response = website_requests_display()
+        response = website_requests_display(org)
         return json.dumps({'Response': response, 'status': True, 'string_response': 'Request data extracted'},
                           default=datetime_converter)
 
