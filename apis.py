@@ -28,7 +28,7 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
     accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, get_messages, \
-    get_user_access_type, request_verification_data_by_id, cron_job_by_id
+    get_user_access_type, request_verification_data_by_id, get_user_list, cron_job_by_id
 
 from partner_assignment import generate_uuid, message_all_volunteers
 
@@ -136,17 +136,26 @@ def create_request():
     source = request.form.get('source', 'covidsos')
     status = request.form.get('status', 'received')
     country = request.form.get('country', 'India')
+    managed_by = request.form.get('managed_by',0)
+    members_impacted = request.form.get('members_impacted', 2)
     current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
     uuid = generate_uuid()
     req_dict = {'timestamp': [current_time], 'name': [name], 'mob_number': [mob_number], 'email_id': [email_id],
                 'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
-                'longitude': [longitude],
-                'source': [source], 'age': [age], 'request': [user_request], 'status': [status], 'uuid': [uuid]}
+                'longitude': [longitude], 'source': [source], 'age': [age], 'request': [user_request],
+                'status': [status], 'uuid': [uuid], 'managed_by': [managed_by], 'members_impacted': [members_impacted]}
     df = pd.DataFrame(req_dict)
     df['email_id'] = df['email_id'].fillna('')
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
                         'longitude', 'source', 'request', 'age', 'status', 'uuid']
     x, y = add_requests(df)
+    r_df = request_data_by_uuid(uuid)
+    if r_df is not None:
+        v_req_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [None], 'what': [None], 'where': [geoaddress],
+                      'verification_status': ['pending'], 'verified_by': [managed_by],
+                      'timestamp': [current_time], 'financial_assistance': [0], 'urgent': ['no']}
+        v_df = pd.DataFrame(v_req_dict)
+        W, Z = add_request_verification_db(v_df)
     response = {'Response': {}, 'status': x, 'string_response': y}
     if (x):
         # move to async
@@ -461,36 +470,35 @@ def auto_assign_volunteer():
 @login_required
 def update_request_info(*args, **kwargs):
     r_id = request.form.get('request_id')
+    r_df = request_data_by_id(r_id)
+    auth_user_org = kwargs.get('organisation')
+    if (r_df.shape[0] == 0):
+        return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
+    if (r_id is None):
+        return json.dumps({'Response': {}, 'status': False, 'string_response': 'Request ID mandatory'})
+    if auth_user_org != 'covidsos' and r_df.loc[0, 'source'] != auth_user_org:
+        return json.dumps({'status': False, 'string_response': 'Your organisation does not match that of this request.', 'Response': {}})
     name = request.form.get('name')
     mob_number = request.form.get('mob_number')
     email_id = request.form.get('email_id')
     age = request.form.get('age')
     address = request.form.get('address')
-    geoaddress = request.form.get('geoaddress', address)
+    geoaddress = request.form.get('geoaddress')
     user_request = request.form.get('request')
     latitude = request.form.get('latitude')
     longitude = request.form.get('longitude')
     source = request.form.get('source')
-    auth_user_org = kwargs.get('organisation')
     status = request.form.get('status')
     country = request.form.get('country')
     managed_by = request.form.get('managed_by')
     geostamp = request.form.get('geostamp')
     volunteers_reqd = request.form.get('volunteers_reqd')
-    r_df = request_data_by_id(r_id)
-    if (r_df.shape[0] == 0):
-        return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
-    if auth_user_org != 'covidsos' and r_df.loc[0, 'source'] != auth_user_org:
-        return json.dumps({'status': False, 'string_response': 'Your organisation does not match that of this request.', 'Response': {}})
     req_dict = {'name': name, 'mob_number': mob_number, 'email_id': email_id,
                 'country': country, 'address': address, 'geoaddress': geoaddress, 'latitude': latitude,
                 'longitude': longitude,
                 'source': source, 'age': age, 'request': user_request, 'status': status, 'managed_by': managed_by,
                 'geostamp': geostamp, 'volunteers_reqd': volunteers_reqd}
-    if (r_df.shape[0] == 0):
-        return json.dumps({'status': False, 'string_response': 'Request does not exist', 'Response': {}})
-    if (r_id is None):
-        return json.dumps({'Response': {}, 'status': False, 'string_response': 'Request ID mandatory'})
+    #only sends out the fields that were received
     r_dict = {x: req_dict[x] for x in req_dict if req_dict[x] is not None}
     response = json.dumps(update_requests_db({'id': r_id}, r_dict))
     return response
@@ -649,21 +657,23 @@ def verify_request_page(*args, **kwargs):
     uuid = request.form.get('uuid')
     auth_user_org = kwargs.get('organisation', '')
     r_df = request_data_by_uuid(uuid)
-    c_1 = ['r_id', 'name', 'mob_number', 'geoaddress', 'latitude', 'longitude', 'request', 'status', 'timestamp', 'source']
+    c_1 = ['r_id', 'name', 'mob_number', 'geoaddress', 'latitude', 'longitude', 'request', 'status', 'timestamp', 'source','volunteers_reqd','members_impacted']
     # Check if request verification table already has a row, then also send info from request verification data along with it.
     if (r_df.shape[0] == 0):
         return json.dumps({'status': False, 'string_response': 'Request ID does not exist.', 'Response': {}})
     if auth_user_org != 'covidsos' and r_df.loc[0, 'source'] != auth_user_org:
         return json.dumps({'status': False, 'string_response': 'Your organisation and that of the request dont match.', 'Response': {}})
     past_df, past_status = check_past_verification(str(r_df.loc[0,'r_id']))
-    c_2 = ['id','r_id','why','what','request_address','verification_status','urgent','financial_assistance']
+    c_2 = ['r_id','why','what','request_address','urgent','financial_assistance']
     if(past_status):
-        ngo_request = {'status':True,'additional_data':past_df.loc[0].to_dict()}
+        full_df = r_df[c_1].merge(past_df[c_2], how='left', on='r_id')
     else:
-        ngo_request = {'status':False,'additional_data':{}}
-    if (r_df.loc[0, 'status'] == 'received'):
+        past_df=pd.DataFrame(columns=c_2)
+        past_df[c_2] = ""
+        full_df = r_df[c_1].merge(past_df[c_2], how='left', on='r_id').fillna('')
+    if (full_df.loc[0, 'status'] == 'received'):
         return json.dumps(
-            {'Response': r_df.to_dict('records'), 'status': True, 'string_response': 'Request data extracted','ngo_request':ngo_request},
+            {'Response': full_df.to_dict('records')[0], 'status': True, 'string_response': 'Request data extracted'},
             default=datetime_converter)
     else:
         return json.dumps({'Response': {}, 'status': False, 'string_response': 'Request already verified/rejected'})
@@ -762,7 +772,7 @@ def admin_pending_requests(*args,**kwargs):
         return json.dumps({'Response': response, 'status': True, 'string_response': 'Request data extracted'},
                           default=datetime_converter)
     else:
-        response = website_requests_display()
+        response = website_requests_display(org)
         return json.dumps({'Response': response, 'status': True, 'string_response': 'Request data extracted'},
                           default=datetime_converter)
 
@@ -953,6 +963,19 @@ def add_manager(*args, **kwargs):
     ru_dict_where = {'uuid': request_uuid}
     ru_dict_set = {'managed_by': update_user_id}
     response = update_requests_db(ru_dict_where, ru_dict_set)
+    return json.dumps(response)
+
+@app.route('/get-user-list', methods=['GET'])
+@capture_api_exception
+@login_required
+def extract_user_list(*args, **kwargs):
+    org = kwargs['organisation']
+    if(org == 'covidsos'):
+        response = get_user_list()
+    else:
+        response = get_user_list(org)
+    return json.dumps(response)
+
 
 @app.route('/message', methods=['GET'])
 @capture_api_exception

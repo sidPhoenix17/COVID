@@ -69,6 +69,9 @@ def message_all_volunteers(uuid,radius,search_radius):
     save_request_sms_url(uuid, 'accept_link', link)
     for i in v_list.index:
         if(v_list.loc[i,'dist']<radius):
+            count = count +1
+            if(count>20):
+                break
             sms_text = nearby_v_sms_text.format(v_name=v_list.loc[i,'name'],link=link)
             sms_to = int(v_list.loc[i,'mob_number'])
             df = df.append(v_list.loc[i,['v_id']])
@@ -143,17 +146,17 @@ def generate_uuid():
 # In[ ]:
 
 
-def assignment_link(r_id):
-    v_list_q = """Select id as v_id,mob_number,name, latitude,longitude from volunteers where status=1"""
-    v_list = pd.read_sql(v_list_q,connections('prod_db_read'))
-    v_list['dist'] = get_haversine_distance(lat,lon,)
-    v_list = v_list.sort_values(by='dist',ascending=True)
-    for i in v_list.index:
-        if(v_list.loc[i,'dist']<'radius'):
-            sms_text = 'Dear, '+v_list.loc[i,'name']+' someone in your area needs help. Click here to help '+link
-            send_sms(sms_text,sms_to=v_list.loc[i,'mob_number'],sms_type='transactional',send=True)
-    #incomplete
-    return None
+# def assignment_link(r_id):
+#     v_list_q = """Select id as v_id,mob_number,name, latitude,longitude from volunteers where status=1"""
+#     v_list = pd.read_sql(v_list_q,connections('prod_db_read'))
+#     v_list['dist'] = get_haversine_distance(lat,lon,)
+#     v_list = v_list.sort_values(by='dist',ascending=True)
+#     for i in v_list.index:
+#         if(v_list.loc[i,'dist']<'radius'):
+#             sms_text = 'Dear, '+v_list.loc[i,'name']+' someone in your area needs help. Click here to help '+link
+#             send_sms(sms_text,sms_to=v_list.loc[i,'mob_number'],sms_type='transactional',send=True)
+#     #incomplete
+#     return None
     
 
 

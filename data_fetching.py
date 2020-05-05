@@ -28,6 +28,20 @@ def get_requests_list():
 # In[ ]:
 
 
+def get_user_list(org='covidsos'):
+    try:
+        if(org=='covidsos'):
+            req_q = """Select id,name,organisation as source from users"""
+        else:
+            req_q = """Select id,name,organisation as source from users where organisation='{source}'""".format(source=org)
+        req_df = pd.read_sql(req_q, connections('prod_db_read'))
+
+        return {'Response':req_df.to_dict('records'),'status':True,'string_response':'List retrieved'}
+    except:
+        mailer.send_exception_mail()
+        return {'Response':{},'status':False,'string_response':'List unavailable'}
+
+
 def get_source_list():
     try:
         req_q = """Select id,org_code from support_orgs"""
@@ -142,7 +156,7 @@ def website_requests_display_secure():
     try:
         server_con = connections('prod_db_read')
         query = """Select r.id as r_id,r.name as name, r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
-                    rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp,
+                    rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp,r.source as source,
                     rsu.url as broadcast_link
                      from requests r 
                     left join request_verification rv on rv.r_id=r.id 
@@ -164,14 +178,16 @@ def website_requests_display_secure():
         mailer.send_exception_mail()
         return {'pending':{},'completed':{}}
 
-def website_requests_display():
+def website_requests_display(source='covidsos'):
     try:
         server_con = connections('prod_db_read')
         query = """Select r.id as r_id,r.name as name, r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
-                    rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp from requests r 
+                    rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp,r.source as source from requests r 
                     left join request_verification rv on rv.r_id=r.id where rv.r_id is not NULL"""
         query_df = pd.read_sql(query,server_con)
         query_df = query_df.sort_values(by=['r_id'],ascending=[False])
+        if(source!='covidsos'):
+            query_df = query_df[query_df['source']==source]
         query_df['verification_status'] = query_df['verification_status'].fillna('verified')
         if(server_type=='prod'):
             query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://covidsos.org/accept/'+x)
@@ -191,7 +207,7 @@ def website_requests_display():
 def website_success_stories():
     try:
         server_con = connections('prod_db_read')
-        query = """Select * from success_stories"""
+        query = """Select * from success_stories order by id desc"""
         query_df = pd.read_sql(query,server_con)
         return {'instagram':query_df.to_dict('records')}
     except:
@@ -324,7 +340,7 @@ def accept_request_page_secure(uuid):
     
     
 def request_data_by_uuid(uuid):
-    r_id_q = """Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp,source from requests where uuid='{uuid_str}'""".format(uuid_str=uuid)
+    r_id_q = """Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp,source,volunteers_reqd,members_impacted from requests where uuid='{uuid_str}'""".format(uuid_str=uuid)
     try:
         r_id_df = pd.read_sql(r_id_q,connections('prod_db_read'))
         return r_id_df
@@ -334,7 +350,7 @@ def request_data_by_uuid(uuid):
     
 
 def request_data_by_id(r_id):
-    r_id_q = """Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp,source,volunteers_reqd from requests where id='{r_id}'""".format(r_id=r_id)
+    r_id_q = """Select id as r_id,name,mob_number,geoaddress,latitude,longitude,request,status,timestamp,source,volunteers_reqd,members_impacted from requests where id='{r_id}'""".format(r_id=r_id)
     try:
         r_id_df = pd.read_sql(r_id_q,connections('prod_db_read'))
         return r_id_df
@@ -373,6 +389,15 @@ def list_cron_jobs():
 
 def volunteer_data_by_id(v_id):
     v_id_q = """Select id as v_id,name,mob_number,source from volunteers where id='{v_id}'""".format(v_id=v_id)
+    try:
+        v_id_df = pd.read_sql(v_id_q,connections('prod_db_read'))
+        return v_id_df
+    except:
+        mailer.send_exception_mail()
+        return pd.DataFrame()
+
+def volunteer_data_by_mob(mob_number):
+    v_id_q = """Select id as v_id,name,mob_number,source from volunteers where mob_number='{mob_number}'""".format(mob_number=mob_number)
     try:
         v_id_df = pd.read_sql(v_id_q,connections('prod_db_read'))
         return v_id_df
