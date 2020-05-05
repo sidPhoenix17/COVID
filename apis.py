@@ -26,7 +26,7 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
     accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, get_messages, \
-    get_user_access_type, request_verification_data_by_id
+    get_user_access_type, request_verification_data_by_id, get_user_list
 
 from partner_assignment import generate_uuid, message_all_volunteers
 
@@ -961,6 +961,19 @@ def add_manager(*args, **kwargs):
     ru_dict_where = {'uuid': request_uuid}
     ru_dict_set = {'managed_by': update_user_id}
     response = update_requests_db(ru_dict_where, ru_dict_set)
+    return json.dumps(response)
+
+@app.route('/get-user-list', methods=['GET'])
+@capture_api_exception
+@login_required
+def extract_user_list(*args, **kwargs):
+    org = kwargs['organisation']
+    if(org == 'covidsos'):
+        response = get_user_list()
+    else:
+        response = get_user_list(org)
+    return json.dumps(response)
+
 
 @app.route('/message', methods=['GET'])
 @capture_api_exception

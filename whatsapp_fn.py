@@ -8,12 +8,12 @@ import requests
 import json
 
 from database_entry import add_message
-from local_settings import bot_number
-from settings import server_type, whatsapp_api_url, whatsapp_api_password,auth_code
+from settings import server_type, whatsapp_api_url, whatsapp_api_password,auth_code,namespace,whatsapp_temp_1,bot_number
 from flask import Flask,request
-from message_templates import a,a1,a2,b,b1,b2,c,c1,c2,mod_wait,inv
+from message_templates import a,b,c,c1,c2,inv,whatsapp_temp_1_message
 import pandas as pd
 from connections import connections
+from data_fetching import get_moderator_list,accept_request_page,volunteer_data_by_mob
 import datetime as dt
 # In[ ]:
 
@@ -44,7 +44,7 @@ def get_auth_key():
 
 
 def send_whatsapp_message(url,to,message,preview_url=False):
-    add_message(to, bot_number, to, message, "text", "whatsapp", "outgoing")
+    add_message(to[2:], bot_number, to[2:], message, "text", "whatsapp", "outgoing")
     url = url+'/v1/messages'
     authkey = get_auth_key()
     ##print("Inside message")
@@ -57,8 +57,60 @@ def send_whatsapp_message(url,to,message,preview_url=False):
         print(e)
     return response
 
+def send_whatsapp_template_message(url,to,namespace,element_name,message_template,body_parameter):
+    message = message_template.format(body_parameter)
+    add_message(to[2:], bot_number, to[2:], message, "text", "whatsapp", "outgoing")
+    url = url+'/v1/messages'
+    authkey = get_auth_key()
+    print("Inside message")
+    data = {"to": to, "type": "hsm", "hsm": {"namespace": namespace, "element_name": element_name,
+                                             "language": {"policy": "deterministic",
+                                                          "code": "en"},
+                                             "localizable_params": body_parameter}}
+    headers = {'Content-type': 'application/json', 'Authorization': "Bearer "+ authkey}
+    print(json.dumps(data))
+    try:
+        response = requests.request("POST", url, data=json.dumps(data), headers=headers, verify = False)
+        print("message sent")
+    except Exception as e:
+        print(e)
+    return response
+
+# @app.route('/testing', methods=['POST'])
+def send_sample_template(uuid):
+    # uuid = request.form.get('uuid')
+    l_mob = [9560488236]
+    for i in l_mob:
+        v_df = volunteer_data_by_mob(i)
+        df = accept_request_page(uuid)
+        v_name = v_df.loc[0,'name']
+        requestor_name = df.loc[0,'name']
+        Address = df.loc[0,'request_address']
+        urgency_status = 'This is an urgent request!' if df.loc[0,'urgent']=='yes' else 'This request needs support in 24-48 hours'
+        reason = df.loc[0,'why']
+        requirement = df.loc[0,'what']
+        financial_assistance_status = 'This request involves monetary support' if df.loc[0,'financial_assistance']==1 else 'This request does not involve monetary support'
+        acceptance_link = 'https://covidsos.org/accept/'+str(uuid)
+        body_parameters =[{"default":v_name}, {"default": requestor_name}, {"default": Address}, {"default": urgency_status}, {
+            "default": requestor_name}, {"default": reason},
+        {"default": requestor_name}, {"default": requirement}, {"default": financial_assistance_status},{"default":acceptance_link}]
+        message = whatsapp_temp_1_message.format(v_name = v_name, requestor_name = requestor_name, Address=Address,
+                                                urgency_status=urgency_status,reason=reason,requirement=requirement,
+                                                 financial_assistance_status=financial_assistance_status,
+                                                acceptance_link=acceptance_link)
+        print(message)
+        m_num = str(91)+str(i)
+        print(m_num)
+        response = send_whatsapp_template_message(whatsapp_api_url,m_num,namespace,whatsapp_temp_1,message,body_parameters)
+        print(response)
+        return response
+
+
+
+
+
 def send_whatsapp_message_image(url,to,media_link,media_caption):
-    add_message(to, bot_number, to, media_link, "image", "whatsapp", "outgoing")
+    add_message(to[2:], bot_number, to[2:], media_link, "image", "whatsapp", "outgoing")
     url = url+'/v1/messages'
     authkey = get_auth_key()
     ##print("Inside message")
@@ -92,86 +144,39 @@ def Get_Message():
     # now_time = str(dt.datetime.now())
     response = request.json
     print(response)
-    try:
-        frm = str(response["messages"][0]["from"])
-        text = str(response["messages"][0]["text"]["body"])
-        ## query for volunteer
-        checkState = """SELECT name, timestamp, id from volunteers where mob_number='{mob_number}'""".format(mob_number=frm)
-        records_a = pd.read_sql(checkState, connections('prod_db_read'))
 
-        ## query for requester
-        checkState = """SELECT name, timestamp, id from requests where mob_number='{mob_number}'""".format(mob_number=frm)
-        records_b = pd.read_sql(checkState, connections('prod_db_read'))
+    frm = str(response["messages"][0]["from"])
+    text = str(response["messages"][0]["text"]["body"])
+    ## query for volunteer
+    checkState = """SELECT name, timestamp, id from volunteers where mob_number='{mob_number}'""".format(mob_number=frm[2:])
+    records_a = pd.read_sql(checkState, connections('prod_db_read'))
 
-        ## check for volunteer
-        if records_a.shape[0]>0:
-            hist = 'v'
-            name = records_a.loc[0,'name']
-            add_message(frm, frm, bot_number, text, "text", "whatsapp", "incoming")
-            if text != '1' and text != '2' and text != 'a' and text != 'A':
-                send_whatsapp_message(whatsapp_api_url, frm, a.format(v_name=name))
+    ## query for requester
+    checkState = """SELECT name, timestamp, id from requests where mob_number='{mob_number}'""".format(mob_number=frm[2:])
+    records_b = pd.read_sql(checkState, connections('prod_db_read'))
 
-            if text == '1':
-                timestamp = str(records_a.loc[0,'timestamp'])
-                v_id = str(records_a.loc[0,'id'])
-                query = """Select r.name as `r_name`,r.uuid as `uuid`,
-                            rv.where as `where`, rv.what as `what`, rv.why as `why`, rm.timestamp as `assignment_time`
-                            from requests r
-                        left join request_verification rv on rv.r_id=r.id
-                        left join request_matching rm on rm.request_id=r.id
-                        left join volunteers v on v.id=rm.volunteer_id
-                        where rm.`is_active`=True and v.`id`='{v_id}' and r.`status`='matched'
-                        ORDER BY rm.timestamp DESC LIMIT 1 """.format(v_id=v_id)
-                df = pd.read_sql(query, connections('prod_db_read'))
-                send_whatsapp_message(whatsapp_api_url, frm,
-                                      a1.format(v_name=name, r_name=df.loc[0,'r_name'], adrs=df.loc[0,'where'],
-                                                reason=df.loc[0,'why'], requirement=df.loc[0,'what']))
-            if text == '2':
-                send_whatsapp_message(whatsapp_api_url, frm, a2.format(name))
-            if text == 'a' or text == 'A':
-                send_whatsapp_message(whatsapp_api_url, frm, mod_wait)
+    ## check for volunteer
+    if records_a.shape[0]>0:
+        name = records_a.loc[0,'name']
+        add_message(frm, frm, bot_number, text, "text", "whatsapp", "incoming")
+        send_whatsapp_message(whatsapp_api_url, frm, a.format(v_name=name))
 
+    ## check for requester
+    elif records_b.shape[0]>0:
+        name = records_b.loc[0,'name']
+        add_message(frm, frm, bot_number, text, "text", "whatsapp", "incoming")
+        send_whatsapp_message(whatsapp_api_url, frm, b.format(r_name=name))
+    ## if new user
+    else:
+        print(text)
+        if text != '1' and text != '2':
+            send_whatsapp_message(whatsapp_api_url, frm, c)
+        if text == '1':
+            send_whatsapp_message(whatsapp_api_url, frm, c1)
+        if text == '2':
+            send_whatsapp_message(whatsapp_api_url, frm, c2)
 
-        ## check for requester
-        elif records_b.shape[0]>0:
-            hist = 'r'
-            name = records_b.loc[0,'name']
-            add_message(frm, frm, bot_number, text, "text", "whatsapp", "incoming")
-            if text != '1' and text != '2' and text != 'a' and text != 'A':
-                send_whatsapp_message(whatsapp_api_url, frm, b.format(r_name=name))
-
-            if text == '1':
-                name =records_b.loc[0,'name']
-                timestamp = dt.datetime.strftime(records_b.loc[0,'timestamp'],'%a, %d %b %y, %I:%M%p %Z')
-                r_id = records_b.loc[0,'id']
-                query = """Select v.name, v.mob_number from request_matching rm 
-                left join volunteers v on v.id=rm.v_id 
-                where rm.r_id='{r_id}' and rm.is_active=True""".format(r_id=r_id)
-                df = pd.read_sql(query, connections('prod_db_read'))
-                v_name = df.loc[0,'name']
-
-                send_whatsapp_message(whatsapp_api_url, frm, b1.format(r_name=name,date_time= timestamp,v_name= v_name,link= "http://wa.me/918618948661"))
-            if text == '2':
-                send_whatsapp_message(whatsapp_api_url, frm, b2.format(r_name=name))
-            if text == 'a' or text == 'A':
-                send_whatsapp_message(whatsapp_api_url, frm, mod_wait)
-
-        ## if new user
-        else:
-            print(text)
-            if text != '1' and text != '2':
-                send_whatsapp_message(whatsapp_api_url, frm, c)
-            if text == '1':
-                send_whatsapp_message(whatsapp_api_url, frm, c1)
-            if text == '2':
-                send_whatsapp_message(whatsapp_api_url, frm, c2)
-
-        print('\n' + frm + '\n')
-
-    except Exception as e:
-
-        print(e)
-    return ""
+    print('\n' + frm + '\n')
 
 
 if __name__ == '__main__':

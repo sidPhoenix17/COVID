@@ -69,6 +69,9 @@ def message_all_volunteers(uuid,radius,search_radius):
     save_request_sms_url(uuid, 'accept_link', link)
     for i in v_list.index:
         if(v_list.loc[i,'dist']<radius):
+            count = count +1
+            if(count>20):
+                break
             sms_text = nearby_v_sms_text.format(v_name=v_list.loc[i,'name'],link=link)
             sms_to = int(v_list.loc[i,'mob_number'])
             df = df.append(v_list.loc[i,['v_id']])
