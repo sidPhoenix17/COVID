@@ -28,6 +28,20 @@ def get_requests_list():
 # In[ ]:
 
 
+def get_user_list(org='covidsos'):
+    try:
+        if(org=='covidsos'):
+            req_q = """Select id,name,organisation as source from users"""
+        else:
+            req_q = """Select id,name,organisation as source from users where organisation='{source}'""".format(source=org)
+        req_df = pd.read_sql(req_q, connections('prod_db_read'))
+
+        return {'Response':req_df.to_dict('records'),'status':True,'string_response':'List retrieved'}
+    except:
+        mailer.send_exception_mail()
+        return {'Response':{},'status':False,'string_response':'List unavailable'}
+
+
 def get_source_list():
     try:
         req_q = """Select id,org_code from support_orgs"""
