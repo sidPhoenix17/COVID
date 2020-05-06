@@ -7,7 +7,7 @@
 import uuid
 import pandas as pd
 import numpy as np
-from settings import EARTH_RADIUS,server_type
+from settings import EARTH_RADIUS,server_type,gmap_key
 from connections import connections
 from database_entry import send_sms, save_request_sms_url
 from data_fetching import request_data_by_uuid,get_moderator_list
@@ -15,7 +15,7 @@ import mailer_fn as mailer
 import urllib.parse as p
 from message_templates import url_shortener_fn, nearby_v_sms_text, far_v_sms_text, \
     request_verified_m_sms1, request_verified_m_sms2, url_start
-
+from pygeocoder import Geocoder
 
 # In[ ]:
 
@@ -164,10 +164,17 @@ def assignment_link(r_id):
 
 
 
+def getCityAddr(lat, lng):
+  '''Function that returns "city, state, country" from a geo-coordinate'''
 
-
-# In[ ]:
-
-
-
-
+  try:
+    lat = float(lat)
+    lng = float(lng)
+    x = Geocoder(gmap_key).reverse_geocode(lat, lng)
+    x = [x.city, x.state, x.country]
+    x = ', '.join(filter(None, x))
+    print(x)
+    return x
+  except Exception as e:
+    print(e)
+    return 'NOT FOUND'
