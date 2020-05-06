@@ -157,7 +157,7 @@ def website_requests_display_secure():
         server_con = connections('prod_db_read')
         query = """Select r.id as r_id,r.name as name, r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
                     rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp,r.source as source,
-                    rsu.url as broadcast_link, u.name as managed_by,u.id as managed_by_id
+                    rsu.url as broadcast_link, u.name as managed_by,u.id as managed_by_id, r.city as city
                      from requests r 
                     left join request_verification rv on rv.r_id=r.id 
                     left join request_sms_urls rsu on rsu.r_uuid=r.uuid and rsu.url_type='broadcast_link'
@@ -170,6 +170,7 @@ def website_requests_display_secure():
         query_df['managed_by_id'] = query_df['managed_by_id'].fillna(0)
         link = "https://wa.me/918618948661?text=" + urllib.parse.quote('Broadcast list for this request is not available. Please message to admin group for details')
         query_df['broadcast_link'] = query_df['broadcast_link'].fillna(link)
+        query_df['city'] = query_df['city'].fillna('')
         if(server_type=='prod'):
             query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://covidsos.org/accept/'+x)
         else:
@@ -185,13 +186,20 @@ def website_requests_display(source='covidsos'):
     try:
         server_con = connections('prod_db_read')
         query = """Select r.id as r_id,r.name as name, r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
-                    rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp,r.source as source from requests r 
-                    left join request_verification rv on rv.r_id=r.id where rv.r_id is not NULL"""
+                    rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp,r.source as source,r.city as city,
+                    so.organisation_name as source_org, so.logo_url as org_logo
+                    from requests r 
+                    left join request_verification rv on rv.r_id=r.id 
+                    left join support_orgs so on so.org_code=r.source
+                    where rv.r_id is not NULL"""
         query_df = pd.read_sql(query,server_con)
+        query_df['source_org'] = query_df['source_org'].fillna('COVIDSOS')
+        query_df['org_logo'] = query_df['org_logo'].fillna('')
         query_df = query_df.sort_values(by=['r_id'],ascending=[False])
         if(source!='covidsos'):
             query_df = query_df[query_df['source']==source]
         query_df['verification_status'] = query_df['verification_status'].fillna('verified')
+        query_df['city'] = query_df['city'].fillna('')
         if(server_type=='prod'):
             query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://covidsos.org/accept/'+x)
         else:
@@ -320,11 +328,14 @@ def get_unverified_requests(org):
 
 def accept_request_page(uuid):
     query = """Select r.id as r_id,r.name as name, r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
-            rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance
+            rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance, so.organisation_name as source_org, so.logo_url as org_logo
             from requests r left join request_verification rv on r.id=rv.r_id
+            left join support_orgs so on so.org_code = r.source
             where r.uuid='{uuid}'""".format(uuid=uuid)
     df = pd.read_sql(query,connections('prod_db_read'))
     df = df[~df['verification_status'].isna()]
+    df['source_org'] = df['source_org'].fillna('COVIDSOS')
+    df['org_logo'] = df['org_logo'].fillna('')
     if(df.shape[0]>1):
         df = df[0:0]
     df['what']=df['what'].fillna('Please call senior citizen to discuss')
@@ -333,7 +344,7 @@ def accept_request_page(uuid):
     return df
 
 def accept_request_page_secure(uuid):
-    query = """Select r.id as r_id,r.name as name,r.mob_number, r.status as status, r.source as source, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
+    query = """Select r.id as r_id,r.name as name,r.mob_number, r.status as status, r.source as source, CONCAT(r.address, ', ', r.geoaddress) as request_address, r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
             rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance
             from requests r left join request_verification rv on r.id=rv.r_id
             where r.uuid='{uuid}'""".format(uuid=uuid)

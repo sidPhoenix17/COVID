@@ -28,7 +28,7 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
     accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, get_messages, \
     get_user_access_type, request_verification_data_by_id, get_user_list
 
-from partner_assignment import generate_uuid, message_all_volunteers
+from partner_assignment import generate_uuid, message_all_volunteers, getCityAddr
 
 from auth import encode_auth_token, decode_auth_token, login_required, volunteer_login_req
 
@@ -137,15 +137,17 @@ def create_request():
     managed_by = request.form.get('managed_by',0)
     members_impacted = request.form.get('members_impacted', 2)
     current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
+    city = getCityAddr(latitude,longitude)
     uuid = generate_uuid()
     req_dict = {'timestamp': [current_time], 'name': [name], 'mob_number': [mob_number], 'email_id': [email_id],
                 'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
                 'longitude': [longitude], 'source': [source], 'age': [age], 'request': [user_request],
-                'status': [status], 'uuid': [uuid], 'managed_by': [managed_by], 'members_impacted': [members_impacted]}
+                'status': [status], 'uuid': [uuid], 'managed_by': [managed_by], 'members_impacted': [members_impacted],
+                'city':[city]}
     df = pd.DataFrame(req_dict)
     df['email_id'] = df['email_id'].fillna('')
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
-                        'longitude', 'source', 'request', 'age', 'status', 'uuid']
+                        'longitude', 'source', 'request', 'age', 'status', 'uuid','managed_by','city']
     x, y = add_requests(df)
     r_df = request_data_by_uuid(uuid)
     if r_df is not None:
@@ -185,13 +187,14 @@ def add_volunteer():
     country = request.form.get('country', 'India')
     support_type = request.form.get('support_type', '1,2,3,4,5')
     current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
+    city = getCityAddr(latitude,longitude)
     req_dict = {'timestamp': [current_time], 'name': [name], 'mob_number': [mob_number], 'email_id': [email_id],
                 'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
                 'longitude': [longitude],
-                'source': [source], 'status': [status], 'support_type': [support_type]}
+                'source': [source], 'status': [status], 'support_type': [support_type],'city':[city]}
     df = pd.DataFrame(req_dict)
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
-                        'longitude', 'source', 'status', 'support_type']
+                        'longitude', 'source', 'status', 'support_type','city']
     x, y = add_volunteers_to_db(df)
     if (x):
         if (y == 'Volunteer already exists. Your information has been updated'):
@@ -596,6 +599,7 @@ def ngo_request_form(*args, **kwargs):
     user_request = request.form.get('request')
     latitude = request.form.get('latitude', 0.0)
     longitude = request.form.get('longitude', 0.0)
+    city = getCityAddr(latitude,longitude)
     source = request.form.get('source', 'covidsos')
     if((source=='undefined')or(source=='')):
         source='covidsos'
@@ -607,6 +611,8 @@ def ngo_request_form(*args, **kwargs):
     what = request.form.get('what')
     why = request.form.get('why')
     financial_assistance = request.form.get('financial_assistance', 0)
+    if(financial_assistance==''):
+        financial_assistance=0
     verification_status = 'pending'
     where = geoaddress
     verified_by = kwargs.get('user_id', 0)
@@ -618,11 +624,11 @@ def ngo_request_form(*args, **kwargs):
                 'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
                 'longitude': [longitude],
                 'source': [source], 'age': [age], 'request': [user_request], 'status': [status], 'uuid': [uuid],
-                'volunteers_reqd': [volunteers_reqd], 'managed_by': [verified_by],'members_impacted':[members_impacted]}
+                'volunteers_reqd': [volunteers_reqd], 'managed_by': [verified_by],'members_impacted':[members_impacted],'city':[city]}
     df = pd.DataFrame(req_dict)
     df['email_id'] = df['email_id'].fillna('')
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
-                        'longitude', 'source', 'request', 'age', 'status', 'members_impacted', 'uuid', 'managed_by']
+                        'longitude', 'source', 'request', 'age', 'status', 'members_impacted', 'uuid', 'managed_by','city']
     x1, y1 = add_requests(df[expected_columns])
     r_df = request_data_by_uuid(uuid)
     r_v_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [why], 'what': [what], 'where': [where],
@@ -688,6 +694,8 @@ def verify_request(*args, **kwargs):
     what = request.form.get('what')
     why = request.form.get('why')
     financial_assistance = request.form.get('financial_assistance', 0)
+    if(financial_assistance==''):
+        financial_assistance=0
     verification_status = request.form.get('verification_status')
     verified_by = kwargs.get('user_id', 0)
     r_id = request.form.get('r_id')
@@ -1016,6 +1024,8 @@ def update_request_verification_info(*args, **kwargs):
     verification_status = request.form.get('verification_status')
     verified_by = request.form.get('verified_by')
     financial_assistance = request.form.get('financial_assistance')
+    if(financial_assistance==''):
+        financial_assistance=0
     urgent = request.form.get('urgent')
     r_df = request_verification_data_by_id(r_id)
     if (r_df.shape[0] == 0):
