@@ -628,7 +628,7 @@ def ngo_request_form(*args, **kwargs):
     df = pd.DataFrame(req_dict)
     df['email_id'] = df['email_id'].fillna('')
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
-                        'longitude', 'source', 'request', 'age', 'status', 'members_impacted', 'uuid', 'managed_by','city']
+                        'longitude', 'source', 'request', 'age', 'status', 'members_impacted', 'uuid', 'managed_by','city','volunteers_reqd']
     x1, y1 = add_requests(df[expected_columns])
     r_df = request_data_by_uuid(uuid)
     r_v_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [why], 'what': [what], 'where': [where],
@@ -885,6 +885,15 @@ def volunteer_tickets(*args, **kwargs):
 @capture_api_exception
 @volunteer_login_req
 def get_request_info(*args, **kwargs):
+    request_uuid = request.args.get('uuid', '')
+    request_data = accept_request_page_secure(request_uuid)
+    request_data = request_data.to_dict('records')
+    return json.dumps({'Response': request_data, 'status': True, 'string_response': 'Data sent'})
+
+@app.route('/admin-request-info', methods=['GET'])
+@capture_api_exception
+@login_required
+def get_admin_request_info(*args, **kwargs):
     request_uuid = request.args.get('uuid', '')
     request_data = accept_request_page_secure(request_uuid)
     request_data = request_data.to_dict('records')
