@@ -9,9 +9,9 @@ import json
 
 from database_entry import add_message
 from settings import server_type, whatsapp_api_url, whatsapp_api_password,auth_code,namespace,whatsapp_temp_1,bot_number
-from database_entry import send_sms
+from database_entry import send_sms,update_volunteers_db,update_requests_db,update_users_db
 from flask import Flask,request
-from message_templates import a,b,c,c1,c2,inv,whatsapp_temp_1_message, nearby_v_sms_text. url_shortener_fn
+from message_templates import a,b,c,c1,c2,inv,whatsapp_temp_1_message
 import pandas as pd
 from connections import connections
 from data_fetching import get_moderator_list,accept_request_page,volunteer_data_by_mob
@@ -43,6 +43,43 @@ def get_auth_key():
 
 # In[ ]:
 
+def check_contact(mob_number,table='volunteers',url=whatsapp_api_url):
+    try:
+        url = url +"/v1/contacts"
+        authkey = get_auth_key()
+        data = {"blocking":"wait","contacts": ["{mob_number}".format(mob_number=mob_number)],"force_check":True}
+        headers = {'Content-type': 'application/json', 'Authorization': "Bearer "+authkey}
+        response = requests.request("POST", url, headers=headers, data=json.dumps(data)).json()
+        if (response.get("errors") is None):
+            print('Contact Verification API Run successfully')
+            print('data sent was', data)
+            print('response json is ', response)
+            if(response.get("contacts")[0].get("status") == 'valid'):
+                wa_id = response.get("contacts")[0].get("wa_id")
+                print('Valid WhatsApp contact')
+            elif(response.get("contacts")[0].get("status") == 'processing'):
+                wa_id = 'processing'
+                print('WhatsApp API processing')
+            else:
+                wa_id = 'SMS'
+                print('Invalid WhatsApp contact')
+            print(wa_id)
+            where_dict = {'mob_number':mob_number[3:]}
+            set_dict = {'whatsapp_id':wa_id}
+            if(table=='volunteers'):
+                res = update_volunteers_db(where_dict, set_dict)
+            elif(table=='requests'):
+                res = update_requests_db(where_dict, set_dict)
+            elif(table=='users'):
+                res = update_users_db(where_dict, set_dict)
+        else:
+            print('Error in the API Call')
+            print('data sent was', data)
+            print('response json is ', response)
+        return None
+    except Exception as e:
+        print('error in check_contact', e)
+        return None
 
 def send_whatsapp_message(url,to,message,preview_url=False):
     add_message(to[2:], bot_number, to[2:], message, "text", "whatsapp", "outgoing")
@@ -52,11 +89,34 @@ def send_whatsapp_message(url,to,message,preview_url=False):
     data = {"to": to,"type": "text","recipient_type":"individual","text":{"body":message},"preview_url":preview_url}
     headers = {'Content-type': 'application/json', 'Authorization': "Bearer "+authkey}
     try:
-        response = requests.request("POST", url, data=json.dumps(data), headers=headers,verify = False)
+        response = requests.request("POST", url, data=json.dumps(data), headers=headers,verify = False).json()
         print("message sent")
+        print(response)
+        if(response.get("errors") is None):
+            return True
+        return False
     except Exception as e:
         print(e)
-    return response
+        return False
+
+
+def send_whatsapp_message_image(url,to,media_link,media_caption):
+    add_message(to[2:], bot_number, to[2:], media_link, "image", "whatsapp", "outgoing")
+    url = url+'/v1/messages'
+    authkey = get_auth_key()
+    ##print("Inside message")
+    data = {"to": to,"type": "image","recipient_type":"individual","image": {"provider": {"name": "covidsos"},"link": "<Link to Image, https>","caption": "<Media Caption>"}}
+    headers = {'Content-type': 'application/json', 'Authorization': "Bearer "+authkey}
+    try:
+        response = requests.request("POST", url, data=json.dumps(data), headers=headers,verify = False).json()
+        print("message sent")
+        if (response.get("errors") is None):
+            return True
+        return False
+    except Exception as e:
+        print(e)
+        return False
+
 
 def send_whatsapp_template_message(url,to,namespace,element_name,message_template,body_parameter):
     message = message_template.format(body_parameter)
@@ -69,72 +129,74 @@ def send_whatsapp_template_message(url,to,namespace,element_name,message_templat
                                                           "code": "en"},
                                              "localizable_params": body_parameter}}
     headers = {'Content-type': 'application/json', 'Authorization': "Bearer "+ authkey}
-    print(json.dumps(data))
     try:
-        response = requests.request("POST", url, data=json.dumps(data), headers=headers, verify = False)
-        if response.status_code in [200, 201]:
-            print("message sent")
+        response = requests.request("POST", url, data=json.dumps(data), headers=headers, verify = False).json()
+        print(response)
+        if response.get("errors") is None:
+            print("WhatsApp message sent")
             return True
-        print("message {message} not sent, received response {txt}".format(message=message, txt=str(response.text)))
-        return False
+        else:
+            print("message {message} not sent, received response {txt}".format(message=message, txt=str(response.text)))
+            return False
     except Exception as e:
         print("message {message} not sent, received exception {exception}".format(message=message, exception=str(e)))
         return False
 
-# @app.route('/testing', methods=['POST'])
-def send_sample_template(uuid):
-    # uuid = request.form.get('uuid')
-    l_mob = [9560488236]
-    for i in l_mob:
-        v_df = volunteer_data_by_mob(i)
+
+def send_request_template(uuid,sms_text,mob_number):
+    try:
+        v_df = volunteer_data_by_mob(mob_number)
+        if(v_df.shape[0]==0):
+            return {'status':False, 'string_response':'Volunteer number incorrect'}
+        if (pd.isna(v_df.loc[0, 'whatsapp_id']) or v_df.loc[0, 'whatsapp_id']=='processing'):
+            check_contact( "+" + str(91) + str(mob_number),'volunteers', whatsapp_api_url)
+            v_df = volunteer_data_by_mob(mob_number)
         df = accept_request_page(uuid)
         v_name = v_df.loc[0,'name']
         requestor_name = df.loc[0,'name']
         Address = df.loc[0,'request_address']
-        urgency_status = 'This is an urgent request!' if df.loc[0,'urgent']=='yes' else 'This request needs support in 24-48 hours'
+        urgency_status = 'This is an urgent request!' if df.loc[0,'urgent']=='yes' else 'This request needs support in 1-2 days'
         reason = df.loc[0,'why']
         requirement = df.loc[0,'what']
-        financial_assistance_status = 'This request involves monetary support' if df.loc[0,'financial_assistance']==1 else 'This request does not involve monetary support'
-        acceptance_link = 'https://covidsos.org/accept/'+str(uuid)
+        if(server_type=='prod'):
+            acceptance_link = 'https://covidsos.org/accept/'+str(uuid)
+            v_name = "from CovidSOS"
+        else:
+            acceptance_link = 'https://stg.covidsos.org/accept/'+str(uuid)
+            v_name = " Test "
+        financial_assistance_status = 'This help-seeker cannot afford to pay.' if df.loc[0,'financial_assistance']==1 else 'This help-seeker can afford to pay for items delivered.'
         body_parameters =[{"default":v_name}, {"default": requestor_name}, {"default": Address}, {"default": urgency_status}, {
             "default": requestor_name}, {"default": reason},
-        {"default": requestor_name}, {"default": requirement}, {"default": financial_assistance_status},{"default":acceptance_link}]
+                          {"default": requestor_name}, {"default": requirement}, {"default": financial_assistance_status},{"default":acceptance_link}]
         message = whatsapp_temp_1_message.format(v_name = v_name, requestor_name = requestor_name, Address=Address,
-                                                urgency_status=urgency_status,reason=reason,requirement=requirement,
+                                                 urgency_status=urgency_status,reason=reason,requirement=requirement,
                                                  financial_assistance_status=financial_assistance_status,
-                                                acceptance_link=acceptance_link)
+                                                 acceptance_link=acceptance_link)
         print(message)
-        m_num = str(91)+str(i)
+        m_num = v_df.loc[0,'whatsapp_id']
         print(m_num)
-        try:
-            if not send_whatsapp_template_message(whatsapp_api_url,m_num,namespace,whatsapp_temp_1,message,body_parameters):
-                send_sms(nearby_v_sms_text.format(v_name=v_name, link=acceptance_link))
-            return "ok", 200
-        except Exception as e:
-            print("Exception in sending message {e}".format(e))
-            return "Internal Server error", 500
-
-
-
-
-
-def send_whatsapp_message_image(url,to,media_link,media_caption):
-    add_message(to[2:], bot_number, to[2:], media_link, "image", "whatsapp", "outgoing")
-    url = url+'/v1/messages'
-    authkey = get_auth_key()
-    ##print("Inside message")
-    data = {"to": to,"type": "image","recipient_type":"individual","image": {"provider": {"name": "covidsos"},"link": "<Link to Image, https>","caption": "<Media Caption>"}}
-    headers = {'Content-type': 'application/json', 'Authorization': "Bearer "+authkey}
-    try:
-        response = requests.request("POST", url, data=json.dumps(data), headers=headers,verify = False)
-        print("message sent")
-        if(str(response)=='<Response [201]>'):
-            output = {'Response':json.loads(response.text)['messages'],'status':True,'string_response':'Successfully sent'}
+        if ((m_num=='SMS') or (send_whatsapp_template_message(whatsapp_api_url, m_num, namespace, whatsapp_temp_1, message,
+                                              body_parameters)==False)):
+            send_sms(sms_text, int(mob_number))
+            print('SMS sent')
+        return {'status':True, 'string_response':'Message Sent'}
     except Exception as e:
-        output = {'Response':{},'status':False,'string_response':'Failure'}
-        print(e)
-    return output
+        print("Exception in sending message {e}".format(e=e))
+        return {'status':False, 'string_response':'Error occurred'}
 
+
+def send_moderator_msg(mob_number,message,preview_url=False):
+    print(message)
+    m_num = str(91)+str(mob_number)
+    print(m_num)
+    try:
+        if not send_whatsapp_message(whatsapp_api_url,m_num,message,preview_url):
+            send_sms(message,int(mob_number))
+            return {'status': True, 'string_response': 'SMS Sent'}
+        return {'status': True, 'string_response': 'WhatsApp Message Sent'}
+    except Exception as e:
+        print("Exception in sending message {e}".format(e=e))
+        return {'status': False, 'string_response': 'Error in send_moderator_msg'}
 
 # In[ ]:
 
@@ -146,48 +208,60 @@ def send_whatsapp_message_image(url,to,media_link,media_caption):
 
 # In[ ]:
 
-
-@app.route('/', methods=['POST', 'GET'])
-def Get_Message():
-    # now = str(dt.datetime.now().date())
-    # now_time = str(dt.datetime.now())
-    response = request.json
-    print(response)
-
-    frm = str(response["messages"][0]["from"])
-    text = str(response["messages"][0]["text"]["body"])
-    ## query for volunteer
-    checkState = """SELECT name, timestamp, id from volunteers where mob_number='{mob_number}'""".format(mob_number=frm[2:])
-    records_a = pd.read_sql(checkState, connections('prod_db_read'))
-
-    ## query for requester
-    checkState = """SELECT name, timestamp, id from requests where mob_number='{mob_number}'""".format(mob_number=frm[2:])
-    records_b = pd.read_sql(checkState, connections('prod_db_read'))
-
-    ## check for volunteer
-    if records_a.shape[0]>0:
-        name = records_a.loc[0,'name']
-        add_message(frm, frm, bot_number, text, "text", "whatsapp", "incoming")
-        send_whatsapp_message(whatsapp_api_url, frm, a.format(v_name=name))
-
-    ## check for requester
-    elif records_b.shape[0]>0:
-        name = records_b.loc[0,'name']
-        add_message(frm, frm, bot_number, text, "text", "whatsapp", "incoming")
-        send_whatsapp_message(whatsapp_api_url, frm, b.format(r_name=name))
-    ## if new user
-    else:
-        print(text)
-        if text != '1' and text != '2':
-            send_whatsapp_message(whatsapp_api_url, frm, c)
-        if text == '1':
-            send_whatsapp_message(whatsapp_api_url, frm, c1)
-        if text == '2':
-            send_whatsapp_message(whatsapp_api_url, frm, c2)
-
-    print('\n' + frm + '\n')
-
-
-if __name__ == '__main__':
-    app.debug = True
-    app.run(host='0.0.0.0', port=4000)
+#
+# @app.route('/', methods=['POST', 'GET'])
+# def Get_Message():
+#     print(request)
+#     response = request.json
+#     print(response)
+#     if((response.get("contacts") is not None) and (response.get("messages") is not None)):
+#         if str(response.get("messages")[0].get("type"))=='text':
+#             body = str(response.get("messages")[0].get("text").get("body"))
+#             whatsapp_id = str(response.get("contacts")[0].get("wa_id"))
+#             add_message(whatsapp_id, whatsapp_id, bot_number, body, "text", "whatsapp", "incoming")
+#         else:
+#             return None
+#         #Storing Message, Media or Location
+#         #elif (response.get("messages")[0].get("type")=='image'):
+#
+#         #Replace with functions from data_fetching
+#
+#         ## query for volunteer
+#         checkState = """SELECT name, timestamp, id, whatsapp_id from volunteers where mob_number='{mob_number}'""".format(mob_number=int(whatsapp_id[2:]))
+#         print(checkState)
+#         records_a = pd.read_sql(checkState, connections('prod_db_read'))
+#         if(records_a.loc[0,'whatsapp_id']!=whatsapp_id):
+#             check_contact("+"+str(whatsapp_id),'volunteers')
+#         ## query for requester
+#         checkState = """SELECT name, timestamp, id, whatsapp_id from requests where mob_number='{mob_number}'""".format(mob_number=whatsapp_id[2:])
+#         records_b = pd.read_sql(checkState, connections('prod_db_read'))
+#         if(records_b.loc[0,'whatsapp_id']!=whatsapp_id):
+#             check_contact("+"+str(whatsapp_id),'requests')
+#
+#         ## check for volunteer
+#         if records_a.shape[0]>0:
+#             name = records_a.loc[0,'name']
+#             send_whatsapp_message(whatsapp_api_url, whatsapp_id, a.format(v_name=name))
+#
+#         ## check for requester
+#         elif records_b.shape[0]>0:
+#             name = records_b.loc[0,'name']
+#             send_whatsapp_message(whatsapp_api_url, whatsapp_id, b.format(r_name=name))
+#
+#         ## if new user
+#         else:
+#             if body != '1' and body != '2':
+#                 send_whatsapp_message(whatsapp_api_url, whatsapp_id, c)
+#             if body == '1':
+#                 send_whatsapp_message(whatsapp_api_url, whatsapp_id, c1)
+#             if body == '2':
+#                 send_whatsapp_message(whatsapp_api_url, whatsapp_id, c2)
+#
+#         print('\n' + whatsapp_id + '\n')
+#         return None
+#     else:
+#         return None
+#
+# if __name__ == '__main__':
+#     app.debug = True
+#     app.run(host='0.0.0.0', port=4000)

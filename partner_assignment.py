@@ -16,6 +16,7 @@ import urllib.parse as p
 from message_templates import url_shortener_fn, nearby_v_sms_text, far_v_sms_text, \
     request_verified_m_sms1, request_verified_m_sms2, url_start
 from pygeocoder import Geocoder
+from whatsapp_fn import send_request_template,send_moderator_msg
 
 # In[ ]:
 
@@ -59,7 +60,6 @@ def message_all_volunteers(uuid,radius,search_radius):
     lon = r_df.loc[0,'longitude']
     v_list['dist'] = get_haversine_distance(float(lat),float(lon),v_list['latitude'].astype(float).values,v_list['longitude'].astype(float).values)
     v_list = v_list.sort_values(by='dist',ascending=True)
-    v_ids = pd.DataFrame()
     df = pd.DataFrame()
     df2 = pd.DataFrame()
     count=0
@@ -75,11 +75,12 @@ def message_all_volunteers(uuid,radius,search_radius):
             sms_text = nearby_v_sms_text.format(v_name=v_list.loc[i,'name'],link=link)
             sms_to = int(v_list.loc[i,'mob_number'])
             df = df.append(v_list.loc[i,['v_id']])
-            if((server_type=='prod')):
-                send_sms(sms_text,sms_to,sms_type='transactional',send=True)
-                print('SMS sent')
-            else:
-                print('Sending sms:',sms_text,' to ',str(sms_to))
+            send_request_template(uuid,sms_text,sms_to)
+            # if((server_type=='prod')):
+            #     send_sms(sms_text,sms_to,sms_type='transactional',send=True)
+            #     print('SMS sent')
+            # else:
+            #     print('Sending sms:',sms_text,' to ',str(sms_to))
         if((v_list.loc[i,'dist']>radius)&(v_list.loc[i,'dist']<search_radius)):
             count = count +1
             if(count>20):
@@ -87,11 +88,12 @@ def message_all_volunteers(uuid,radius,search_radius):
             sms_text = far_v_sms_text.format(address=r_df.loc[0,'geoaddress'][0:40],link=link)
             sms_to=int(v_list.loc[i,'mob_number'])
             df2 = df2.append(v_list.loc[i,['v_id']])
-            if((server_type=='prod')):
-                send_sms(sms_text,sms_to,sms_type='transactional',send=True)
-                print('SMS sent')
-            else:
-                print('Sending sms:',sms_text,' to ',str(sms_to))
+            send_request_template(uuid,sms_text,sms_to)
+            # if((server_type=='prod')):
+            #     send_sms(sms_text,sms_to,sms_type='transactional',send=True)
+            #     print('SMS sent')
+            # else:
+            #     print('Sending sms:',sms_text,' to ',str(sms_to))
     df['r_id']=r_id
     df['status']='pending'
     print(v_list)
@@ -105,7 +107,7 @@ def message_all_volunteers(uuid,radius,search_radius):
     counter_broadcast = 0
     for i in v_list.index:
         counter_broadcast = counter_broadcast+1
-        if((counter_broadcast>10) or (v_list.loc[i,'dist']>search_radius)):
+        if((counter_broadcast>20) or (v_list.loc[i,'dist']>search_radius)):
             break
         str_broadcast = str_broadcast + v_list.loc[i,'name']+" m: wa.me/91"+str(v_list.loc[i,'mob_number'])+" "
     link = url_shortener_fn("https://wa.me/918618948661?text="+p.quote(str_broadcast))
@@ -113,13 +115,15 @@ def message_all_volunteers(uuid,radius,search_radius):
     mod_sms_text_2 = request_verified_m_sms2.format(link=link)
     moderator_list = get_moderator_list()
     for i_number in moderator_list:
-        if((server_type=='prod')):
-            send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
-            send_sms(mod_sms_text_2,sms_to=int(i_number),sms_type='transactional',send=True)
-            print('SMS sent')
-        else:
-            print('Sending sms:',mod_sms_text,' to ',str(i_number))
-            print('Sending sms:',mod_sms_text_2,' to ',str(i_number))
+        send_moderator_msg(mod_sms_text, i_number)
+        send_moderator_msg(mod_sms_text_2, i_number)
+        # if((server_type=='prod')):
+            # send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
+            # send_sms(mod_sms_text_2,sms_to=int(i_number),sms_type='transactional',send=True)
+            # print('SMS sent')
+        # else:
+        #     print('Sending sms:',mod_sms_text,' to ',str(i_number))
+        #     print('Sending sms:',mod_sms_text_2,' to ',str(i_number))
     return None
 
 
@@ -145,18 +149,18 @@ def generate_uuid():
 
 # In[ ]:
 
-
-def assignment_link(r_id):
-    v_list_q = """Select id as v_id,mob_number,name, latitude,longitude from volunteers where status=1"""
-    v_list = pd.read_sql(v_list_q,connections('prod_db_read'))
-    v_list['dist'] = get_haversine_distance(lat,lon,)
-    v_list = v_list.sort_values(by='dist',ascending=True)
-    for i in v_list.index:
-        if(v_list.loc[i,'dist']<'radius'):
-            sms_text = 'Dear, '+v_list.loc[i,'name']+' someone in your area needs help. Click here to help '+link
-            send_sms(sms_text,sms_to=v_list.loc[i,'mob_number'],sms_type='transactional',send=True)
-    #incomplete
-    return None
+#
+# def assignment_link(r_id):
+#     v_list_q = """Select id as v_id,mob_number,name, latitude,longitude from volunteers where status=1"""
+#     v_list = pd.read_sql(v_list_q,connections('prod_db_read'))
+#     v_list['dist'] = get_haversine_distance(lat,lon)
+#     v_list = v_list.sort_values(by='dist',ascending=True)
+#     for i in v_list.index:
+#         if(v_list.loc[i,'dist']<'radius'):
+#             sms_text = 'Dear, '+v_list.loc[i,'name']+' someone in your area needs help. Click here to help '+link
+#             send_sms(sms_text,sms_to=v_list.loc[i,'mob_number'],sms_type='transactional',send=True)
+#     #incomplete
+#     return None
     
 
 
@@ -165,16 +169,15 @@ def assignment_link(r_id):
 
 
 def getCityAddr(lat, lng):
-  '''Function that returns "city, state, country" from a geo-coordinate'''
-
-  try:
-    lat = float(lat)
-    lng = float(lng)
-    x = Geocoder(gmap_key).reverse_geocode(lat, lng)
-    x = [x.city, x.state, x.country]
-    x = ', '.join(filter(None, x))
-    print(x)
-    return x
-  except Exception as e:
-    print(e)
-    return 'NOT FOUND'
+  #'''Function that returns "city, state, country" from a geo-coordinate'''
+    try:
+        lat = float(lat)
+        lng = float(lng)
+        x = Geocoder(gmap_key).reverse_geocode(lat, lng)
+        x = [x.city, x.state, x.country]
+        x = ', '.join(filter(None, x))
+        print(x)
+        return x
+    except Exception as e:
+        print(e)
+        return 'NOT FOUND'
