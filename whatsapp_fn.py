@@ -9,8 +9,9 @@ import json
 
 from database_entry import add_message
 from settings import server_type, whatsapp_api_url, whatsapp_api_password,auth_code,namespace,whatsapp_temp_1,bot_number
+from database_entry import send_sms
 from flask import Flask,request
-from message_templates import a,b,c,c1,c2,inv,whatsapp_temp_1_message
+from message_templates import a,b,c,c1,c2,inv,whatsapp_temp_1_message, nearby_v_sms_text. url_shortener_fn
 import pandas as pd
 from connections import connections
 from data_fetching import get_moderator_list,accept_request_page,volunteer_data_by_mob
@@ -71,10 +72,14 @@ def send_whatsapp_template_message(url,to,namespace,element_name,message_templat
     print(json.dumps(data))
     try:
         response = requests.request("POST", url, data=json.dumps(data), headers=headers, verify = False)
-        print("message sent")
+        if response.status_code in [200, 201]:
+            print("message sent")
+            return True
+        print("message {message} not sent, received response {txt}".format(message=message, txt=str(response.text)))
+        return False
     except Exception as e:
-        print(e)
-    return response
+        print("message {message} not sent, received exception {exception}".format(message=message, exception=str(e)))
+        return False
 
 # @app.route('/testing', methods=['POST'])
 def send_sample_template(uuid):
@@ -101,9 +106,13 @@ def send_sample_template(uuid):
         print(message)
         m_num = str(91)+str(i)
         print(m_num)
-        response = send_whatsapp_template_message(whatsapp_api_url,m_num,namespace,whatsapp_temp_1,message,body_parameters)
-        print(response)
-        return response
+        try:
+            if not send_whatsapp_template_message(whatsapp_api_url,m_num,namespace,whatsapp_temp_1,message,body_parameters):
+                send_sms(nearby_v_sms_text.format(v_name=v_name, link=acceptance_link))
+            return "ok", 200
+        except Exception as e:
+            print("Exception in sending message {e}".format(e))
+            return "Internal Server error", 500
 
 
 
