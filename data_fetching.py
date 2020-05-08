@@ -303,7 +303,7 @@ def get_unverified_requests(org):
     try:
         query = """Select r.id, r.name, r.mob_number, r.timestamp, r.email_id, r.address, r.geoaddress, r.latitude,
                 r.longitude, r.country, r.request, r.age, r.source, r.geostamp, r.status, r.last_updated,
-                r.volunteers_reqd, r.uuid, u.name as managed_by, u.id as managed_by_id
+                r.volunteers_reqd, r.uuid, u.name as managed_by, u.id as managed_by_id, r.city as city
                 from requests r left join users u on r.managed_by = u.id where r.status='received'"""
         if org != 'covidsos':
             query += f" and source='{org}'"
@@ -460,7 +460,7 @@ def get_assigned_requests(org):
     org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
     query = f"""Select r.id as r_id, r.uuid as request_uuid, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd,r.timestamp as `request_time`,
                 r.source as `source`, r.status as `request_status`, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
-                v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`, u.name as managed_by, u.id as managed_by_id
+                v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`, u.name as managed_by, u.id as managed_by_id, r.city
                 from requests r
             left join request_verification rv on rv.r_id=r.id
             left join request_matching rm on rm.request_id=r.id
