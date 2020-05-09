@@ -1060,13 +1060,37 @@ def assigned_volunteer_details(*args, **kwargs):
         v_id = get_volunteers_assigned_to_request(r_df.get("r_id")[0])
         volunteer = volunteer_data_by_id(v_id)
         if volunteer is not None:
-            response_data = {"name": volunteer.get("name")[0], "mob_number": volunteer.get("mob_number")[0]}
+            response_data = {"name": volunteer.get("name")[0], "mob_number": str(volunteer.get("mob_number")[0])}
             return json.dumps(
                 {'Response': response_data, 'status': True, 'string_response': 'Request data extracted'},
                 default=datetime_converter)
         else:
             return json.dumps(
                 {'Response': {}, 'status': True, 'string_response': 'No volunteer found'},
+                default=datetime_converter)
+    else:
+        return json.dumps({'Response': {}, 'status': True, 'string_response': 'No requests found'},
+                          default=datetime_converter)
+
+
+@app.route('/verification_details', methods=['GET'])
+@capture_api_exception
+@login_required
+def assigned_verification_details(*args, **kwargs):
+    request_uuid = request.args.get('request_uuid', '')
+    r_df = request_data_by_uuid(request_uuid)
+    if (r_df.shape[0] > 0):
+        vr_df = request_verification_data_by_id(r_df.get("r_id")[0])
+        if vr_df is not None:
+            response_data = {"why": vr_df.get("why")[0], "what": vr_df.get("what")[0], "where": vr_df.get("where")[0],
+                             "financial_assistance": str(vr_df.get("financial_assistance")[0]),
+                             "urgent": vr_df.get("urgent")[0]}
+            return json.dumps(
+                {'Response': response_data, 'status': True, 'string_response': 'Request data extracted'},
+                default=datetime_converter)
+        else:
+            return json.dumps(
+                {'Response': {}, 'status': True, 'string_response': 'No verification details found'},
                 default=datetime_converter)
     else:
         return json.dumps({'Response': {}, 'status': True, 'string_response': 'No requests found'},
