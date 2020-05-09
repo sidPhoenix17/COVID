@@ -1097,6 +1097,23 @@ def assigned_verification_details(*args, **kwargs):
                           default=datetime_converter)
 
 
+@app.route('/request_details', methods=['GET'])
+@capture_api_exception
+@login_required
+def assigned_request_details(*args, **kwargs):
+    request_uuid = request.args.get('request_uuid', '')
+    r_df = request_data_by_uuid(request_uuid)
+    if (r_df.shape[0] > 0):
+        response_data = {"source": r_df.get("source")[0], "status": r_df.get("status")[0],
+                         "volunteers_reqd": str(r_df.get("volunteers_reqd")[0])}
+        return json.dumps(
+                {'Response': response_data, 'status': True, 'string_response': 'Request data extracted'},
+                default=datetime_converter)
+    else:
+        return json.dumps({'Response': {}, 'status': True, 'string_response': 'No requests found'},
+                          default=datetime_converter)
+
+
 # In[ ]:
 if(server_type=='local'):
     if __name__ == '__main__':
