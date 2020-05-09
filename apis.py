@@ -143,19 +143,22 @@ def create_request():
                 'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
                 'longitude': [longitude], 'source': [source], 'age': [age], 'request': [user_request],
                 'status': [status], 'uuid': [uuid], 'managed_by': [managed_by], 'members_impacted': [members_impacted],
-                'city':[city]}
+                'city':[city],'volunteers_reqd':[0]}
     df = pd.DataFrame(req_dict)
     df['email_id'] = df['email_id'].fillna('')
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
-                        'longitude', 'source', 'request', 'age', 'status', 'uuid','managed_by','city']
-    x, y = add_requests(df)
+                        'longitude', 'source', 'members_impacted', 'request', 'age', 'status', 'uuid', 'managed_by',
+                        'city', 'volunteers_reqd']
+    x, y = add_requests(df[expected_columns])
     r_df = request_data_by_uuid(uuid)
     if r_df is not None:
         v_req_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [None], 'what': [None], 'where': [geoaddress],
                       'verification_status': ['pending'], 'verified_by': [managed_by],
                       'timestamp': [current_time], 'financial_assistance': [0], 'urgent': ['no']}
+        expected_columns = ['timestamp', 'r_id', 'what', 'why', 'where', 'verification_status', 'verified_by',
+                            'financial_assistance', 'urgent']
         v_df = pd.DataFrame(v_req_dict)
-        W, Z = add_request_verification_db(v_df)
+        W, Z = add_request_verification_db(v_df[expected_columns])
     response = {'Response': {}, 'status': x, 'string_response': y}
     if (x):
         # move to async
@@ -741,7 +744,9 @@ def verify_request(*args, **kwargs):
             rv_dict = {x: r_v_dict[x] for x in r_v_dict}
             update_request_v_db({'id': (past_df.loc[0,'id'])}, rv_dict)
         else:
-            x, y = add_request_verification_db(df)
+            expected_columns = ['timestamp', 'r_id', 'what', 'why', 'where', 'verification_status', 'verified_by',
+                                'financial_assistance', 'urgent']
+            x, y = add_request_verification_db(df[expected_columns])
         if (verification_status == 'verified'):
             requestor_text = request_verified_sms
             send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
