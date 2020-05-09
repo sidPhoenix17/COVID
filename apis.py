@@ -1049,6 +1049,30 @@ def update_request_verification_info(*args, **kwargs):
     response = json.dumps(update_request_v_db({'r_id': r_id}, r_dict))
     return response
 
+
+@app.route('/volunteer_details', methods=['GET'])
+@capture_api_exception
+@login_required
+def assigned_volunteer_details(*args, **kwargs):
+    request_uuid = request.args.get('request_uuid', '')
+    r_df = request_data_by_uuid(request_uuid)
+    if (r_df.shape[0] > 0):
+        v_id = get_volunteers_assigned_to_request(r_df.get("r_id")[0])
+        volunteer = volunteer_data_by_id(v_id)
+        if volunteer is not None:
+            response_data = {"name": volunteer.get("name")[0], "mob_number": volunteer.get("mob_number")[0]}
+            return json.dumps(
+                {'Response': response_data, 'status': True, 'string_response': 'Request data extracted'},
+                default=datetime_converter)
+        else:
+            return json.dumps(
+                {'Response': {}, 'status': True, 'string_response': 'No volunteer found'},
+                default=datetime_converter)
+    else:
+        return json.dumps({'Response': {}, 'status': True, 'string_response': 'No requests found'},
+                          default=datetime_converter)
+
+
 # In[ ]:
 if(server_type=='local'):
     if __name__ == '__main__':
