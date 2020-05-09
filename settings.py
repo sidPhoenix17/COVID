@@ -1,5 +1,5 @@
 import os
-from local_settings import server_type,SECRET_KEY,sms_key,sms_sid,whatsapp_api_url,whatsapp_api_password,auth_code, redis_host, bot_number,namespace,whatsapp_temp_1
+from local_settings import server_type,SECRET_KEY,sms_key,sms_sid,whatsapp_api_url,whatsapp_api_password,auth_code, redis_host, bot_number,namespace,whatsapp_temp_1,gmap_key
 import numpy as np
 default_r=0.5
 

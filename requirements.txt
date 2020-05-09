@@ -15,3 +15,4 @@ Flask-Cors==3.0.8
 pyjwt==1.7.1
 celery==4.4.2
 redis==3.4.1
+pygeocoder==1.2.5

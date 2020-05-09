@@ -39,7 +39,7 @@ def last_entry_timestamp(source):
 
 
 def add_volunteers_to_db(df):
-    expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude','longitude', 'source', 'status', 'support_type']
+    expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude','longitude', 'source', 'status', 'support_type','city']
     try:
         if (len(df.columns.intersection(expected_columns)) == len(expected_columns)):
             exists,v_id = check_volunteer_exists(df)
@@ -66,7 +66,7 @@ def add_volunteers_to_db(df):
 
 def add_requests(df):
     #df with columns [timestamp, name,mob_number, email_id, country, address, geoaddress, latitude, longitude, source, request,age]
-    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source','members_impacted', 'request', 'age','status','uuid', 'managed_by']
+    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source','members_impacted', 'request', 'age','status','uuid', 'managed_by','city','volunteers_reqd']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
         engine = connections('prod_db_write')
         df.to_sql(name = 'requests', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
@@ -259,6 +259,18 @@ def update_volunteers_db(v_dict_where,v_dict_set):
     except:
         mailer.send_exception_mail()
         return  {'Response':{},'string_response': 'Volunteer info updation failed' ,'status':False}
+
+def update_users_db(r_dict_where,r_dict_set):
+    try:
+        r_dict_where, r_dict_set = sanitise_for_sql(r_dict_where), sanitise_for_sql(r_dict_set)
+        set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = r_dict_set[x]) for x in r_dict_set))
+        where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = r_dict_where[x]) for x in r_dict_where))
+        query = """update users set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
+        write_query(query,'prod_db_write')
+        return {'Response':{},'string_response': 'User info Updated','status':True}
+    except:
+        mailer.send_exception_mail()
+        return  {'Response':{},'string_response': 'User info updation failed' ,'status':False}
 
 
 def update_request_v_db(rv_dict_where,rv_dict_set):

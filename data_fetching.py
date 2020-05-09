@@ -28,6 +28,20 @@ def get_requests_list():
 # In[ ]:
 
 
+def get_user_list(org='covidsos'):
+    try:
+        if(org=='covidsos'):
+            req_q = """Select id,name,organisation as source from users"""
+        else:
+            req_q = """Select id,name,organisation as source from users where organisation='{source}'""".format(source=org)
+        req_df = pd.read_sql(req_q, connections('prod_db_read'))
+
+        return {'Response':req_df.to_dict('records'),'status':True,'string_response':'List retrieved'}
+    except:
+        mailer.send_exception_mail()
+        return {'Response':{},'status':False,'string_response':'List unavailable'}
+
+
 def get_source_list():
     try:
         req_q = """Select id,org_code from support_orgs"""
@@ -143,16 +157,20 @@ def website_requests_display_secure():
         server_con = connections('prod_db_read')
         query = """Select r.id as r_id,r.name as name, r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
                     rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp,r.source as source,
-                    rsu.url as broadcast_link
+                    rsu.url as broadcast_link, u.name as managed_by,u.id as managed_by_id, r.city as city
                      from requests r 
                     left join request_verification rv on rv.r_id=r.id 
                     left join request_sms_urls rsu on rsu.r_uuid=r.uuid and rsu.url_type='broadcast_link'
+                    left join users u on u.id = r.managed_by
                     where rv.r_id is not NULL"""
         query_df = pd.read_sql(query,server_con)
         query_df = query_df.sort_values(by=['r_id'],ascending=[False])
         query_df['verification_status'] = query_df['verification_status'].fillna('verified')
+        query_df['managed_by'] = query_df['managed_by'].fillna('admin')
+        query_df['managed_by_id'] = query_df['managed_by_id'].fillna(0)
         link = "https://wa.me/918618948661?text=" + urllib.parse.quote('Broadcast list for this request is not available. Please message to admin group for details')
         query_df['broadcast_link'] = query_df['broadcast_link'].fillna(link)
+        query_df['city'] = query_df['city'].fillna('')
         if(server_type=='prod'):
             query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://covidsos.org/accept/'+x)
         else:
@@ -168,13 +186,20 @@ def website_requests_display(source='covidsos'):
     try:
         server_con = connections('prod_db_read')
         query = """Select r.id as r_id,r.name as name, r.uuid as uuid, rv.where as location,rv.what as requirement,rv.why as reason,r.request,
-                    rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp,r.source as source from requests r 
-                    left join request_verification rv on rv.r_id=r.id where rv.r_id is not NULL"""
+                    rv.verification_status,r.latitude,r.longitude, r.status as status,r.timestamp as timestamp,r.source as source,r.city as city,
+                    so.organisation_name as source_org, so.logo_url as org_logo
+                    from requests r 
+                    left join request_verification rv on rv.r_id=r.id 
+                    left join support_orgs so on so.org_code=r.source
+                    where rv.r_id is not NULL"""
         query_df = pd.read_sql(query,server_con)
+        query_df['source_org'] = query_df['source_org'].fillna('COVIDSOS')
+        query_df['org_logo'] = query_df['org_logo'].fillna('')
         query_df = query_df.sort_values(by=['r_id'],ascending=[False])
         if(source!='covidsos'):
             query_df = query_df[query_df['source']==source]
         query_df['verification_status'] = query_df['verification_status'].fillna('verified')
+        query_df['city'] = query_df['city'].fillna('')
         if(server_type=='prod'):
             query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://covidsos.org/accept/'+x)
         else:
@@ -276,10 +301,15 @@ def check_past_verification(r_id):
 
 def get_unverified_requests(org):
     try:
-        query = """Select * from requests r where status='received'"""
+        query = """Select r.id, r.name, r.mob_number, r.timestamp, r.email_id, r.address, r.geoaddress, r.latitude,
+                r.longitude, r.country, r.request, r.age, r.source, r.geostamp, r.status, r.last_updated,
+                r.volunteers_reqd, r.uuid, u.name as managed_by, u.id as managed_by_id
+                from requests r left join users u on r.managed_by = u.id where r.status='received'"""
         if org != 'covidsos':
             query += f" and source='{org}'"
         df = pd.read_sql(query,connections('prod_db_read'))
+        df['managed_by'] = df['managed_by'].fillna('admin')
+        df['managed_by_id'] = df['managed_by_id'].fillna(0)
         df = df[~df['uuid'].isna()]
         df = df.sort_values(by=['id'],ascending=[False])
         df = df.fillna('')
@@ -298,11 +328,14 @@ def get_unverified_requests(org):
 
 def accept_request_page(uuid):
     query = """Select r.id as r_id,r.name as name, r.status as status, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
-            rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance
+            rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance, so.organisation_name as source_org, so.logo_url as org_logo
             from requests r left join request_verification rv on r.id=rv.r_id
+            left join support_orgs so on so.org_code = r.source
             where r.uuid='{uuid}'""".format(uuid=uuid)
     df = pd.read_sql(query,connections('prod_db_read'))
     df = df[~df['verification_status'].isna()]
+    df['source_org'] = df['source_org'].fillna('COVIDSOS')
+    df['org_logo'] = df['org_logo'].fillna('')
     if(df.shape[0]>1):
         df = df[0:0]
     df['what']=df['what'].fillna('Please call senior citizen to discuss')
@@ -311,7 +344,7 @@ def accept_request_page(uuid):
     return df
 
 def accept_request_page_secure(uuid):
-    query = """Select r.id as r_id,r.name as name,r.mob_number, r.status as status, r.source as source, r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
+    query = """Select r.id as r_id,r.name as name,r.mob_number, r.status as status, r.source as source, CONCAT(r.address, ', ', r.geoaddress) as request_address, r.latitude as latitude, r.longitude as longitude, r.volunteers_reqd as volunteers_reqd,
             rv.what as what, rv.why as why, rv.verification_status, rv.urgent as urgent,rv.financial_assistance as financial_assistance
             from requests r left join request_verification rv on r.id=rv.r_id
             where r.uuid='{uuid}'""".format(uuid=uuid)
@@ -364,7 +397,7 @@ def volunteer_data_by_id(v_id):
         return pd.DataFrame()
 
 def volunteer_data_by_mob(mob_number):
-    v_id_q = """Select id as v_id,name,mob_number,source from volunteers where mob_number='{mob_number}'""".format(mob_number=mob_number)
+    v_id_q = """Select id as v_id,name,mob_number,source,whatsapp_id from volunteers where mob_number='{mob_number}'""".format(mob_number=mob_number)
     try:
         v_id_df = pd.read_sql(v_id_q,connections('prod_db_read'))
         return v_id_df
@@ -427,13 +460,16 @@ def get_assigned_requests(org):
     org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
     query = f"""Select r.id as r_id, r.uuid as request_uuid, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd,r.timestamp as `request_time`,
                 r.source as `source`, r.status as `request_status`, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
-                v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`
+                v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`, u.name as managed_by, u.id as managed_by_id
                 from requests r
             left join request_verification rv on rv.r_id=r.id
             left join request_matching rm on rm.request_id=r.id
             left join volunteers v on v.id=rm.volunteer_id
+            left join users u on u.id = r.managed_by
             where rm.is_active=True and r.status in ('assigned','matched') {org_condition}"""
     requests_data = pd.read_sql(query,connections('prod_db_read'))
+    requests_data['managed_by'] = requests_data['managed_by'].fillna('admin')
+    requests_data['managed_by_id'] = requests_data['managed_by_id'].fillna(0)
     requests_data = requests_data.fillna('')
     requests_data = requests_data.sort_values(by=['assignment_time'],ascending=[False])
     requests_data['requestor_chat']=requests_data['requestor_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
