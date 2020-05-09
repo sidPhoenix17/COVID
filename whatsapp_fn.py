@@ -209,59 +209,59 @@ def send_moderator_msg(mob_number,message,preview_url=False):
 # In[ ]:
 
 #
-# @app.route('/', methods=['POST', 'GET'])
-# def Get_Message():
-#     print(request)
-#     response = request.json
-#     print(response)
-#     if((response.get("contacts") is not None) and (response.get("messages") is not None)):
-#         if str(response.get("messages")[0].get("type"))=='text':
-#             body = str(response.get("messages")[0].get("text").get("body"))
-#             whatsapp_id = str(response.get("contacts")[0].get("wa_id"))
-#             add_message(whatsapp_id, whatsapp_id, bot_number, body, "text", "whatsapp", "incoming")
-#         else:
-#             return None
-#         #Storing Message, Media or Location
-#         #elif (response.get("messages")[0].get("type")=='image'):
-#
-#         #Replace with functions from data_fetching
-#
-#         ## query for volunteer
-#         checkState = """SELECT name, timestamp, id, whatsapp_id from volunteers where mob_number='{mob_number}'""".format(mob_number=int(whatsapp_id[2:]))
-#         print(checkState)
-#         records_a = pd.read_sql(checkState, connections('prod_db_read'))
-#         if(records_a.loc[0,'whatsapp_id']!=whatsapp_id):
-#             check_contact("+"+str(whatsapp_id),'volunteers')
-#         ## query for requester
-#         checkState = """SELECT name, timestamp, id, whatsapp_id from requests where mob_number='{mob_number}'""".format(mob_number=whatsapp_id[2:])
-#         records_b = pd.read_sql(checkState, connections('prod_db_read'))
-#         if(records_b.loc[0,'whatsapp_id']!=whatsapp_id):
-#             check_contact("+"+str(whatsapp_id),'requests')
-#
-#         ## check for volunteer
-#         if records_a.shape[0]>0:
-#             name = records_a.loc[0,'name']
-#             send_whatsapp_message(whatsapp_api_url, whatsapp_id, a.format(v_name=name))
-#
-#         ## check for requester
-#         elif records_b.shape[0]>0:
-#             name = records_b.loc[0,'name']
-#             send_whatsapp_message(whatsapp_api_url, whatsapp_id, b.format(r_name=name))
-#
-#         ## if new user
-#         else:
-#             if body != '1' and body != '2':
-#                 send_whatsapp_message(whatsapp_api_url, whatsapp_id, c)
-#             if body == '1':
-#                 send_whatsapp_message(whatsapp_api_url, whatsapp_id, c1)
-#             if body == '2':
-#                 send_whatsapp_message(whatsapp_api_url, whatsapp_id, c2)
-#
-#         print('\n' + whatsapp_id + '\n')
-#         return None
-#     else:
-#         return None
-#
-# if __name__ == '__main__':
-#     app.debug = True
-#     app.run(host='0.0.0.0', port=4000)
+
+def process_whatsapp_received_text_message(message):
+    body = str(message.get("text").get("body"))
+    whatsapp_id = str(message.get('from'))
+    add_message(whatsapp_id, whatsapp_id, bot_number, body, "text", "whatsapp", "incoming")
+    #Storing Message, Media or Location
+    #elif (response.get("messages")[0].get("type")=='image'):
+
+    #Replace with functions from data_fetching
+
+    ## query for volunteer
+    checkState = """SELECT name, timestamp, id, whatsapp_id from volunteers where mob_number='{mob_number}'""".format(mob_number=int(whatsapp_id[2:]))
+    print(checkState)
+    records_a = pd.read_sql(checkState, connections('prod_db_read'))
+    if(records_a.loc[0,'whatsapp_id']!=whatsapp_id):
+        check_contact("+"+str(whatsapp_id),'volunteers')
+    ## query for requester
+    checkState = """SELECT name, timestamp, id, whatsapp_id from requests where mob_number='{mob_number}'""".format(mob_number=whatsapp_id[2:])
+    records_b = pd.read_sql(checkState, connections('prod_db_read'))
+    if(records_b.loc[0,'whatsapp_id']!=whatsapp_id):
+        check_contact("+"+str(whatsapp_id),'requests')
+
+    ## check for volunteer
+    if records_a.shape[0]>0:
+        name = records_a.loc[0,'name']
+        send_whatsapp_message(whatsapp_api_url, whatsapp_id, a.format(v_name=name))
+
+    ## check for requester
+    elif records_b.shape[0]>0:
+        name = records_b.loc[0,'name']
+        send_whatsapp_message(whatsapp_api_url, whatsapp_id, b.format(r_name=name))
+
+    ## if new user
+    else:
+        if body != '1' and body != '2':
+            send_whatsapp_message(whatsapp_api_url, whatsapp_id, c)
+        if body == '1':
+            send_whatsapp_message(whatsapp_api_url, whatsapp_id, c1)
+        if body == '2':
+            send_whatsapp_message(whatsapp_api_url, whatsapp_id, c2)
+
+    print('\n' + whatsapp_id + '\n')
+
+@app.route('/', methods=['POST', 'GET'])
+def Get_Message():
+    response = request.json
+
+    for message in response.get('messages', []):
+        if message.get('text', False):
+            print(response, flush=True)
+            process_whatsapp_received_text_message(message)
+    return "ok"
+
+if __name__ == '__main__':
+    app.debug = True
+    app.run(host='0.0.0.0', port=4000)
