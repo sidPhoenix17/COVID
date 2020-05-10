@@ -59,6 +59,7 @@ def add_volunteers_to_db(df):
             return_str = 'Data format not matching'
             return False,return_str
     except Exception as e:
+        print(df.loc[0].to_dict())
         print(e)
         return_str = 'Error'
         mailer.send_exception_mail()
@@ -73,6 +74,7 @@ def add_requests(df):
         return_str = 'Request submitted successfully'
         return True,return_str
     else:
+        print(df.loc[0].to_dict())
         return_str = 'Data Format not matching'
         return False,return_str
 
@@ -152,24 +154,6 @@ def get_city(lat, lon):
 
 
 
-def verify_user(username,password):
-    server_con = connections('prod_db_read')
-    query = """Select users.id as id,name as full_name, mob_number,email_id,password,user_access.type as type, organisation as source from users left join user_access on users.access_type=user_access.id"""
-    user_list = pd.read_sql(query,server_con)
-    for i in user_list.index:
-        if(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']==password)):
-            output = {'Response':{'access_level': user_list.loc[i,'type'],'username':username,'user_id':str(user_list.loc[i,'id']),'full_name':user_list.loc[i,'full_name'],'source':user_list.loc[i,'source']},'string_response': 'Login successful','status':True}
-            break
-        elif(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']!=password)):
-            output = {'Response':{'username':username},'string_response': 'Incorrect Password','status':False}
-            break
-        else:
-            output = {'Response':{'username':username},'string_response': 'Incorrect Username','status':False}
-    return output
-
-
-# In[ ]:
-
 
 # TODO: sanitise df data for single quotes
 def add_user(df):
@@ -193,6 +177,16 @@ def add_message(message_id, from_number, to_number, message, message_format, cha
         return {'Response':{},'string_response': 'Message Added Successfully','status':True}
     except:
         return {'Response':{},'string_response': 'Message addition failed due to incorrect data format' ,'status':False}
+
+
+def add_cron_job(df):
+    expected_columns = ['created_by', 'is_deleted', 'updated_by', 'cron_expression', 'task_ref']
+    if (len(df.columns.intersection(expected_columns)) == len(expected_columns)):
+        engine = connections('prod_db_write')
+        df.to_sql(name='schedule', con=engine, schema='covidsos', if_exists='append', index=False, index_label=None)
+        return {'Response': {}, 'string_response': 'Cron Added Successfully', 'status': True}
+    else:
+        return {'Response': {}, 'string_response': 'Cron addition failed due to incorrect data format', 'status': False}
 
 
 # In[ ]:
@@ -292,6 +286,19 @@ def update_request_updates_db(ru_dict_where,ru_dict_set):
         set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = ru_dict_set[x]) for x in ru_dict_set))
         where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = ru_dict_where[x]) for x in ru_dict_where))
         query = """update request_updates set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
+        write_query(query,'prod_db_write')
+        return {'Response':{},'string_response': 'Request Update info Updated','status':True}
+    except:
+        mailer.send_exception_mail()
+        return  {'Response':{},'string_response': 'Request Update info updation failed' ,'status':False}
+
+
+def update_schedule_db(ru_dict_where,ru_dict_set):
+    try:
+        ru_dict_where,ru_dict_set = sanitise_for_sql(ru_dict_where), sanitise_for_sql(ru_dict_set)
+        set_sql_format = ",".join(("`{column_name}`='{value}'".format(column_name = x,value = ru_dict_set[x]) for x in ru_dict_set))
+        where_sql_format = " and ".join(("`{column_name}`='{value}'".format(column_name = x,value = ru_dict_where[x]) for x in ru_dict_where))
+        query = """update schedule set {set_str} where {where_str};""".format(set_str = set_sql_format,where_str=where_sql_format)
         write_query(query,'prod_db_write')
         return {'Response':{},'string_response': 'Request Update info Updated','status':True}
     except:

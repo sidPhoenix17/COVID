@@ -148,12 +148,10 @@ def generate_uuid():
 
 
 # In[ ]:
-
-#
 # def assignment_link(r_id):
 #     v_list_q = """Select id as v_id,mob_number,name, latitude,longitude from volunteers where status=1"""
 #     v_list = pd.read_sql(v_list_q,connections('prod_db_read'))
-#     v_list['dist'] = get_haversine_distance(lat,lon)
+#     v_list['dist'] = get_haversine_distance(lat,lon,)
 #     v_list = v_list.sort_values(by='dist',ascending=True)
 #     for i in v_list.index:
 #         if(v_list.loc[i,'dist']<'radius'):
