@@ -59,6 +59,7 @@ def add_volunteers_to_db(df):
             return_str = 'Data format not matching'
             return False,return_str
     except Exception as e:
+        print(df.loc[0].to_dict())
         print(e)
         return_str = 'Error'
         mailer.send_exception_mail()
@@ -73,6 +74,7 @@ def add_requests(df):
         return_str = 'Request submitted successfully'
         return True,return_str
     else:
+        print(df.loc[0].to_dict())
         return_str = 'Data Format not matching'
         return False,return_str
 
@@ -151,24 +153,6 @@ def get_city(lat, lon):
 # In[ ]:
 
 
-
-def verify_user(username,password):
-    server_con = connections('prod_db_read')
-    query = """Select users.id as id,name as full_name, mob_number,email_id,password,user_access.type as type, organisation as source from users left join user_access on users.access_type=user_access.id"""
-    user_list = pd.read_sql(query,server_con)
-    for i in user_list.index:
-        if(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']==password)):
-            output = {'Response':{'access_level': user_list.loc[i,'type'],'username':username,'user_id':str(user_list.loc[i,'id']),'full_name':user_list.loc[i,'full_name'],'source':user_list.loc[i,'source']},'string_response': 'Login successful','status':True}
-            break
-        elif(((str(user_list.loc[i,'mob_number'])==username) or (user_list.loc[i,'email_id']==username)) and (user_list.loc[i,'password']!=password)):
-            output = {'Response':{'username':username},'string_response': 'Incorrect Password','status':False}
-            break
-        else:
-            output = {'Response':{'username':username},'string_response': 'Incorrect Username','status':False}
-    return output
-
-
-# In[ ]:
 
 
 # TODO: sanitise df data for single quotes
