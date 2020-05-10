@@ -223,21 +223,21 @@ def process_whatsapp_received_text_message(message):
     checkState = """SELECT name, timestamp, id, whatsapp_id from volunteers where mob_number='{mob_number}'""".format(mob_number=int(whatsapp_id[2:]))
     print(checkState)
     records_a = pd.read_sql(checkState, connections('prod_db_read'))
-    if(records_a.loc[0,'whatsapp_id']!=whatsapp_id):
-        check_contact("+"+str(whatsapp_id),'volunteers')
     ## query for requester
     checkState = """SELECT name, timestamp, id, whatsapp_id from requests where mob_number='{mob_number}'""".format(mob_number=whatsapp_id[2:])
     records_b = pd.read_sql(checkState, connections('prod_db_read'))
-    if(records_b.loc[0,'whatsapp_id']!=whatsapp_id):
-        check_contact("+"+str(whatsapp_id),'requests')
 
     ## check for volunteer
     if records_a.shape[0]>0:
+        if (records_a.loc[0, 'whatsapp_id'] != whatsapp_id):
+            check_contact("+" + str(whatsapp_id), 'volunteers')
         name = records_a.loc[0,'name']
         send_whatsapp_message(whatsapp_api_url, whatsapp_id, a.format(v_name=name))
 
     ## check for requester
     elif records_b.shape[0]>0:
+        if (records_b.loc[0, 'whatsapp_id'] != whatsapp_id):
+            check_contact("+" + str(whatsapp_id), 'requests')
         name = records_b.loc[0,'name']
         send_whatsapp_message(whatsapp_api_url, whatsapp_id, b.format(r_name=name))
 
