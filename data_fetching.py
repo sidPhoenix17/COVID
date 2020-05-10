@@ -155,7 +155,7 @@ def get_public_map_data():
 
 def get_unverified_requests(org):
     org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
-    query = f"""Select r.id, r.uuid as `request_uuid`, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`,
+    query = f"""Select r.id, r.uuid as `uuid`, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`,
                 r.timestamp as `request_time`, r.email_id, r.address, r.geoaddress, r.latitude,
             r.longitude, r.country, r.request, r.age, r.source, r.geostamp, r.status, r.last_updated,
             r.volunteers_reqd, u.name as managed_by, u.id as managed_by_id, r.city as city,
@@ -169,18 +169,18 @@ def get_unverified_requests(org):
     df = pd.read_sql(query,connections('prod_db_read'))
     df['managed_by'] = df['managed_by'].fillna('admin')
     df['managed_by_id'] = df['managed_by_id'].fillna(0)
-    df = df[~df['request_uuid'].isna()]
+    df = df[~df['uuid'].isna()]
     df = df.sort_values(by=['id'],ascending=[False])
     df = df.fillna('')
     if(server_type=='prod'):
-        df['verify_link'] = df['request_uuid'].apply(lambda x:'https://covidsos.org/verify/'+x)
+        df['verify_link'] = df['uuid'].apply(lambda x:'https://covidsos.org/verify/'+x)
     else:
-        df['verify_link'] = df['request_uuid'].apply(lambda x:'https://stg.covidsos.org/verify/'+x)
+        df['verify_link'] = df['uuid'].apply(lambda x:'https://stg.covidsos.org/verify/'+x)
     return df
 
 def get_assigned_requests(org):
     org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
-    query = f"""Select r.id as r_id, r.uuid as 'request_uuid', r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd as `volunteer_count`,r.timestamp as `request_time`,
+    query = f"""Select r.id as r_id, r.uuid as `uuid`, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd as `volunteer_count`,r.timestamp as `request_time`,
                 r.source as `source`, r.status as `request_status`, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
                 v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`, u.name as managed_by, u.id as managed_by_id, r.city,
                 so.organisation_name as source_org, so.logo_url as org_logo
@@ -203,7 +203,7 @@ def get_assigned_requests(org):
 
 def get_completed_requests(org):
     org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
-    query = f"""Select r.id as r_id,r.name as `requestor_name`, r.uuid as 'request_uuid', rv.where as `location`, rv.what as `what`, rv.why as `why`,r.request,
+    query = f"""Select r.id as r_id,r.name as `requestor_name`, r.uuid as `uuid`, rv.where as `location`, rv.what as `what`, rv.why as `why`,r.request,
                 r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd as 'volunteer_count',r.timestamp as `request_time`,
                 r.source as `source`, r.status as `request_status`, rv.financial_assistance, rv.urgent,
                 v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,
@@ -229,7 +229,7 @@ def get_completed_requests(org):
 def website_requests_display_secure(org='covidsos'):
     org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
     server_con = connections('prod_db_read')
-    query = f"""Select r.id as r_id,r.name as 'requestor_name', r.uuid as 'request_uuid', rv.where as `location`,rv.what as `what`,rv.why as `why`,r.request,
+    query = f"""Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `location`,rv.what as `what`,rv.why as `why`,r.request,
                 rv.verification_status,r.latitude,r.longitude, r.status as 'request_status',r.timestamp as 'request_time',r.source as source,
                 rsu.url as broadcast_link, u.name as managed_by,u.id as managed_by_id, r.city as city,
                 so.organisation_name as source_org, so.logo_url as org_logo
@@ -248,15 +248,15 @@ def website_requests_display_secure(org='covidsos'):
     query_df['broadcast_link'] = query_df['broadcast_link'].fillna(link)
     query_df['city'] = query_df['city'].fillna('')
     if(server_type=='prod'):
-        query_df['accept_link'] = query_df['request_uuid'].apply(lambda x:'https://covidsos.org/accept/'+x)
+        query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://covidsos.org/accept/'+x)
     else:
-        query_df['accept_link'] = query_df['request_uuid'].apply(lambda x:'https://stg.covidsos.org/accept/'+x)
+        query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://stg.covidsos.org/accept/'+x)
     pending_queries = query_df[(query_df['verification_status']=='verified')&(query_df['request_status'].isin(['received','verified','pending']))]
     return pending_queries
 
 def website_requests_display(org='covidsos'):
     server_con = connections('prod_db_read')
-    query = """Select r.id as r_id,r.name as 'requestor_name', r.uuid as 'request_uuid', rv.where as `location`,rv.what as `what`,rv.why as `what`,r.request,
+    query = """Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `location`,rv.what as `what`,rv.why as `what`,r.request,
                 rv.verification_status,r.latitude,r.longitude, r.status as `request_status`,r.timestamp as `request_time`,r.source as source,r.city as city,
                 so.organisation_name as source_org, so.logo_url as org_logo
                 from requests r 
@@ -272,9 +272,9 @@ def website_requests_display(org='covidsos'):
     query_df['verification_status'] = query_df['verification_status'].fillna('verified')
     query_df['city'] = query_df['city'].fillna('')
     if(server_type=='prod'):
-        query_df['accept_link'] = query_df['request_uuid'].apply(lambda x:'https://covidsos.org/accept/'+x)
+        query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://covidsos.org/accept/'+x)
     else:
-        query_df['accept_link'] = query_df['request_uuid'].apply(lambda x:'https://stg.covidsos.org/accept/'+x)
+        query_df['accept_link'] = query_df['uuid'].apply(lambda x:'https://stg.covidsos.org/accept/'+x)
     pending_queries = query_df[(query_df['verification_status']=='verified')&(query_df['request_status'].isin(['received','verified','pending']))]
     return pending_queries
 
@@ -282,7 +282,7 @@ def website_requests_display(org='covidsos'):
 def get_requests(org='covidsos',public_page=True,request_status=['unverified','assigned','pending','completed']):
     try:
         server_con = connections('prod_db_read')
-        query = """Select r.id as r_id,r.name as 'requestor_name', r.uuid as 'request_uuid', rv.where as `location`,rv.what as `what`,rv.why as `what`,r.request,
+        query = """Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `location`,rv.what as `what`,rv.why as `what`,r.request,
                     rv.verification_status,r.latitude,r.longitude, r.status as `request_status`,r.timestamp as `request_time`,r.source as source,r.city as city,
                     so.organisation_name as source_org, so.logo_url as org_logo
                     from requests r 
