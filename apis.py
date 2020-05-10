@@ -731,6 +731,30 @@ def pending_requests():
                       default=datetime_converter)
 
 
+
+
+@app.route('/admin_completed_requests', methods=['GET'])
+@capture_api_exception
+@login_required
+def admin_completed_requests(*args, **kwargs):
+    org = kwargs.get('organisation', '')
+    if (org == 'covidsos'):
+        response = get_completed_requests(org)
+        return json.dumps({'Response': response.to_dict('records'), 'status': True, 'string_response': 'Request data extracted'},
+                          default=datetime_converter)
+    else:
+        response = get_completed_requests(org)
+        return json.dumps({'Response': response.to_dict('records'), 'status': True, 'string_response': 'Request data extracted'},
+                          default=datetime_converter)
+
+@app.route('/completed_requests', methods=['GET'])
+@capture_api_exception
+def completed_requests(*args, **kwargs):
+    response = get_completed_requests()
+    return json.dumps({'Response': response.to_dict('records'), 'status': True, 'string_response': 'Request data extracted'},
+                      default=datetime_converter)
+
+
 @app.route('/admin_pending_requests', methods=['GET'])
 @capture_api_exception
 @login_required
