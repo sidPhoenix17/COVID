@@ -51,18 +51,18 @@ def check_contact(mob_number,table='volunteers',url=whatsapp_api_url):
         headers = {'Content-type': 'application/json', 'Authorization': "Bearer "+authkey}
         response = requests.request("POST", url, headers=headers, data=json.dumps(data)).json()
         if (response.get("errors") is None):
-            print('Contact Verification API Run successfully')
-            print('data sent was', data)
-            print('response json is ', response)
+            print('Contact Verification API Run successfully',flush=True)
+            print('data sent was', data,flush=True)
+            print('response json is ', response,flush=True)
             if(response.get("contacts")[0].get("status") == 'valid'):
                 wa_id = response.get("contacts")[0].get("wa_id")
-                print('Valid WhatsApp contact')
+                print('Valid WhatsApp contact',flush=True)
             elif(response.get("contacts")[0].get("status") == 'processing'):
                 wa_id = 'processing'
-                print('WhatsApp API processing')
+                print('WhatsApp API processing',flush=True)
             else:
                 wa_id = 'SMS'
-                print('Invalid WhatsApp contact')
+                print('Invalid WhatsApp contact',flush=True)
             print(wa_id)
             where_dict = {'mob_number':mob_number[3:]}
             set_dict = {'whatsapp_id':wa_id}
@@ -73,12 +73,12 @@ def check_contact(mob_number,table='volunteers',url=whatsapp_api_url):
             elif(table=='users'):
                 res = update_users_db(where_dict, set_dict)
         else:
-            print('Error in the API Call')
-            print('data sent was', data)
-            print('response json is ', response)
+            print('Error in the API Call',flush=True)
+            print('data sent was', data,flush=True)
+            print('response json is ', response,flush=True)
         return None
     except Exception as e:
-        print('error in check_contact', e)
+        print('error in check_contact', e,flush=True)
         return None
 
 def send_whatsapp_message(url,to,message,preview_url=False):
@@ -90,11 +90,14 @@ def send_whatsapp_message(url,to,message,preview_url=False):
     headers = {'Content-type': 'application/json', 'Authorization': "Bearer "+authkey}
     try:
         response = requests.request("POST", url, data=json.dumps(data), headers=headers,verify = False).json()
-        print("message sent")
-        print(response)
+        print("message sent",flush=True)
+        print(response,flush=True)
         if(response.get("errors") is None):
             return True
-        return False
+        else:
+            print('data is ', data,flush=True)
+            print('response is ', response,flush=True)
+            return False
     except Exception as e:
         print(e)
         return False
@@ -109,12 +112,12 @@ def send_whatsapp_message_image(url,to,media_link,media_caption):
     headers = {'Content-type': 'application/json', 'Authorization': "Bearer "+authkey}
     try:
         response = requests.request("POST", url, data=json.dumps(data), headers=headers,verify = False).json()
-        print("message sent")
+        print("message sent",flush=True)
         if (response.get("errors") is None):
             return True
         return False
     except Exception as e:
-        print(e)
+        print(e,flush=True)
         return False
 
 
@@ -123,7 +126,7 @@ def send_whatsapp_template_message(url,to,namespace,element_name,message_templat
     add_message(to[2:], bot_number, to[2:], message, "text", "whatsapp", "outgoing")
     url = url+'/v1/messages'
     authkey = get_auth_key()
-    print("Inside message")
+    print("Inside message",flush=True)
     data = {"to": to, "type": "hsm", "hsm": {"namespace": namespace, "element_name": element_name,
                                              "language": {"policy": "deterministic",
                                                           "code": "en"},
@@ -131,15 +134,15 @@ def send_whatsapp_template_message(url,to,namespace,element_name,message_templat
     headers = {'Content-type': 'application/json', 'Authorization': "Bearer "+ authkey}
     try:
         response = requests.request("POST", url, data=json.dumps(data), headers=headers, verify = False).json()
-        print(response)
+        print(response,flush=True)
         if response.get("errors") is None:
-            print("WhatsApp message sent")
+            print("WhatsApp message sent",flush=True)
             return True
         else:
-            print("message {message} not sent, received response {txt}".format(message=message, txt=str(response.text)))
+            print("message {message} not sent, received response {txt}".format(message=message, txt=str(response.text)),flush=True)
             return False
     except Exception as e:
-        print("message {message} not sent, received exception {exception}".format(message=message, exception=str(e)))
+        print("message {message} not sent, received exception {exception}".format(message=message, exception=str(e)),flush=True)
         return False
 
 
@@ -172,30 +175,30 @@ def send_request_template(uuid,sms_text,mob_number):
                                                  urgency_status=urgency_status,reason=reason,requirement=requirement,
                                                  financial_assistance_status=financial_assistance_status,
                                                  acceptance_link=acceptance_link)
-        print(message)
+        print(message,flush=True)
         m_num = v_df.loc[0,'whatsapp_id']
-        print(m_num)
+        print(m_num,flush=True)
         if ((m_num=='SMS') or (send_whatsapp_template_message(whatsapp_api_url, m_num, namespace, whatsapp_temp_1, message,
                                               body_parameters)==False)):
             send_sms(sms_text, int(mob_number))
-            print('SMS sent')
+            print('SMS sent',flush=True)
         return {'status':True, 'string_response':'Message Sent'}
     except Exception as e:
-        print("Exception in sending message {e}".format(e=e))
+        print("Exception in sending message {e}".format(e=e),flush=True)
         return {'status':False, 'string_response':'Error occurred'}
 
 
 def send_moderator_msg(mob_number,message,preview_url=False):
-    print(message)
+    print(message,flush=True)
     m_num = str(91)+str(mob_number)
-    print(m_num)
+    print(m_num,flush=True)
     try:
         if not send_whatsapp_message(whatsapp_api_url,m_num,message,preview_url):
             send_sms(message,int(mob_number))
             return {'status': True, 'string_response': 'SMS Sent'}
         return {'status': True, 'string_response': 'WhatsApp Message Sent'}
     except Exception as e:
-        print("Exception in sending message {e}".format(e=e))
+        print("Exception in sending message {e}".format(e=e),flush=True)
         return {'status': False, 'string_response': 'Error in send_moderator_msg'}
 
 # In[ ]:
@@ -250,7 +253,7 @@ def process_whatsapp_received_text_message(message):
         if body == '2':
             send_whatsapp_message(whatsapp_api_url, whatsapp_id, c2)
 
-    print('\n' + whatsapp_id + '\n')
+    print('\n The whatsapp ID is ' + whatsapp_id + '\n',flush=True)
 
 @app.route('/', methods=['POST', 'GET'])
 def Get_Message():

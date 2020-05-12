@@ -59,8 +59,8 @@ def add_volunteers_to_db(df):
             return_str = 'Data format not matching'
             return False,return_str
     except Exception as e:
-        print(df.loc[0].to_dict())
-        print(e)
+        print(df.loc[0].to_dict(),flush=True)
+        print(e,flush=True)
         return_str = 'Error'
         mailer.send_exception_mail()
         return False,return_str
@@ -74,7 +74,7 @@ def add_requests(df):
         return_str = 'Request submitted successfully'
         return True,return_str
     else:
-        print(df.loc[0].to_dict())
+        print(df.loc[0].to_dict(),flush=True)
         return_str = 'Data Format not matching'
         return False,return_str
 
@@ -341,7 +341,7 @@ def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
         jsonInfo = json.dumps(info)
         redis.lpush(redis_key, jsonInfo)
     except Exception as e:
-        print("Problem in storing sms, sending directly", str(e))
+        print("Problem in storing sms, sending directly", str(e),flush=True)
         return send_sms_to_phone(sms_text, sms_to, sms_type, send)
 
 def send_sms_to_phone(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
@@ -366,7 +366,7 @@ def send_sms_to_phone(sms_text,sms_to=9582148040,sms_type='transactional',send=T
             new_sms_df.to_sql(name = 'sms_log', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
             return None
         except:
-            print('SMS API error')
+            print('SMS API error',flush=True)
             mailer.send_exception_mail()
             return None
 
