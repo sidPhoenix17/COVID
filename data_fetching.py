@@ -544,7 +544,7 @@ def user_data_by_id(user_id):
 
 
 def get_volunteers_assigned_to_request(r_id):
-    query = f"""Select volunteer_id from request_matching where request_id={r_id}"""
+    query = f"""Select volunteer_id from request_matching where request_id={r_id} and is_active=1"""
     data = pd.read_sql(query, connections('prod_db_read'))
     if data.shape[0]==0:
         return None
@@ -556,7 +556,7 @@ def get_volunteers_assigned_to_request(r_id):
 
 def get_requests_assigned_to_volunteer(v_id):
     query = f"""Select r.uuid as uuid, r.status as status, r.name as name, r.address as address, rm.last_updated as last_updated
-    from request_matching rm left join requests r on rm.request_id=r.id where rm.volunteer_id={v_id} and rm.is_active=True;"""
+    from request_matching rm left join requests r on rm.request_id=r.id where rm.volunteer_id={v_id} and rm.is_active=1;"""
     data = pd.read_sql(query, connections('prod_db_read'))
     return data.to_dict('records')
 
