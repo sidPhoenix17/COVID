@@ -193,11 +193,15 @@ def send_moderator_msg(mob_number,message,preview_url=False):
     m_num = str(91)+str(mob_number)
     print(m_num,flush=True)
     try:
-        if not send_whatsapp_message(whatsapp_api_url,m_num,message,preview_url):
+        check_contact("+" + str(m_num), 'users')
+        wa_msg = send_whatsapp_message(whatsapp_api_url,m_num,message,preview_url)
+        if wa_msg:
+            return {'status': True, 'string_response': 'WhatsApp Message Sent'}
+        else:
             send_sms(message,int(mob_number))
             return {'status': True, 'string_response': 'SMS Sent'}
-        return {'status': True, 'string_response': 'WhatsApp Message Sent'}
     except Exception as e:
+        send_sms(message, int(mob_number))
         print("Exception in sending message {e}".format(e=e),flush=True)
         return {'status': False, 'string_response': 'Error in send_moderator_msg'}
 

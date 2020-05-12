@@ -115,8 +115,8 @@ def message_all_volunteers(uuid,radius,search_radius):
     mod_sms_text_2 = request_verified_m_sms2.format(link=link)
     moderator_list = get_moderator_list()
     for i_number in moderator_list:
-        send_moderator_msg(mod_sms_text, i_number)
-        send_moderator_msg(mod_sms_text_2, i_number)
+        send_moderator_msg(int(i_number),mod_sms_text)
+        send_moderator_msg(int(i_number), mod_sms_text_2)
         # if((server_type=='prod')):
             # send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
             # send_sms(mod_sms_text_2,sms_to=int(i_number),sms_type='transactional',send=True)
