@@ -109,6 +109,7 @@ def get_private_map_data(org):
         if org != 'covidsos':
             v_q += f" where source='{org}'"
         v_df = pd.read_sql(v_q,server_con)
+        v_df['full_address'] = v_df['address'].fillna('')+v_df['geoaddress'].fillna('')
         v_df['timestamp']=pd.to_datetime(v_df['timestamp'])#.dt.tz_localize(tz='Asia/kolkata')
         v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)&(v_df['status']==1)]
         r_q = """Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number,uuid from requests"""
@@ -169,6 +170,7 @@ def get_unverified_requests(org):
     df = pd.read_sql(query,connections('prod_db_read'))
     df['managed_by'] = df['managed_by'].fillna('admin')
     df['managed_by_id'] = df['managed_by_id'].fillna(0)
+    df['full_address'] = df['address'].fillna('') + df['geo_address'].fillna('')
     df = df[~df['uuid'].isna()]
     df = df.sort_values(by=['id'],ascending=[False])
     df = df.fillna('')
@@ -183,7 +185,7 @@ def get_assigned_requests(org):
     query = f"""Select r.id as r_id, r.uuid as `uuid`, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd as `volunteer_count`,r.timestamp as `request_time`,
                 r.source as `source`, r.status as `request_status`, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
                 v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`, u.name as managed_by, u.id as managed_by_id, r.city,
-                so.organisation_name as source_org, so.logo_url as org_logo
+                so.organisation_name as source_org, so.logo_url as org_logo, CONCAT(r.address, ', ', r.geoaddress) as full_address
                 from requests r
             left join request_verification rv on rv.r_id=r.id
             left join request_matching rm on rm.request_id=r.id and rm.is_active=1
@@ -194,6 +196,7 @@ def get_assigned_requests(org):
     requests_data = pd.read_sql(query,connections('prod_db_read'))
     requests_data['managed_by'] = requests_data['managed_by'].fillna('admin')
     requests_data['managed_by_id'] = requests_data['managed_by_id'].fillna(0)
+    requests_data['full_address'] = requests_data['address'].fillna('') + requests_data['geo_address'].fillna('')
     requests_data = requests_data.fillna('')
     requests_data = requests_data.sort_values(by=['assignment_time'],ascending=[False])
     requests_data['requestor_chat']=requests_data['requestor_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
@@ -208,7 +211,7 @@ def get_completed_requests(org):
                 r.source as `source`, r.status as `request_status`, rv.financial_assistance, rv.urgent,
                 v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,
                 rm.timestamp as `assignment_time`, u.name as managed_by, u.id as managed_by_id, r.city,
-                so.organisation_name as source_org, so.logo_url as org_logo
+                so.organisation_name as source_org, so.logo_url as org_logo,CONCAT(r.address, ', ', r.geoaddress) as full_address
                 from requests r
             left join request_verification rv on rv.r_id=r.id
             left join request_matching rm on rm.request_id=r.id and rm.is_active=1
@@ -232,7 +235,7 @@ def website_requests_display_secure(org='covidsos'):
     query = f"""Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `location`,rv.what as `what`,rv.why as `why`,r.request,
                 rv.verification_status,r.latitude,r.longitude, r.status as 'request_status',r.timestamp as 'request_time',r.source as source,
                 rsu.url as broadcast_link, u.name as managed_by,u.id as managed_by_id, r.city as city,
-                so.organisation_name as source_org, so.logo_url as org_logo
+                so.organisation_name as source_org, so.logo_url as org_logo,CONCAT(r.address, ', ', r.geoaddress) as full_address
                  from requests r 
                 left join request_verification rv on rv.r_id=r.id 
                 left join request_sms_urls rsu on rsu.r_uuid=r.uuid and rsu.url_type='broadcast_link'
@@ -284,7 +287,7 @@ def get_requests(org='covidsos',public_page=True,request_status=['unverified','a
         server_con = connections('prod_db_read')
         query = """Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `location`,rv.what as `what`,rv.why as `what`,r.request,
                     rv.verification_status,r.latitude,r.longitude, r.status as `request_status`,r.timestamp as `request_time`,r.source as source,r.city as city,
-                    so.organisation_name as source_org, so.logo_url as org_logo
+                    so.organisation_name as source_org, so.logo_url as org_logo,CONCAT(r.address, ', ', r.geoaddress) as full_address
                     from requests r 
                     left join request_verification rv on rv.r_id=r.id 
                     left join support_orgs so on so.org_code=r.source
@@ -555,7 +558,7 @@ def get_volunteers_assigned_to_request(r_id):
 
 
 def get_requests_assigned_to_volunteer(v_id):
-    query = f"""Select r.uuid as uuid, r.status as status, r.name as name, r.address as address, rm.last_updated as last_updated
+    query = f"""Select r.uuid as uuid, r.status as status, r.name as name, r.address as address, rm.last_updated as last_updated,CONCAT(r.address, ', ', r.geoaddress) as full_address
     from request_matching rm left join requests r on rm.request_id=r.id where rm.volunteer_id={v_id} and rm.is_active=1;"""
     data = pd.read_sql(query, connections('prod_db_read'))
     return data.to_dict('records')
