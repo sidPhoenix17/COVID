@@ -170,7 +170,7 @@ def get_unverified_requests(org):
     df = pd.read_sql(query,connections('prod_db_read'))
     df['managed_by'] = df['managed_by'].fillna('admin')
     df['managed_by_id'] = df['managed_by_id'].fillna(0)
-    df['full_address'] = df['address'].fillna('') + df['geo_address'].fillna('')
+    df['full_address'] = df['address'].fillna('') + df['geoaddress'].fillna('')
     df = df[~df['uuid'].isna()]
     df = df.sort_values(by=['id'],ascending=[False])
     df = df.fillna('')
@@ -196,7 +196,6 @@ def get_assigned_requests(org):
     requests_data = pd.read_sql(query,connections('prod_db_read'))
     requests_data['managed_by'] = requests_data['managed_by'].fillna('admin')
     requests_data['managed_by_id'] = requests_data['managed_by_id'].fillna(0)
-    requests_data['full_address'] = requests_data['address'].fillna('') + requests_data['geo_address'].fillna('')
     requests_data = requests_data.fillna('')
     requests_data = requests_data.sort_values(by=['assignment_time'],ascending=[False])
     requests_data['requestor_chat']=requests_data['requestor_mob_number'].apply(lambda x:'http://wa.me/91'+str(x))
