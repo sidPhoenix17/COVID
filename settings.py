@@ -21,3 +21,4 @@ error_mailing_list=['jain.siddarth94@gmail.com','chiragb1994@gmail.com','shailys
 org_request_list =['shahraamisha@gmail.com','jain.siddarth94@gmail.com']
 search_radius=15
 redis_host = os.getenv("REDISHOST") if os.getenv("REDISHOST") else redis_host
+stale_whatsapp_message_threshold = 300 #seconds
