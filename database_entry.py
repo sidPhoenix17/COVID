@@ -41,6 +41,8 @@ def last_entry_timestamp(source):
 def add_volunteers_to_db(df):
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude','longitude', 'source', 'status', 'support_type','city']
     try:
+        df.loc[0, 'address'] = sanitise_for_sql({'message': df.loc[0, 'address']}).get('message', '')
+        df.loc[0, 'geoaddress'] = sanitise_for_sql({'message': df.loc[0, 'geoaddress']}).get('message', '')
         if (len(df.columns.intersection(expected_columns)) == len(expected_columns)):
             exists,v_id = check_volunteer_exists(df)
             df['timestamp']=pd.to_datetime(df['timestamp'])
@@ -56,6 +58,7 @@ def add_volunteers_to_db(df):
                 return_str = 'Volunteer Data Submitted'
                 return True, return_str
         else:
+            print(df.loc[0].to_dict(),flush=True)
             return_str = 'Data format not matching'
             return False,return_str
     except Exception as e:
@@ -66,17 +69,24 @@ def add_volunteers_to_db(df):
         return False,return_str
 
 def add_requests(df):
-    #df with columns [timestamp, name,mob_number, email_id, country, address, geoaddress, latitude, longitude, source, request,age]
-    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source','members_impacted', 'request', 'age','status','uuid', 'managed_by','city','volunteers_reqd']
-    if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
-        engine = connections('prod_db_write')
-        df.to_sql(name = 'requests', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
-        return_str = 'Request submitted successfully'
-        return True,return_str
-    else:
+    expected_columns=['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude', 'longitude', 'source','members_impacted', 'request', 'age','status','uuid', 'managed_by','city','volunteers_reqd','filled_by_name','filled_by_mob_number']
+    try:
+        if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
+            engine = connections('prod_db_write')
+            df.to_sql(name = 'requests', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
+            return_str = 'Request submitted successfully'
+            return True,return_str
+        else:
+            print(df.loc[0].to_dict(),flush=True)
+            return_str = 'Data Format not matching'
+            return False,return_str
+    except Exception as e:
         print(df.loc[0].to_dict(),flush=True)
-        return_str = 'Data Format not matching'
+        print(e,flush=True)
+        return_str = 'Error'
+        mailer.send_exception_mail()
         return False,return_str
+
 
 def contact_us_form_add(df):
     mimetype_parts_dict={'html':df.to_html()}
@@ -96,11 +106,11 @@ def contact_us_form_add(df):
 
 
 def add_request_verification_db(df):
-    df.loc[0,'what'] = sanitise_for_sql({'message': df.loc[0,'what']}).get('message', '')
-    df.loc[0,'why'] = sanitise_for_sql({'message': df.loc[0,'why']}).get('message', '')
-    df.loc[0,'where'] = sanitise_for_sql({'message': df.loc[0,'where']}).get('message', '')
     expected_columns=['timestamp', 'r_id','what', 'why', 'where', 'verification_status','verified_by','financial_assistance', 'urgent']
     if(len(df.columns.intersection(expected_columns))==len(expected_columns)):
+        df.loc[0, 'what'] = sanitise_for_sql({'message': df.loc[0, 'what']}).get('message', '')
+        df.loc[0, 'why'] = sanitise_for_sql({'message': df.loc[0, 'why']}).get('message', '')
+        df.loc[0, 'where'] = sanitise_for_sql({'message': df.loc[0, 'where']}).get('message', '')
         engine = connections('prod_db_write')
         df.to_sql(name = 'request_verification', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
         return_str = 'Request verification data added successfully'
@@ -363,6 +373,7 @@ def send_sms_to_phone(sms_text,sms_to=9582148040,sms_type='transactional',send=T
                 sms_dict = {'sms_text': [sms_text], 'sms_type': [sms_type], 'sms_to': [sms_to],'sms_status_type': [r.status_code], 'sms_json_response': ['{}']}
             new_sms_df = pd.DataFrame(sms_dict)
             engine = connections('prod_db_write')
+            new_sms_df.loc[0, 'sms_text'] = sanitise_for_sql({'message': new_sms_df.loc[0, 'sms_text']}).get('message', '')
             new_sms_df.to_sql(name = 'sms_log', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
             return None
         except:
@@ -455,10 +466,12 @@ def update_request_status(r_uuid,status, status_message, volunteer_id):
 
 
 def save_request_sms_url(request_uuid, url_type, url):
-    query = f"""insert into request_sms_urls (r_uuid, url_type, url) values ('{request_uuid}', '{url_type}', '{url}');"""
     try:
+        url = sanitise_for_sql({'message': url[:1000]}).get('message', '')
+        query = f"""insert into request_sms_urls (r_uuid, url_type, url) values ('{request_uuid}', '{url_type}', '{url}');"""
         write_query(query,'prod_db_write')
         return True
     except:
+        print(url,flush=True)
         mailer.send_exception_mail()
         return False
