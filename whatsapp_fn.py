@@ -6,6 +6,7 @@
 
 import requests
 import json
+from lib.redis import redis
 
 from database_entry import add_message
 from settings import server_type, whatsapp_api_url, whatsapp_api_password,auth_code,namespace,whatsapp_temp_1,bot_number
@@ -16,6 +17,7 @@ import pandas as pd
 from connections import connections
 from data_fetching import get_moderator_list,accept_request_page,volunteer_data_by_mob
 import datetime as dt
+from lib.redis import redis
 # In[ ]:
 
 app = Flask(__name__)
@@ -192,18 +194,23 @@ def send_moderator_msg(mob_number,message,preview_url=False):
     print(message,flush=True)
     m_num = str(91)+str(mob_number)
     print(m_num,flush=True)
-    try:
-        check_contact("+" + str(m_num), 'users')
-        wa_msg = send_whatsapp_message(whatsapp_api_url,m_num,message,preview_url)
-        if wa_msg:
-            return {'status': True, 'string_response': 'WhatsApp Message Sent'}
-        else:
-            send_sms(message,int(mob_number))
-            return {'status': True, 'string_response': 'SMS Sent'}
-    except Exception as e:
-        send_sms(message, int(mob_number))
-        print("Exception in sending message {e}".format(e=e),flush=True)
-        return {'status': False, 'string_response': 'Error in send_moderator_msg'}
+    if has_user_replied(m_num):
+        try:
+            check_contact("+" + str(m_num), 'users')
+            wa_msg = send_whatsapp_message(whatsapp_api_url,m_num,message,preview_url)
+            if wa_msg:
+                return {'status': True, 'string_response': 'WhatsApp Message Sent'}
+            else:
+                send_sms(message,int(mob_number))
+                return {'status': True, 'string_response': 'SMS Sent'}
+        except Exception as e:
+            send_sms(message, int(mob_number))
+            print("Exception in sending message {e}".format(e=e),flush=True)
+            return {'status': False, 'string_response': 'Error in send_moderator_msg'}
+    else:
+        print("User has not replied since last 24 hours; sending message {message} to {number}".format(message=message, number = m_num))
+        send_sms(message,int(mob_number))
+        return {'status': True, 'string_response': 'SMS Sent'}
 
 # In[ ]:
 
@@ -215,7 +222,15 @@ def send_moderator_msg(mob_number,message,preview_url=False):
 
 # In[ ]:
 
-#
+def get_user_replied_marker(wa_id):
+    return "wa_id_{wa_id}_replied_marker"
+
+def set_user_replied_marker(whatsapp_id):
+    # setting limit to 1 day as per whatsapp rules
+    redis.set(get_user_replied_marker(whatsapp_id), 1, ex=24*3600)
+
+def has_user_replied(whatsapp_id):
+    return redis.get(get_user_replied_marker(whatsapp_id)) != None
 
 def process_whatsapp_received_text_message(message):
     body = str(message.get("text").get("body"))
@@ -264,6 +279,8 @@ def Get_Message():
     response = request.json
 
     for message in response.get('messages', []):
+        whatsapp_id = str(message.get('from'))
+        set_user_replied_marker(whatsapp_id)
         if message.get('text', False):
             print(response, flush=True)
             process_whatsapp_received_text_message(message)
