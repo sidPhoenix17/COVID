@@ -207,9 +207,9 @@ def get_assigned_requests(org):
 
 def get_completed_requests(org):
     org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
-    query = f"""Select r.id as r_id,r.name as `requestor_name`, r.uuid as `uuid`, rv.where as `where`, rv.what as `what`, rv.why as `why`,r.request,
-                r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd as 'volunteer_count',r.timestamp as `request_time`,
-                r.source as `source`, r.status as `request_status`, rv.financial_assistance, rv.urgent,
+    query = f"""Select r.id as r_id,r.name as `requestor_name`, r.uuid as `uuid`, r.mob_number as `requestor_mob_number`,
+                r.volunteers_reqd as 'volunteer_count',r.timestamp as `request_time`, r.source as `source`, r.status as `request_status`,
+                r.request,rv.where as `where`, rv.what as `what`, rv.why as `why`,rv.financial_assistance, rv.urgent,
                 v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,
                 rm.timestamp as `assignment_time`, u.name as managed_by, u.id as managed_by_id, r.city,
                 so.organisation_name as source_org, so.logo_url as org_logo,CONCAT(r.address, ', ', r.geoaddress) as full_address
