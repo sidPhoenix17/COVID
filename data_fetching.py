@@ -234,6 +234,7 @@ def website_requests_display_secure(org='covidsos'):
     org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
     server_con = connections('prod_db_read')
     query = f"""Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `where`,rv.what as `what`,rv.why as `why`,r.request,
+                rv.financial_assistance, rv.urgent,
                 rv.verification_status,r.latitude,r.longitude, r.status as 'request_status',r.timestamp as 'request_time',r.source as source,
                 rsu.url as broadcast_link, u.name as managed_by,u.id as managed_by_id, r.city as city,
                 so.organisation_name as source_org, so.logo_url as org_logo,CONCAT(r.address, ', ', r.geoaddress) as full_address
@@ -261,6 +262,7 @@ def website_requests_display_secure(org='covidsos'):
 def website_requests_display(org='covidsos'):
     server_con = connections('prod_db_read')
     query = """Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `where`,rv.what as `what`,rv.why as `what`,r.request,
+                rv.financial_assistance, rv.urgent,
                 rv.verification_status,r.latitude,r.longitude, r.status as `request_status`,r.timestamp as `request_time`,r.source as source,r.city as city,
                 so.organisation_name as source_org, so.logo_url as org_logo
                 from requests r 
