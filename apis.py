@@ -8,6 +8,8 @@ import pandas as pd
 import datetime as dt
 from flask import Flask, request, jsonify, json
 from flask_cors import CORS
+
+from aws_utils import upload_to_s3
 from cron_utils import is_valid_cron
 from celery import Celery
 import urllib
@@ -1298,6 +1300,21 @@ def get_cron_job(*args, **kwargs):
             default=datetime_converter)
     else:
         return json.dumps({'Response': {}, 'status': True, 'string_response': 'No open requests found'},
+                          default=datetime_converter)
+
+
+@app.route('/upload_file', methods=['GET'])
+@capture_api_exception
+@login_required
+def upload_file_to_s3(*args, **kwargs):
+    file = request.args.get('file')
+    bucket = "Random"
+    s3_response = upload_to_s3(file, bucket)
+    if s3_response == True:
+        response = {'Response': {}, 'status': False, 'string_response': 'Upload to s3 successful'}
+        return json.dumps(response)
+    else:
+        return json.dumps({'Response': {}, 'status': True, 'string_response': 'Upload to s3 failed'},
                           default=datetime_converter)
 
 
