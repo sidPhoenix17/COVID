@@ -226,7 +226,7 @@ def send_moderator_msg(mob_number,message,preview_url=False):
 # In[ ]:
 
 def get_user_replied_marker(wa_id):
-    return "wa_id_{wa_id}_replied_marker"
+    return "wa_id_{wa_id}_replied_marker".format(wa_id=wa_id)
 
 def set_user_replied_marker(whatsapp_id):
     # setting limit to 1 day as per whatsapp rules
