@@ -211,6 +211,8 @@ def send_moderator_msg(mob_number,message,preview_url=False):
     else:
         print("User has not replied since last 24 hours; sending message {message} to {number}".format(message=message, number = m_num))
         send_sms(message,int(mob_number))
+        admin_reminder = 'Dear admin, Click https://wa.me/91{bot_number}?text=Hi and receive further message on whatsapp'.format(bot_number=bot_number)
+        send_sms(admin_reminder,int(mob_number))
         return {'status': True, 'string_response': 'SMS Sent'}
 
 # In[ ]:
