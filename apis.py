@@ -127,7 +127,7 @@ def create_request():
         save_request_sms_url(uuid, 'verify_link', url_start + "verify/{uuid}".format(uuid=uuid))
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
-            send_moderator_msg(i_number,mod_sms_text,preview_url=True)
+            send_moderator_msg(i_number,mod_sms_text)
             # send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
     return json.dumps(response)
 
@@ -238,7 +238,7 @@ def ngo_request_form(*args, **kwargs):
         save_request_sms_url(uuid, 'verify_link', url_start + "verify/{uuid}".format(uuid=uuid))
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
-            send_moderator_msg(i_number,mod_sms_text,preview_url=True)
+            send_moderator_msg(i_number,mod_sms_text)
             # send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
 
     response = {'Response': {}, 'status': x1, 'string_response': y1}
@@ -308,7 +308,7 @@ def full_request_form():
         save_request_sms_url(uuid, 'verify_link', url_start + "verify/{uuid}".format(uuid=uuid))
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
-            send_moderator_msg(i_number,mod_sms_text,preview_url=True)
+            send_moderator_msg(i_number,mod_sms_text)
             # send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
 
     response = {'Response': {}, 'status': x1, 'string_response': y1}
@@ -593,7 +593,7 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by, org):
                                                        r_mob_number=r_df.loc[0, 'mob_number'])
             moderator_list = get_moderator_list()
             for i_number in moderator_list:
-                send_moderator_msg(i_number, m_sms_text, preview_url=True)
+                send_moderator_msg(i_number, m_sms_text)
                # send_sms(m_sms_text, int(i_number), sms_type='transactional', send=True)
         else:
             return {'status': False, 'string_response': 'Request already assigned/closed/completed', 'Response': {}}
@@ -953,7 +953,7 @@ def task_completed(*args, **kwargs):
                                         status=status, v_name=v_df.loc[0, 'name'],
                                         v_mob_number=v_df.loc[0, 'mob_number'],
                                         status_message=status_message)
-            send_moderator_msg(i_number,mod_sms_text,preview_url=True)
+            send_moderator_msg(i_number,mod_sms_text)
             # send_sms(mod_sms_text, int(i_number))
         send_sms(request_closed_r_sms.format(status=status), int(r_df.loc[0, 'mob_number']))
     if (status == 'cancelled'):
@@ -992,7 +992,7 @@ def admin_task_completed(*args, **kwargs):
                                                    v_mob_number=v_df.loc[0, 'mob_number'], status=status,
                                                    user_name=user_df.loc[0, 'name'],
                                                    status_message=status_message)
-            send_moderator_msg(i_number,mod_sms_text,preview_url=True)
+            send_moderator_msg(i_number,mod_sms_text)
             # send_sms(mod_sms_text, int(i_number))
         send_sms(a_request_closed_r_sms.format(status=status), int(r_df.loc[0, 'mob_number']))
     if (status == 'cancelled'):
