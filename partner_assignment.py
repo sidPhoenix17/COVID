@@ -16,7 +16,7 @@ import urllib.parse as p
 from message_templates import url_shortener_fn, nearby_v_sms_text, far_v_sms_text, \
     request_verified_m_sms1, request_verified_m_sms2, url_start
 from pygeocoder import Geocoder
-# from whatsapp_fn import send_request_template,send_moderator_msg
+from whatsapp_fn import send_request_template,send_moderator_msg
 
 # In[ ]:
 
@@ -75,12 +75,12 @@ def message_all_volunteers(uuid,radius,search_radius):
             sms_text = nearby_v_sms_text.format(v_name=v_list.loc[i,'name'],link=link)
             sms_to = int(v_list.loc[i,'mob_number'])
             df = df.append(v_list.loc[i,['v_id']])
-            # send_request_template(uuid,sms_text,sms_to)
-            if((server_type=='prod')):
-                send_sms(sms_text,sms_to,sms_type='transactional',send=True)
-                print('SMS sent')
-            else:
-                print('Sending sms:',sms_text,' to ',str(sms_to))
+            send_request_template(uuid,sms_text,sms_to)
+            # if((server_type=='prod')):
+            #     send_sms(sms_text,sms_to,sms_type='transactional',send=True)
+            #     print('SMS sent')
+            # else:
+            #     print('Sending sms:',sms_text,' to ',str(sms_to))
         if((v_list.loc[i,'dist']>radius)&(v_list.loc[i,'dist']<search_radius)):
             count = count +1
             if(count>20):
@@ -88,12 +88,12 @@ def message_all_volunteers(uuid,radius,search_radius):
             sms_text = far_v_sms_text.format(address=r_df.loc[0,'geoaddress'][0:40],link=link)
             sms_to=int(v_list.loc[i,'mob_number'])
             df2 = df2.append(v_list.loc[i,['v_id']])
-            # send_request_template(uuid,sms_text,sms_to)
-            if((server_type=='prod')):
-                send_sms(sms_text,sms_to,sms_type='transactional',send=True)
-                print('SMS sent')
-            else:
-                print('Sending sms:',sms_text,' to ',str(sms_to))
+            send_request_template(uuid,sms_text,sms_to)
+            # if((server_type=='prod')):
+            #     send_sms(sms_text,sms_to,sms_type='transactional',send=True)
+            #     print('SMS sent')
+            # else:
+            #     print('Sending sms:',sms_text,' to ',str(sms_to))
     df['r_id']=r_id
     df['status']='pending'
     print(v_list)
@@ -115,15 +115,15 @@ def message_all_volunteers(uuid,radius,search_radius):
     mod_sms_text_2 = request_verified_m_sms2.format(link=link)
     moderator_list = get_moderator_list()
     for i_number in moderator_list:
-        # send_moderator_msg(int(i_number),mod_sms_text)
-        # send_moderator_msg(int(i_number), mod_sms_text_2)
-        if((server_type=='prod')):
-            send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
-            send_sms(mod_sms_text_2,sms_to=int(i_number),sms_type='transactional',send=True)
-            print('SMS sent')
-        else:
-            print('Sending sms:',mod_sms_text,' to ',str(i_number))
-            print('Sending sms:',mod_sms_text_2,' to ',str(i_number))
+        send_moderator_msg(int(i_number),mod_sms_text)
+        send_moderator_msg(int(i_number), mod_sms_text_2)
+        # if((server_type=='prod')):
+        #     send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
+        #     send_sms(mod_sms_text_2,sms_to=int(i_number),sms_type='transactional',send=True)
+        #     print('SMS sent')
+        # else:
+        #     print('Sending sms:',mod_sms_text,' to ',str(i_number))
+        #     print('Sending sms:',mod_sms_text_2,' to ',str(i_number))
     return None
 
 
