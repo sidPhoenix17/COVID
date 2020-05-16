@@ -109,7 +109,7 @@ def get_private_map_data(org):
         if org != 'covidsos':
             v_q += f" where source='{org}'"
         v_df = pd.read_sql(v_q,server_con)
-        v_df['full_address'] = v_df['address'].fillna('')+v_df['geoaddress'].fillna('')
+        v_df['full_address'] = v_df['address'].fillna('')+', '+v_df['geoaddress'].fillna('')
         v_df['timestamp']=pd.to_datetime(v_df['timestamp'])#.dt.tz_localize(tz='Asia/kolkata')
         v_df = v_df[(v_df['latitude']!=0.0)&(v_df['longitude']!=0.0)&(v_df['status']==1)]
         r_q = """Select timestamp,id as r_id, name,source,latitude,longitude,geoaddress,request,status,address,mob_number,uuid from requests"""
@@ -160,9 +160,11 @@ def get_unverified_requests(org):
                 r.timestamp as `request_time`, r.email_id, r.address, r.geoaddress, r.latitude,
             r.longitude, r.country, r.request, r.age, r.source, r.geostamp, r.status, r.last_updated,
             r.volunteers_reqd, u.name as managed_by, u.id as managed_by_id, r.city as city,
+            rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
             so.organisation_name as source_org, so.logo_url as org_logo
             from requests r 
-            left join users u on r.managed_by = u.id 
+            left join request_verification rv on rv.r_id=r.id
+            left join users u on r.managed_by = u.id
             left join support_orgs so on so.org_code=r.source
             where r.status='received' {org_condition}"""
     if org != 'covidsos':
@@ -170,7 +172,7 @@ def get_unverified_requests(org):
     df = pd.read_sql(query,connections('prod_db_read'))
     df['managed_by'] = df['managed_by'].fillna('admin')
     df['managed_by_id'] = df['managed_by_id'].fillna(0)
-    df['full_address'] = df['address'].fillna('') + df['geoaddress'].fillna('')
+    df['full_address'] = df['address'].fillna('') +', '+ df['geoaddress'].fillna('')
     df = df[~df['uuid'].isna()]
     df = df.sort_values(by=['id'],ascending=[False])
     df = df.fillna('')
@@ -183,7 +185,7 @@ def get_unverified_requests(org):
 def get_assigned_requests(org):
     org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
     query = f"""Select r.id as r_id, r.uuid as `uuid`, r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd as `volunteer_count`,r.timestamp as `request_time`,
-                r.source as `source`, r.status as `request_status`, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
+                r.source as `source`, r.status as `request_status`,r.request, rv.where as `where`, rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
                 v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,rm.timestamp as `assignment_time`, u.name as managed_by, u.id as managed_by_id, r.city,
                 so.organisation_name as source_org, so.logo_url as org_logo, CONCAT(r.address, ', ', r.geoaddress) as full_address
                 from requests r
@@ -205,7 +207,7 @@ def get_assigned_requests(org):
 
 def get_completed_requests(org):
     org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
-    query = f"""Select r.id as r_id,r.name as `requestor_name`, r.uuid as `uuid`, rv.where as `location`, rv.what as `what`, rv.why as `why`,r.request,
+    query = f"""Select r.id as r_id,r.name as `requestor_name`, r.uuid as `uuid`, rv.where as `where`, rv.what as `what`, rv.why as `why`,r.request,
                 r.name as `requestor_name`, r.mob_number as `requestor_mob_number`, r.volunteers_reqd as 'volunteer_count',r.timestamp as `request_time`,
                 r.source as `source`, r.status as `request_status`, rv.financial_assistance, rv.urgent,
                 v.id as v_id, v.name as `volunteer_name`, v.mob_number as `volunteer_mob_number`,
@@ -231,7 +233,7 @@ def get_completed_requests(org):
 def website_requests_display_secure(org='covidsos'):
     org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
     server_con = connections('prod_db_read')
-    query = f"""Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `location`,rv.what as `what`,rv.why as `why`,r.request,
+    query = f"""Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `where`,rv.what as `what`,rv.why as `why`,r.request,
                 rv.verification_status,r.latitude,r.longitude, r.status as 'request_status',r.timestamp as 'request_time',r.source as source,
                 rsu.url as broadcast_link, u.name as managed_by,u.id as managed_by_id, r.city as city,
                 so.organisation_name as source_org, so.logo_url as org_logo,CONCAT(r.address, ', ', r.geoaddress) as full_address
@@ -258,7 +260,7 @@ def website_requests_display_secure(org='covidsos'):
 
 def website_requests_display(org='covidsos'):
     server_con = connections('prod_db_read')
-    query = """Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `location`,rv.what as `what`,rv.why as `what`,r.request,
+    query = """Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `where`,rv.what as `what`,rv.why as `what`,r.request,
                 rv.verification_status,r.latitude,r.longitude, r.status as `request_status`,r.timestamp as `request_time`,r.source as source,r.city as city,
                 so.organisation_name as source_org, so.logo_url as org_logo
                 from requests r 
@@ -284,7 +286,7 @@ def website_requests_display(org='covidsos'):
 def get_requests(org='covidsos',public_page=True,request_status=['unverified','assigned','pending','completed']):
     try:
         server_con = connections('prod_db_read')
-        query = """Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `location`,rv.what as `what`,rv.why as `what`,r.request,
+        query = """Select r.id as r_id,r.name as 'requestor_name', r.uuid as `uuid`, rv.where as `where`,rv.what as `what`,rv.why as `what`,r.request,
                     rv.verification_status,r.latitude,r.longitude, r.status as `request_status`,r.timestamp as `request_time`,r.source as source,r.city as city,
                     so.organisation_name as source_org, so.logo_url as org_logo,CONCAT(r.address, ', ', r.geoaddress) as full_address
                     from requests r 

@@ -96,16 +96,18 @@ def create_request():
     current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
     city = getCityAddr(latitude, longitude)
     uuid = generate_uuid()
+    filled_by_name = request.form.get('filled_by_name', name)
+    filled_by_mob_number = request.form.get('filled_by_mob_number', mob_number)
     req_dict = {'timestamp': [current_time], 'name': [name], 'mob_number': [mob_number], 'email_id': [email_id],
                 'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
                 'longitude': [longitude], 'source': [source], 'age': [age], 'request': [user_request],
                 'status': [status], 'uuid': [uuid], 'managed_by': [managed_by], 'members_impacted': [members_impacted],
-                'city': [city], 'volunteers_reqd': [1]}
+                'city': [city], 'volunteers_reqd': [1],'filled_by_name':[filled_by_name],'filled_by_mob_number':[filled_by_mob_number]}
     df = pd.DataFrame(req_dict)
     df['email_id'] = df['email_id'].fillna('')
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
-                        'longitude', 'source', 'members_impacted', 'request', 'age', 'status', 'uuid', 'managed_by',
-                        'city', 'volunteers_reqd']
+                        'longitude', 'source', 'request', 'age', 'status', 'members_impacted', 'uuid', 'managed_by',
+                        'city', 'volunteers_reqd','filled_by_name','filled_by_mob_number']
     x, y = add_requests(df[expected_columns])
     r_df = request_data_by_uuid(uuid)
     if r_df is not None:
@@ -200,21 +202,99 @@ def ngo_request_form(*args, **kwargs):
     volunteers_reqd = request.form.get('volunteer_count', 1)
     members_impacted = request.form.get('members_impacted', 2)
     current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
+    user_df = user_data_by_id(verified_by)
+    if(user_df.shape[0]>0):
+        filled_by_name = user_df.loc[0,'name']
+        filled_by_mob_number = user_df.loc[0,'mob_number']
+    else:
+        filled_by_name = name
+        filled_by_mob_number = mob_number
     req_dict = {'timestamp': [current_time], 'name': [name], 'mob_number': [mob_number], 'email_id': [email_id],
                 'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
                 'longitude': [longitude],
                 'source': [source], 'age': [age], 'request': [user_request], 'status': [status], 'uuid': [uuid],
                 'volunteers_reqd': [volunteers_reqd], 'managed_by': [verified_by],
-                'members_impacted': [members_impacted], 'city': [city]}
+                'members_impacted': [members_impacted], 'city': [city],'filled_by_name':[filled_by_name],
+                'filled_by_mob_number':[filled_by_mob_number]}
     df = pd.DataFrame(req_dict)
     df['email_id'] = df['email_id'].fillna('')
     expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
                         'longitude', 'source', 'request', 'age', 'status', 'members_impacted', 'uuid', 'managed_by',
-                        'city', 'volunteers_reqd']
+                        'city', 'volunteers_reqd','filled_by_name','filled_by_mob_number']
     x1, y1 = add_requests(df[expected_columns])
     r_df = request_data_by_uuid(uuid)
     r_v_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [why], 'what': [what], 'where': [where],
                 'verification_status': [verification_status], 'verified_by': [verified_by], 'timestamp': [current_time],
+                'financial_assistance': [financial_assistance], 'urgent': [urgent_status]}
+    df = pd.DataFrame(r_v_dict)
+    expected_columns = ['timestamp', 'r_id', 'what', 'why', 'where', 'verification_status', 'verified_by',
+                        'financial_assistance', 'urgent']
+    x2, y2 = add_request_verification_db(df[expected_columns])
+    if (x1):
+        # move to async
+        sms_text = new_request_sms.format(source=source, name=name)
+        send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
+        mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
+        save_request_sms_url(uuid, 'verify_link', url_start + "verify/{uuid}".format(uuid=uuid))
+        moderator_list = get_moderator_list()
+        for i_number in moderator_list:
+            # send_moderator_msg(i_number,mod_sms_text,preview_url=True)
+            send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
+
+    response = {'Response': {}, 'status': x1, 'string_response': y1}
+    return response
+
+@app.route('/create_full_request', methods=['POST'])
+@capture_api_exception
+def full_request_form():
+    name = request.form.get('name')
+    mob_number = request.form.get('mob_number')
+    email_id = request.form.get('email_id', '')
+    age = request.form.get('age', 70)
+    address = request.form.get('address')
+    geoaddress = request.form.get('geoaddress', address)
+    user_request = request.form.get('request')
+    latitude = request.form.get('latitude', 0.0)
+    longitude = request.form.get('longitude', 0.0)
+    city = getCityAddr(latitude, longitude)
+    source = request.form.get('source', 'covidsos')
+    if ((source == 'undefined') or (source == '')):
+        source = 'covidsos'
+    status = request.form.get('status', 'received')
+    if (status == ''):
+        status = 'received'
+    country = request.form.get('country', 'India')
+    uuid = generate_uuid()
+    what = request.form.get('what')
+    why = request.form.get('why')
+    financial_assistance = request.form.get('financial_assistance', 0)
+    if (financial_assistance == ''):
+        financial_assistance = 0
+    verification_status = 'pending'
+    where = geoaddress
+    managed_by = request.form.get('managed_by', 0)
+    urgent_status = request.form.get('urgent', 'no')
+    volunteers_reqd = request.form.get('volunteer_count', 1)
+    members_impacted = request.form.get('members_impacted', 2)
+    filled_by_name = request.form.get('filled_by_name', name)
+    filled_by_mob_number = request.form.get('filled_by_mob_number', mob_number)
+    current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
+    req_dict = {'timestamp': [current_time], 'name': [name], 'mob_number': [mob_number], 'email_id': [email_id],
+                'country': [country], 'address': [address], 'geoaddress': [geoaddress], 'latitude': [latitude],
+                'longitude': [longitude],
+                'source': [source], 'age': [age], 'request': [user_request], 'status': [status], 'uuid': [uuid],
+                'volunteers_reqd': [volunteers_reqd], 'managed_by': [managed_by],
+                'members_impacted': [members_impacted], 'city': [city],'filled_by_name':[filled_by_name],
+                'filled_by_mob_number':[filled_by_mob_number]}
+    df = pd.DataFrame(req_dict)
+    df['email_id'] = df['email_id'].fillna('')
+    expected_columns = ['timestamp', 'name', 'mob_number', 'email_id', 'country', 'address', 'geoaddress', 'latitude',
+                        'longitude', 'source', 'request', 'age', 'status', 'members_impacted', 'uuid', 'managed_by',
+                        'city', 'volunteers_reqd','filled_by_name','filled_by_mob_number']
+    x1, y1 = add_requests(df[expected_columns])
+    r_df = request_data_by_uuid(uuid)
+    r_v_dict = {'r_id': [r_df.loc[0, 'r_id']], 'why': [why], 'what': [what], 'where': [where],
+                'verification_status': [verification_status], 'verified_by': [managed_by], 'timestamp': [current_time],
                 'financial_assistance': [financial_assistance], 'urgent': [urgent_status]}
     df = pd.DataFrame(r_v_dict)
     expected_columns = ['timestamp', 'r_id', 'what', 'why', 'where', 'verification_status', 'verified_by',

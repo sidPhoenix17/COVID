@@ -6,10 +6,11 @@
 
 import requests
 import json
+import time
 from lib.redis import redis
 
 from database_entry import add_message
-from settings import server_type, whatsapp_api_url, whatsapp_api_password,auth_code,namespace,whatsapp_temp_1,bot_number
+from settings import server_type, whatsapp_api_url, whatsapp_api_password,auth_code,namespace,whatsapp_temp_1,bot_number, stale_whatsapp_message_threshold
 from database_entry import send_sms,update_volunteers_db,update_requests_db,update_users_db
 from flask import Flask,request
 from message_templates import a,b,c,c1,c2,inv,whatsapp_temp_1_message
@@ -232,10 +233,33 @@ def set_user_replied_marker(whatsapp_id):
 def has_user_replied(whatsapp_id):
     return redis.get(get_user_replied_marker(whatsapp_id)) != None
 
+
+def get_stale_marker_redis_key(wa_id):
+    return "waid_{wa_id}_stale_marker".format(wa_id=wa_id)
+
+def check_mesage_to_number_already_sent(whatsapp_id):
+    key_val = redis.get(get_stale_marker_redis_key(whatsapp_id))
+    return key_val != None
+
+def mark_number_as_processed_for_stale_message(whatsapp_id):
+    # assuming that the server proceessed all messages in 1 hour
+    redis.set(get_stale_marker_redis_key(whatsapp_id), 1, ex=3600)
+    
 def process_whatsapp_received_text_message(message):
     body = str(message.get("text").get("body"))
     whatsapp_id = str(message.get('from'))
     add_message(whatsapp_id, whatsapp_id, bot_number, body, "text", "whatsapp", "incoming")
+
+    current_time = int(time.time())
+    timestamp = int(message.get('timestamp', current_time))
+    whatsapp_id = str(message.get('from'))
+    if (current_time - timestamp > stale_whatsapp_message_threshold): 
+        if check_mesage_to_number_already_sent(whatsapp_id):
+            print("Message to whatsapp_id {wa_id} already processed skipping".format(wa_id=whatsapp_id))
+            return
+        else:
+            mark_number_as_processed_for_stale_message(whatsapp_id)
+
     #Storing Message, Media or Location
     #elif (response.get("messages")[0].get("type")=='image'):
 
