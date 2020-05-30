@@ -22,7 +22,8 @@ services:
         - "../deps:/usr/local/lib/python3.6/dist-packages"
         ports:
             - "5000:5000"
-        command: bash -c "pip3 install -r requirements.txt && supervisord -c supervisord.conf"
+            - "4000:4000"
+        command: bash -c "pip3 install -r requirements.txt && supervisord -c supervisord-local.conf"
         environment: 
             FLASK_ENV: "development"
             FLASK_APP: apis.py
