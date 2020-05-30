@@ -21,9 +21,11 @@ def url_shortener_fn(input_url):
 
     
 #New User 
-url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus("I have registered!")
+# url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus("I have registered!")
+# link = url_shortener_fn(url)
+url = "https://api.whatsapp.com/send?text="+urllib.parse.quote_plus("Hey, I volunteered for #COVIDSOS. Register as a volunteer and help someone: https://covidsos.org/volunteer :)")
 link = url_shortener_fn(url)
-new_reg_sms = key_word+" Thank you for registering. If you have any queries, please click https://tinyurl.com/covidsosFAQ"
+new_reg_sms = key_word+" Thank you for your kindness. Support us by asking a friend to volunteer. Click here: "+ link
 new_reg_whatsapp = "Thank you for registering as a volunteer with COVIDSOS. We will reach out to you if anyone near your location needs help. This is an *automated* message. Please reach out to wa.me/918618948661 for further queries."
 new_reg_whatsapp_img = {'media_link':'cdcdscdc311','caption':'Share this with your friends and family!'}
 
@@ -125,7 +127,7 @@ a = """Dear {v_name}, thank you for messaging COVIDSOS.
 
 If this is about a request sent to you, kindly click on the link in the message.
 
-If you have any other queries, please click https://tinyurl.com/covidsosFAQ
+If you have any other queries, please click https://covidsos.org/faq
 
 If you want to speak to someone from our team, please click https://tinyurl.com/y8fagrwh
 """
