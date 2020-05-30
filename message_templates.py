@@ -31,7 +31,7 @@ new_reg_whatsapp_img = {'media_link':'cdcdscdc311','caption':'Share this with yo
 
 
 #Re-registration
-url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus("I have registered!")
+url = "https://api.whatsapp.com/send?text="+urllib.parse.quote_plus("Hey, I volunteered for #COVIDSOS. Register as a volunteer and help someone: https://covidsos.org/volunteer :)")
 link = url_shortener_fn(url)
 old_reg_sms = key_word+" You are already registered. We have updated your info. Click here to contact us "+link
 old_reg_whatsapp = "You are already registered as a volunteer with COVIDSOS. We will reach out to you if anyone near your location needs help. This is an *automated* message. Please reach out to wa.me/918618948661 for further queries."
@@ -40,7 +40,7 @@ old_reg_whatsapp_img = {'media_link':'cdcdscdc311','caption':'Share this with yo
 
 #New Request
 # To requestor
-url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('I have submitted a request.')
+url = "https://covidsos.org/how-it-works"
 link = url_shortener_fn(url)
 new_request_sms = key_word+" {name}, we have received your request via {source}. We will call you soon. If urgent, please click "+ link
 new_request_whatsapp = "We have received a help request from you. If you have not filled it, someone would have filled it on your behalf. This is an *automated* message. Please reach out to wa.me/918618948661 for further queries."
@@ -52,7 +52,7 @@ new_request_mod_sms = key_word+" New query received from {source}. Verify lead b
 
 #Request Verified
 # To requestor
-url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('My request is verified.')
+url = "https://covidsos.org/how-it-works"
 link = url_shortener_fn(url)
 request_verified_sms = key_word+" Your request has been verified. We are looking for volunteers. Chat "+str(link)
 
@@ -69,25 +69,34 @@ far_v_sms_text = key_word+ " HELP NEEDED in {address}.. Click {link} to help or 
 
 #Request Accepted
 # To volunteer
-request_accepted_v_sms = key_word+" Thank you agreeing to help. Name:{r_name} Mob:{mob_number} Request:{request} Address: {address}"
+url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus("I have accepted a request and have a query")
+link = url_shortener_fn(url)
+request_accepted_v_sms = key_word+" Thank you agreeing to help. Name:{r_name} Mob:{mob_number} Request:{request} Address: {address} Click here to speak to us:"+link
 
 # To requestor
-request_accepted_r_sms = key_word+" Volunteer {v_name} will help you. Mob: {mob_number}"
+url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus("My request is accepted and I have a query")
+link = url_shortener_fn(url)
+request_accepted_r_sms = key_word+" Volunteer {v_name} will help you. Mob: {mob_number} Click here to speak to us:"+link
 
 # To moderator
 request_accepted_m_sms = key_word+" Volunteer {v_name} Mob:{v_mob_number} assigned to {r_name} Mob: {r_mob_number}"
 
 #Request Updated by Volunteer
-request_closed_v_sms = key_word+" Thank you. This request has been {status} as per your feedback"
+url = "https://api.whatsapp.com/send?text="+urllib.parse.quote_plus("Hey, I volunteered for #COVIDSOS. Register as a volunteer and help someone: https://covidsos.org/volunteer :)")
+link = url_shortener_fn(url)
+
+request_closed_v_sms = key_word+" Thank you. This request has been {status} . Every volunteer is a hero. Refer a friend by clicking here "+link
 request_closed_m_sms = key_word+" Request {r_id} from {r_name}, {r_mob_number} has been marked as {status} by {v_name},{v_mob_number}. Feedback given is {status_message}"
-url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('I have a new request')
+url = "https://covidsos.org/"
 link = url_shortener_fn(url)
 request_closed_r_sms = key_word+" Your request has been {status} as per the feedback from volunteer. If you have any further requests, click "+link
 
 # Request updated by admin
-a_request_closed_v_sms = key_word+" Thank you. Request assigned to you has been {status} by the {user_name}, COVIDSOS. "
+url = "https://api.whatsapp.com/send?text="+urllib.parse.quote_plus("Hey, I volunteered for #COVIDSOS. Register as a volunteer and help someone: https://covidsos.org/volunteer :)")
+link = url_shortener_fn(url)
+a_request_closed_v_sms = key_word+" Thank you. Request assigned to you has been {status} by the {user_name}, COVIDSOS. Every volunteer is a hero. Refer a friend by clicking here "+link
 a_request_closed_m_sms = key_word+" Request {r_id} from {r_name}, {r_mob_number}, Volunteer {v_name},{v_mob_number} has been marked as {status} by {user_name}. Feedback given is {status_message}"
-url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus('I have a new request')
+url = "https://covidsos.org/"
 link = url_shortener_fn(url)
 a_request_closed_r_sms = key_word+" Your request has been {status} as per the feedback. If you have any further requests, click "+link
 
