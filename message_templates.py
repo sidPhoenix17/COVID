@@ -76,7 +76,7 @@ request_accepted_v_sms = key_word+" Thank you agreeing to help. Name:{r_name} Mo
 # To requestor
 url = "https://wa.me/918618948661?text="+urllib.parse.quote_plus("My request is accepted and I have a query")
 link = url_shortener_fn(url)
-request_accepted_r_sms = key_word+" Volunteer {v_name} will help you. Mob: {mob_number} Click here to speak to us:"+link
+request_accepted_r_sms = key_word+" A volunteer has accepted to help you. Click here to speak to us:"+link
 
 # To moderator
 request_accepted_m_sms = key_word+" Volunteer {v_name} Mob:{v_mob_number} assigned to {r_name} Mob: {r_mob_number}"
