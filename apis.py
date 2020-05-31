@@ -586,8 +586,9 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by, org):
                                                        address=r_df.loc[0, 'geoaddress'])
             send_sms(v_sms_text, int(v_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
             # Send to Requestor
-            r_sms_text = request_accepted_r_sms.format(v_name=v_df.loc[0, 'name'], mob_number=v_df.loc[0, 'mob_number'])
-            send_sms(r_sms_text, int(r_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
+            # r_sms_text = request_accepted_r_sms
+            #.format(v_name=v_df.loc[0, 'name'], mob_number=v_df.loc[0, 'mob_number'])
+            # send_sms(r_sms_text, int(r_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
             # Send to Moderator
             m_sms_text = request_accepted_m_sms.format(v_name=v_df.loc[0, 'name'],
                                                        v_mob_number=v_df.loc[0, 'mob_number'],
@@ -634,8 +635,9 @@ def auto_assign_volunteer():
                                                        address=r_df.loc[0, 'geoaddress'])
             send_sms(v_sms_text, int(v_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
             # Send to Requestor
-            r_sms_text = request_accepted_r_sms.format(v_name=v_df.loc[0, 'name'], mob_number=v_df.loc[0, 'mob_number'])
-            send_sms(r_sms_text, int(r_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
+            # r_sms_text = request_accepted_r_sms
+                #.format(v_name=v_df.loc[0, 'name'], mob_number=v_df.loc[0, 'mob_number'])
+            # send_sms(r_sms_text, int(r_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
             return json.dumps(response)
         elif ((r_df.loc[0, 'status'] == 'received') or (r_df.loc[0, 'status'] == 'verified') or (
                 r_df.loc[0, 'status'] == 'pending')):
