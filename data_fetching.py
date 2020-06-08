@@ -300,8 +300,6 @@ def completed_website_requests_display(org='covidsos'):
                 left join support_orgs so on so.org_code=r.source
                 where rm.is_active=True and r.status in ('completed') and v.id is not NULL {org_condition}"""
     requests_data = pd.read_sql(query, connections('prod_db_read'))
-    requests_data['managed_by'] = requests_data['managed_by'].fillna('admin')
-    requests_data['managed_by_id'] = requests_data['managed_by_id'].fillna(0)
     requests_data = requests_data.fillna('')
     requests_data = requests_data.sort_values(by=['assignment_time'],ascending=[False])
     return requests_data
