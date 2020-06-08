@@ -284,6 +284,47 @@ def website_requests_display(org='covidsos'):
     pending_queries = query_df[(query_df['verification_status']=='verified')&(query_df['request_status'].isin(['received','verified','pending']))]
     return pending_queries
 
+def completed_website_requests_display(org='covidsos'):
+    org_condition = f"and r.source='{org}'" if org != 'covidsos' else ''
+    query = f"""Select r.id as r_id,r.name as `requestor_name`, r.uuid as `uuid`, r.timestamp as `request_time`, 
+                r.source as `source`, r.status as `request_status`,r.request, rv.where as `where`, 
+                rv.what as `what`, rv.why as `why`, rv.financial_assistance, rv.urgent,
+                v.id as v_id, v.name as `volunteer_name`, rm.timestamp as `assignment_time`, 
+                r.city, so.organisation_name as source_org, 
+                so.logo_url as org_logo
+                from requests r
+                left join request_verification rv on rv.r_id=r.id
+                left join request_matching rm on rm.request_id=r.id and rm.is_active=1
+                left join volunteers v on v.id=rm.volunteer_id
+                left join users u on u.id = r.managed_by
+                left join support_orgs so on so.org_code=r.source
+                where rm.is_active=True and r.status in ('completed') and v.id is not NULL {org_condition}"""
+    requests_data = pd.read_sql(query, connections('prod_db_read'))
+    requests_data['managed_by'] = requests_data['managed_by'].fillna('admin')
+    requests_data['managed_by_id'] = requests_data['managed_by_id'].fillna(0)
+    requests_data = requests_data.fillna('')
+    requests_data = requests_data.sort_values(by=['assignment_time'],ascending=[False])
+    return requests_data
+
+
+# def completed_request_page(uuid):
+#     query = """Select r.id as r_id,r.name as `requestor_name`, r.status as `request_status`,
+#             r.geoaddress as request_address,r.latitude as latitude, r.longitude as longitude,
+#             rv.what as what, rv.why as why, rv.financial_assistance as financial_assistance, so.organisation_name as source_org, so.logo_url as org_logo
+#             from requests r left join request_verification rv on r.id=rv.r_id
+#             left join support_orgs so on so.org_code = r.source
+#             where r.uuid='{uuid}'""".format(uuid=uuid)
+#     df = pd.read_sql(query,connections('prod_db_read'))
+#     df = df[~df['verification_status'].isna()]
+#     df['source_org'] = df['source_org'].fillna('COVIDSOS')
+#     df['org_logo'] = df['org_logo'].fillna('')
+#     if(df.shape[0]>1):
+#         df = df[0:0]
+#     df['what']=df['what'].fillna('Please call senior citizen to discuss')
+#     df['why']=df['why'].fillna('Senior Citizen')
+#     df['financial_assistance']=df['financial_assistance'].fillna(0)
+#     return df
+
 
 def get_requests(org='covidsos',public_page=True,request_status=['unverified','assigned','pending','completed']):
     try:
