@@ -31,8 +31,7 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
     accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, get_messages, \
     get_user_access_type, request_verification_data_by_id, get_user_list, cron_job_by_id, verify_user,\
-    get_completed_requests,completed_website_requests_display
-    #, completed_request_page
+    get_completed_requests,completed_website_requests_display, completed_request_page
 
 from partner_assignment import generate_uuid, message_all_volunteers, getCityAddr
 
@@ -840,17 +839,18 @@ def admin_completed_requests(*args, **kwargs):
 
 
 
-# @app.route('/completed_page', methods=['GET'])
-# @capture_api_exception
-# def request_accept_page():
-#     uuid = request.args.get('uuid')
-#     df = completed_request_page(uuid)
-#     if (df.shape[0] == 0):
-#         return json.dumps(
-#             {'Response': {}, 'status': False, 'string_response': 'This page does not exist. Redirecting to homepage'})
-#     else:
-#         return json.dumps(
-#             {'Response': df.to_dict('records'), 'status': True, 'string_response': 'Request related data extracted'})
+@app.route('/completed_page', methods=['GET'])
+@capture_api_exception
+def request_completed_page():
+    uuid = request.args.get('uuid')
+    v_id = request.args.get('v_id')
+    df = completed_request_page(uuid,v_id)
+    if (df.shape[0] == 0):
+        return json.dumps(
+            {'Response': {}, 'status': False, 'string_response': 'This page does not exist. Redirecting to homepage'})
+    else:
+        return json.dumps(
+            {'Response': df.to_dict('records'), 'status': True, 'string_response': 'Request related data extracted'})
 
 
 @app.route('/completed_requests', methods=['GET'])
