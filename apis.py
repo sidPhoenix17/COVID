@@ -30,7 +30,9 @@ from data_fetching import get_ticker_counts, get_private_map_data, get_public_ma
     verify_volunteer_exists, check_past_verification, get_volunteers_assigned_to_request, \
     get_type_list, get_moderator_list, get_unverified_requests, get_requests_assigned_to_volunteer, \
     accept_request_page_secure, get_assigned_requests, user_data_by_id, website_requests_display_secure, get_messages, \
-    get_user_access_type, request_verification_data_by_id, get_user_list, cron_job_by_id, verify_user,get_completed_requests
+    get_user_access_type, request_verification_data_by_id, get_user_list, cron_job_by_id, verify_user,\
+    get_completed_requests,completed_website_requests_display
+    #, completed_request_page
 
 from partner_assignment import generate_uuid, message_all_volunteers, getCityAddr
 
@@ -836,13 +838,27 @@ def admin_completed_requests(*args, **kwargs):
         return json.dumps({'Response': response.to_dict('records'), 'status': True, 'string_response': 'Request data extracted'},
                           default=datetime_converter)
 
-# Removing this as not being used anywhere
-# @app.route('/completed_requests', methods=['GET'])
+
+
+# @app.route('/completed_page', methods=['GET'])
 # @capture_api_exception
-# def completed_requests(*args, **kwargs):
-#     response = get_completed_requests()
-#     return json.dumps({'Response': response.to_dict('records'), 'status': True, 'string_response': 'Request data extracted'},
-#                       default=datetime_converter)
+# def request_accept_page():
+#     uuid = request.args.get('uuid')
+#     df = completed_request_page(uuid)
+#     if (df.shape[0] == 0):
+#         return json.dumps(
+#             {'Response': {}, 'status': False, 'string_response': 'This page does not exist. Redirecting to homepage'})
+#     else:
+#         return json.dumps(
+#             {'Response': df.to_dict('records'), 'status': True, 'string_response': 'Request related data extracted'})
+
+
+@app.route('/completed_requests', methods=['GET'])
+@capture_api_exception
+def completed_requests(*args, **kwargs):
+    response = completed_website_requests_display()
+    return json.dumps({'Response': response.to_dict('records'), 'status': True,
+                       'string_response': 'Completed requests data extracted'}, default=datetime_converter)
 
 
 @app.route('/admin_pending_requests', methods=['GET'])
