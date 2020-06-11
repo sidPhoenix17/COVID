@@ -727,7 +727,7 @@ def verify_request(*args, **kwargs):
         source = 'covidsos'
     volunteers_reqd = request.form.get('volunteer_count', 1)
     current_time = dt.datetime.utcnow() + dt.timedelta(minutes=330)
-    members_impacted = request.form.get('volunteer_count', 2)
+    members_impacted = request.form.get('members_impacted', 2)
     if (verification_status is None):
         return json.dumps({'Response': {}, 'status': False, 'string_response': 'Please send verification status'})
     if ((r_id is None) or (uuid is None)):
