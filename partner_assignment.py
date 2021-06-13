@@ -9,14 +9,14 @@ import pandas as pd
 import numpy as np
 from settings import EARTH_RADIUS,server_type,gmap_key
 from connections import connections
-from database_entry import send_sms, save_request_sms_url
+from database_entry import send_sms, save_request_sms_url, send_raven_v1
 from data_fetching import request_data_by_uuid,get_moderator_list
 import mailer_fn as mailer
 import urllib.parse as p
 from message_templates import url_shortener_fn, nearby_v_sms_text, far_v_sms_text, \
-    request_verified_m_sms1, request_verified_m_sms2, url_start
+    request_verified_m_sms1, request_verified_m_sms2, url_start, key_word
 from pygeocoder import Geocoder
-from whatsapp_fn import send_request_template,send_moderator_msg
+# from whatsapp_fn import send_request_template,send_moderator_msg
 
 # In[ ]:
 
@@ -72,28 +72,34 @@ def message_all_volunteers(uuid,radius,search_radius):
             count = count +1
             if(count>20):
                 break
-            sms_text = nearby_v_sms_text.format(v_name=v_list.loc[i,'name'],link=link)
-            sms_to = int(v_list.loc[i,'mob_number'])
-            df = df.append(v_list.loc[i,['v_id']])
-            send_request_template(uuid,sms_text,sms_to)
-            # if((server_type=='prod')):
-            #     send_sms(sms_text,sms_to,sms_type='transactional',send=True)
-            #     print('SMS sent')
-            # else:
-            #     print('Sending sms:',sms_text,' to ',str(sms_to))
+            v_name = v_list.loc[i, 'name']
+            params_1 = {"var1":key_word,"var2":v_name,"var3":link}
+            # sms_text = nearby_v_sms_text.format(v_name=v_list.loc[i,'name'],link=link)
+            # sms_to = int(v_list.loc[i,'mob_number'])
+            # df = df.append(v_list.loc[i,['v_id']])
+            # send_request_template(uuid,sms_text,sms_to)
+            if((server_type=='prod')):
+                # send_sms(sms_text,sms_to,sms_type='transactional',send=True)
+                send_raven_v1("a_verified_req_vol", sms_to=int(v_list.loc[i, 'mob_number']), send=True,body_parameters=params_1)
+                print('SMS sent')
+            else:
+                print('Sending sms: for nearby request to ',str(v_list.loc[i, 'mob_number']))
         if((v_list.loc[i,'dist']>radius)&(v_list.loc[i,'dist']<search_radius)):
             count = count +1
             if(count>20):
                 break
-            sms_text = far_v_sms_text.format(address=r_df.loc[0,'geoaddress'][0:40],link=link)
-            sms_to=int(v_list.loc[i,'mob_number'])
-            df2 = df2.append(v_list.loc[i,['v_id']])
-            send_request_template(uuid,sms_text,sms_to)
-            # if((server_type=='prod')):
-            #     send_sms(sms_text,sms_to,sms_type='transactional',send=True)
-            #     print('SMS sent')
-            # else:
-            #     print('Sending sms:',sms_text,' to ',str(sms_to))
+            address = r_df.loc[0, 'geoaddress'][0:30]
+            params_2 = {"var1":key_word,"var2":address,"var3":"","var4":link}
+            # sms_text = far_v_sms_text.format(address=r_df.loc[0,'geoaddress'][0:40],link=link)
+            # sms_to=int(v_list.loc[i,'mob_number'])
+            # df2 = df2.append(v_list.loc[i,['v_id']])
+            # send_request_template(uuid,sms_text,sms_to)
+            if((server_type=='prod')):
+                send_raven_v1("a_v_req_to_vol_2", sms_to=int(v_list.loc[i, 'mob_number']), send=True,body_parameters=params_2)
+                # send_sms(sms_text,sms_to,sms_type='transactional',send=True)
+                print('SMS sent')
+            else:
+                print('Sending sms: for far request to ',str(v_list.loc[i, 'mob_number']))
     df['r_id']=r_id
     df['status']='pending'
     print(v_list)
@@ -102,7 +108,8 @@ def message_all_volunteers(uuid,radius,search_radius):
     if((server_type=='prod')):
         engine = connections('prod_db_write')
         df.to_sql(name = 'nearby_volunteers', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
-    mod_sms_text = request_verified_m_sms1.format(r_id=str(r_df.loc[0,'r_id']),name=r_df.loc[0,'name'],geoaddress=r_df.loc[0,'geoaddress'][0:50],mob_number=str(r_df.loc[0,'mob_number']),v_count_1=str(df.shape[0]),v_count_2=str(df2.shape[0]))
+    params_1 = {"var1":key_word,"var2":r_df.loc[0,'r_id'],"var3":r_df.loc[0,'name'],"var4":str(df.shape[0]),"var5":str(df2.shape[0])}
+    # mod_sms_text = request_verified_m_sms1.format(r_id=str(r_df.loc[0,'r_id']),name=r_df.loc[0,'name'],geoaddress=r_df.loc[0,'geoaddress'][0:50],mob_number=str(r_df.loc[0,'mob_number']),v_count_1=str(df.shape[0]),v_count_2=str(df2.shape[0]))
     str_broadcast = "For request #"+str(r_df.loc[0,'r_id'])+ " "
     counter_broadcast = 0
     for i in v_list.index:
@@ -112,11 +119,15 @@ def message_all_volunteers(uuid,radius,search_radius):
         str_broadcast = str_broadcast + v_list.loc[i,'name']+" m: wa.me/91"+str(v_list.loc[i,'mob_number'])+" "
     link = url_shortener_fn("https://wa.me/918618948661?text="+p.quote(str_broadcast))
     save_request_sms_url(uuid, 'broadcast_link', link)
-    mod_sms_text_2 = request_verified_m_sms2.format(link=link)
+    params_2={"var1":key_word,"var2":link}
+
+    # mod_sms_text_2 = request_verified_m_sms2.format(link=link)
     moderator_list = get_moderator_list()
     for i_number in moderator_list:
-        send_moderator_msg(int(i_number),mod_sms_text)
-        send_moderator_msg(int(i_number), mod_sms_text_2)
+        send_raven_v1("a_verified_req_mod",sms_to=int(i_number),send=True,body_parameters=params_1)
+        send_raven_v1("a_verified_req_mod_2",sms_to=int(i_number),send=True,body_parameters=params_2)
+        # send_moderator_msg(int(i_number),mod_sms_text)
+        # send_moderator_msg(int(i_number), mod_sms_text_2)
         # if((server_type=='prod')):
         #     send_sms(mod_sms_text,sms_to=int(i_number),sms_type='transactional',send=True)
         #     send_sms(mod_sms_text_2,sms_to=int(i_number),sms_type='transactional',send=True)
