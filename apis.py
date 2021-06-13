@@ -22,7 +22,7 @@ from database_entry import add_requests, add_volunteers_to_db, contact_us_form_a
     add_user, request_matching, update_requests_db, update_volunteers_db, \
     blacklist_token, send_sms, send_otp, resend_otp, verify_otp, update_nearby_volunteers_db, \
     add_request_verification_db, update_request_v_db, update_request_status, save_request_sms_url, add_message, \
-    add_cron_job, update_schedule_db
+    add_cron_job, update_schedule_db, send_raven_v1
 
 from data_fetching import get_ticker_counts, get_private_map_data, get_public_map_data, get_user_id, \
     accept_request_page, request_data_by_uuid, request_data_by_id, volunteer_data_by_id, \
@@ -42,7 +42,7 @@ from utils import capture_api_exception
 from message_templates import old_reg_sms, new_reg_sms, new_request_sms, new_request_mod_sms, request_verified_sms, \
     request_accepted_v_sms, request_accepted_r_sms, request_accepted_m_sms, request_rejected_sms, \
     request_closed_v_sms, request_closed_r_sms, request_closed_m_sms, a_request_closed_v_sms, \
-    a_request_closed_r_sms, a_request_closed_m_sms, url_start
+    a_request_closed_r_sms, a_request_closed_m_sms, url_start, url_retriever, key_word
 
 from settings import server_type, SECRET_KEY, neighbourhood_radius, search_radius
 
@@ -124,13 +124,18 @@ def create_request():
     response = {'Response': {}, 'status': x, 'string_response': y}
     if (x):
         # move to async
-        sms_text = new_request_sms.format(name=name, source=source)
-        send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
-        mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
+        # sms_text = new_request_sms.format(name=name, source=source)
+        # send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
+        sms_params_1 = {"var1":key_word,"var2":name,"var3":source,"var4":url_retriever("new_request_sms")}
+        send_raven_v1("a_request_received",sms_to=int(mob_number), send=True,body_parameters=sms_params_1)
+        # mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
         save_request_sms_url(uuid, 'verify_link', url_start + "verify/{uuid}".format(uuid=uuid))
+
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
-            send_moderator_msg(i_number,mod_sms_text)
+            sms_params_2 = {"var1":key_word,"var2":name,"var3":url_start,"var4":uuid}
+            send_raven_v1("a_request_verification_moderat",sms_to=int(i_number),send=True,body_parameters=sms_params_2)
+            # send_moderator_msg(i_number,mod_sms_text)
             # send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
     return json.dumps(response)
 
@@ -164,10 +169,14 @@ def add_volunteer():
     x, y = add_volunteers_to_db(df)
     if (x):
         if (y == 'Volunteer already exists. Your information has been updated'):
-            v_sms_text = old_reg_sms
+            # v_sms_text = old_reg_sms
+            params_1={"var1":key_word, "var2":url_retriever("a_existing_user_registration")}
+            send_raven_v1("a_existing_user_registration",sms_to=int(mob_number),send=True,body_parameters=params_1)
         else:
-            v_sms_text = new_reg_sms
-        send_sms(v_sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
+            # v_sms_text = new_reg_sms
+            params_1 = {"var1": key_word, "var2": url_retriever("a_new_user_registration")}
+            send_raven_v1("a_new_user_registration", sms_to=int(mob_number), send=True, body_parameters=params_1)
+        # send_sms(v_sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
     response = {'Response': {}, 'status': x, 'string_response': y}
     return json.dumps(response)
 
@@ -235,15 +244,19 @@ def ngo_request_form(*args, **kwargs):
     x2, y2 = add_request_verification_db(df[expected_columns])
     if (x1):
         # move to async
-        sms_text = new_request_sms.format(source=source, name=name)
-        send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
-        mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
+        sms_params_1 = {"var1":key_word,"var2":name,"var3":source,"var4":url_retriever("new_request_sms")}
+        send_raven_v1("a_request_received",sms_to=int(mob_number), send=True,body_parameters=sms_params_1)
+
+        # sms_text = new_request_sms.format(source=source, name=name)
+        # send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
+        # mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
         save_request_sms_url(uuid, 'verify_link', url_start + "verify/{uuid}".format(uuid=uuid))
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
-            send_moderator_msg(i_number,mod_sms_text)
+            sms_params_2 = {"var1":key_word,"var2":name,"var3":url_start,"var4":uuid}
+            send_raven_v1("a_request_verification_moderat",sms_to=int(i_number),send=True,body_parameters=sms_params_2)
+            # send_moderator_msg(i_number,mod_sms_text)
             # send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
-
     response = {'Response': {}, 'status': x1, 'string_response': y1}
     return response
 
@@ -305,13 +318,18 @@ def full_request_form():
     x2, y2 = add_request_verification_db(df[expected_columns])
     if (x1):
         # move to async
-        sms_text = new_request_sms.format(source=source, name=name)
-        send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
-        mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
+        sms_params_1 = {"var1":key_word,"var2":name,"var3":source,"var4":url_retriever("new_request_sms")}
+        send_raven_v1("a_request_received",sms_to=int(mob_number), send=True,body_parameters=sms_params_1)
+
+        # sms_text = new_request_sms.format(source=source, name=name)
+        # send_sms(sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
+        # mod_sms_text = new_request_mod_sms.format(source=source, uuid=str(uuid))
         save_request_sms_url(uuid, 'verify_link', url_start + "verify/{uuid}".format(uuid=uuid))
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
-            send_moderator_msg(i_number,mod_sms_text)
+            sms_params_2 = {"var1":key_word,"var2":name,"var3":url_start,"var4":uuid}
+            send_raven_v1("a_request_verification_moderat",sms_to=int(i_number),send=True,body_parameters=sms_params_2)
+            # send_moderator_msg(i_number,mod_sms_text)
             # send_sms(mod_sms_text, sms_to=int(i_number), sms_type='transactional', send=True)
 
     response = {'Response': {}, 'status': x1, 'string_response': y1}
@@ -582,22 +600,37 @@ def assign_request_to_volunteer(volunteer_id, request_id, matched_by, org):
                     response_2 = update_requests_db({'id': request_id}, {'status': 'matched'})
                     response_3 = update_nearby_volunteers_db({'r_id': request_id}, {'status': 'expired'})
             # Send to Volunteer
-            v_sms_text = request_accepted_v_sms.format(r_name=r_df.loc[0, 'name'], mob_number=r_df.loc[0, 'mob_number'],
-                                                       request=r_df.loc[0, 'request'],
-                                                       address=r_df.loc[0, 'geoaddress'])
-            send_sms(v_sms_text, int(v_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
+            params_1 = {"var1":key_word,"var2":r_df.loc[0, 'name'],"var3":r_df.loc[0, 'mob_number'],"var4":r_df.loc[0, 'request'],"var5":r_df.loc[0, 'geoaddress'],
+                        "var6":url_retriever("a_accepted_request_vol")}
+            send_raven_v1("a_accepted_request_vol",int(v_df.loc[0, 'mob_number']), send=True,body_parameters=params_1)
+            # v_sms_text = request_accepted_v_sms.format(r_name=r_df.loc[0, 'name'], mob_number=r_df.loc[0, 'mob_number'],
+            #                                            request=r_df.loc[0, 'request'],
+            #                                            address=r_df.loc[0, 'geoaddress'])
+            # send_sms(v_sms_text, int(v_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
+
+
             # Send to Requestor
+            params_2 = {"var1":key_word,"var2":url_retriever("a_accepted_request_requestor")}
+            send_raven_v1("a_accepted_request_requestor",int(r_df.loc[0, 'mob_number']), send=True,body_parameters=params_2)
+
             # r_sms_text = request_accepted_r_sms
             #.format(v_name=v_df.loc[0, 'name'], mob_number=v_df.loc[0, 'mob_number'])
             # send_sms(r_sms_text, int(r_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
             # Send to Moderator
-            m_sms_text = request_accepted_m_sms.format(v_name=v_df.loc[0, 'name'],
-                                                       v_mob_number=v_df.loc[0, 'mob_number'],
-                                                       r_name=r_df.loc[0, 'name'],
-                                                       r_mob_number=r_df.loc[0, 'mob_number'])
+
+            params_3 = {"var1":key_word,"var2":v_df.loc[0, 'name'],"var3":v_df.loc[0, 'mob_number'],"var4":r_df.loc[0, 'name'],"var5":r_df.loc[0, 'mob_number']}
+
+
+            # m_sms_text = request_accepted_m_sms.format(v_name=v_df.loc[0, 'name'],
+            #                                            v_mob_number=v_df.loc[0, 'mob_number'],
+            #                                            r_name=r_df.loc[0, 'name'],
+            #                                            r_mob_number=r_df.loc[0, 'mob_number'])
+
             moderator_list = get_moderator_list()
             for i_number in moderator_list:
-                send_moderator_msg(i_number, m_sms_text)
+                send_raven_v1("a_acc_request_mod", int(i_number), send=True, body_parameters=params_3)
+
+                # send_moderator_msg(i_number, m_sms_text)
                # send_sms(m_sms_text, int(i_number), sms_type='transactional', send=True)
         else:
             return {'status': False, 'string_response': 'Request already assigned/closed/completed', 'Response': {}}
@@ -631,11 +664,19 @@ def auto_assign_volunteer():
             response_2 = update_requests_db({'id': r_id}, {'status': 'matched'})
             response_3 = update_nearby_volunteers_db({'r_id': r_id}, {'status': 'expired'})
             # Send to Volunteer
-            v_sms_text = request_accepted_v_sms.format(r_name=r_df.loc[0, 'name'], mob_number=r_df.loc[0, 'mob_number'],
-                                                       request=r_df.loc[0, 'request'],
-                                                       address=r_df.loc[0, 'geoaddress'])
-            send_sms(v_sms_text, int(v_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
+            params_1 = {"var1":key_word,"var2":r_df.loc[0, 'name'],"var3":r_df.loc[0, 'mob_number'],"var4":r_df.loc[0, 'request'],"var5":r_df.loc[0, 'geoaddress'],
+                        "var6":url_retriever("a_accepted_request_vol")}
+            send_raven_v1("a_accepted_request_vol",int(v_df.loc[0, 'mob_number']), send=True,body_parameters=params_1)
+
+
+            # v_sms_text = request_accepted_v_sms.format(r_name=r_df.loc[0, 'name'], mob_number=r_df.loc[0, 'mob_number'],
+            #                                            request=r_df.loc[0, 'request'],
+            #                                            address=r_df.loc[0, 'geoaddress'])
+            # send_sms(v_sms_text, int(v_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
             # Send to Requestor
+            params_2 = {"var1":key_word,"var2":url_retriever("a_accepted_request_requestor")}
+            send_raven_v1("a_accepted_request_requestor",int(r_df.loc[0, 'mob_number']), send=True,body_parameters=params_2)
+
             # r_sms_text = request_accepted_r_sms
                 #.format(v_name=v_df.loc[0, 'name'], mob_number=v_df.loc[0, 'mob_number'])
             # send_sms(r_sms_text, int(r_df.loc[0, 'mob_number']), sms_type='transactional', send=True)
@@ -765,15 +806,21 @@ def verify_request(*args, **kwargs):
                                 'financial_assistance', 'urgent']
             x, y = add_request_verification_db(df[expected_columns])
         if (verification_status == 'verified'):
-            requestor_text = request_verified_sms
-            send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
+            params_1 = {"var1":key_word,"var2":url_retriever("a_verified_req")}
+            send_raven_v1("a_verified_req",sms_to=int(mob_number), send=True,body_parameters=params_1)
+
+
+            # requestor_text = request_verified_sms
+            # send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
             message_all_volunteers(uuid, neighbourhood_radius, search_radius)
             ru_dict_where = {'uuid': uuid}
             ru_dict_set = {'managed_by': verified_by}
             update_requests_db(ru_dict_where, ru_dict_set)
         else:
-            requestor_text = request_rejected_sms
-            send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
+            params_2 = {"var1":key_word}
+            send_raven_v1("a_rejected_request_to_reqstr",sms_to=int(mob_number), send=True, body_parameters=params_2)
+            # requestor_text = request_rejected_sms
+            # send_sms(requestor_text, sms_to=int(mob_number), sms_type='transactional', send=True)
         return json.dumps(
             {'Response': {}, 'status': response_2['status'], 'string_response': response_2['string_response']})
     else:
@@ -965,19 +1012,33 @@ def task_completed(*args, **kwargs):
     response, success = update_request_status(request_uuid, status, status_message, volunteer_id)
     # Send SMS to Volunteer, Requestor and Moderator - request_closed_v_sms,request_closed_r_sms,request_closed_m_sms
     if ((v_df.shape[0] > 0) & (r_df.shape[0] > 0)):
-        send_sms(request_closed_v_sms.format(status=status), int(v_df.loc[0, 'mob_number']))
+        params_1= {"var1":key_word,"var2":status,"var3":url_retriever("a_request_closed_vol")}
+        send_raven_v1("a_request_closed_vol",sms_to=int(v_df.loc[0, 'mob_number']),send=True,body_parameters=params_1)
+        # send_sms(request_closed_v_sms.format(status=status), int(v_df.loc[0, 'mob_number']))
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
-            mod_sms_text = request_closed_m_sms.format(r_id=r_df.loc[0, 'r_id'], r_name=r_df.loc[0, 'name'],
-                                        r_mob_number=r_df.loc[0, 'mob_number'],
-                                        status=status, v_name=v_df.loc[0, 'name'],
-                                        v_mob_number=v_df.loc[0, 'mob_number'],
-                                        status_message=status_message)
-            send_moderator_msg(i_number,mod_sms_text)
+            params_2 = {"var1":key_word,"var2":r_df.loc[0, 'r_id'],"var3":r_df.loc[0, 'name'],"var4":r_df.loc[0, 'mob_number'],"var5":status,
+                        "var6":v_df.loc[0, 'name'],"var7":v_df.loc[0, 'mob_number'],"var8":status_message}
+            send_raven_v1("a_req_closed_mod",sms_to=int(i_number),send=True,body_parameters=params_2)
+            # mod_sms_text = request_closed_m_sms.format(r_id=r_df.loc[0, 'r_id'], r_name=r_df.loc[0, 'name'],
+            #                             r_mob_number=r_df.loc[0, 'mob_number'],
+            #                             status=status, v_name=v_df.loc[0, 'name'],
+            #                             v_mob_number=v_df.loc[0, 'mob_number'],
+            #                             status_message=status_message)
+            # send_moderator_msg(i_number,mod_sms_text)
             # send_sms(mod_sms_text, int(i_number))
-        send_sms(request_closed_r_sms.format(status=status), int(r_df.loc[0, 'mob_number']))
-    if (status == 'cancelled'):
-        message_all_volunteers(request_uuid, neighbourhood_radius, search_radius)
+        params_3={"var1":key_word,"var2":status,"var3":url_retriever("a_request_closed_req_2")}
+        send_raven_v1("a_request_closed_req_2",sms_to=int(r_df.loc[0, 'mob_number']),send=True,body_parameters=params_3)
+        # send_sms(request_closed_r_sms.format(status=status), int(r_df.loc[0, 'mob_number']))
+    if((v_df.shape[0]==0)& (r_df.shape[0] > 0)):
+        moderator_list = get_moderator_list()
+        for i_number in moderator_list:
+            params_2 = {"var1": key_word, "var2": r_df.loc[0, 'r_id'], "var3": r_df.loc[0, 'name'],
+                        "var4": r_df.loc[0, 'mob_number'], "var5": status,
+                        "var6": "", "var7": "", "var8": status_message}
+            send_raven_v1("a_req_closed_mod", sms_to=int(i_number), send=True, body_parameters=params_2)
+        params_3 = {"var1": key_word, "var2": status, "var3": url_retriever("a_request_closed_req_2")}
+        send_raven_v1("a_request_closed_req_2", sms_to=int(r_df.loc[0, 'mob_number']), send=True, body_parameters=params_3)
     return json.dumps({'Response': {}, 'status': success, 'string_response': response})
 
 
@@ -1002,21 +1063,37 @@ def admin_task_completed(*args, **kwargs):
     response, success = update_request_status(request_uuid, status, status_message, volunteer_id)
     # Send SMS to Volunteer, Requestor and Moderator - request_closed_v_sms,request_closed_r_sms,request_closed_m_sms
     if ((v_df.shape[0] > 0) & (r_df.shape[0] > 0)):
-        send_sms(a_request_closed_v_sms.format(status=status, user_name=user_df.loc[0, 'name']),
-                 int(v_df.loc[0, 'mob_number']))
+        params_1= {"var1":key_word,"var2":status,"var3":user_df.loc[0, 'name'],"var4":url_retriever("a_request_closed_vol_2")}
+        send_raven_v1("a_request_closed_vol_2",sms_to=int(v_df.loc[0, 'mob_number']),send=True,body_parameters=params_1)
+        # send_sms(a_request_closed_v_sms.format(status=status, user_name=user_df.loc[0, 'name']), int(v_df.loc[0, 'mob_number']))
         moderator_list = get_moderator_list()
         for i_number in moderator_list:
-            mod_sms_text = a_request_closed_m_sms.format(r_id=r_df.loc[0, 'r_id'], r_name=r_df.loc[0, 'name'],
-                                                   r_mob_number=r_df.loc[0, 'mob_number'],
-                                                   v_name=v_df.loc[0, 'name'],
-                                                   v_mob_number=v_df.loc[0, 'mob_number'], status=status,
-                                                   user_name=user_df.loc[0, 'name'],
-                                                   status_message=status_message)
-            send_moderator_msg(i_number,mod_sms_text)
+            params_2 = {"var1": key_word, "var2": r_df.loc[0, 'r_id'], "var3": r_df.loc[0, 'name'],
+                        "var4": r_df.loc[0, 'mob_number'],"var5": v_df.loc[0, 'name'],
+                        "var6":v_df.loc[0, 'mob_number'],"var7":status,"var8":user_df.loc[0,'name'],"var9": status_message}
+            send_raven_v1("a_req_closed_mod_2", sms_to=int(i_number), send=True, body_parameters=params_2)
+
+        # mod_sms_text = a_request_closed_m_sms.format(r_id=r_df.loc[0, 'r_id'], r_name=r_df.loc[0, 'name'],
+            #                                        r_mob_number=r_df.loc[0, 'mob_number'],
+            #                                        v_name=v_df.loc[0, 'name'],
+            #                                        v_mob_number=v_df.loc[0, 'mob_number'], status=status,
+            #                                        user_name=user_df.loc[0, 'name'],
+            #                                        status_message=status_message)
+            # send_moderator_msg(i_number,mod_sms_text)
             # send_sms(mod_sms_text, int(i_number))
-        send_sms(a_request_closed_r_sms.format(status=status), int(r_df.loc[0, 'mob_number']))
-    if (status == 'cancelled'):
-        message_all_volunteers(request_uuid, neighbourhood_radius, search_radius)
+        # send_sms(a_request_closed_r_sms.format(status=status), int(r_df.loc[0, 'mob_number']))
+        params_3 = {"var1": key_word, "var2": status, "var3": url_retriever("a_request_closed_req_2")}
+        send_raven_v1("a_request_closed_req_2", sms_to=int(r_df.loc[0, 'mob_number']), send=True,
+                      body_parameters=params_3)
+    if((v_df.shape[0]==0)& (r_df.shape[0] > 0)):
+        moderator_list = get_moderator_list()
+        for i_number in moderator_list:
+            params_2 = {"var1": key_word, "var2": r_df.loc[0, 'r_id'], "var3": r_df.loc[0, 'name'],
+                        "var4": r_df.loc[0, 'mob_number'],"var5": "",
+                        "var6":"","var7":status,"var8":user_df.loc[0,'name'],"var9": status_message}
+            send_raven_v1("a_req_closed_mod_2", sms_to=int(i_number), send=True, body_parameters=params_2)
+        params_3 = {"var1": key_word, "var2": status, "var3": url_retriever("a_request_closed_req_2")}
+        send_raven_v1("a_request_closed_req_2", sms_to=int(r_df.loc[0, 'mob_number']), send=True, body_parameters=params_3)
     return json.dumps({'Response': {}, 'status': success, 'string_response': response})
 
 

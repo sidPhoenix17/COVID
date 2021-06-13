@@ -8,8 +8,9 @@ import requests, json
 import pandas as pd
 from lib.redis import redis
 from connections import connections,write_query
-from settings import sms_key, sms_sid, sms_url, otp_url,server_type,org_request_list
+from settings import sms_key, sms_sid, sms_url,sms_url_v2, otp_url,server_type,org_request_list, raven_key, raven_sms_url
 import mailer_fn as mailer
+from message_templates import otp_template_id
 
 # In[ ]:
 
@@ -339,7 +340,6 @@ def blacklist_token(token):
 # In[ ]:
 
 
-
 def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
     try:
         redis_key = "sms_channel"
@@ -355,22 +355,72 @@ def send_sms(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
         return send_sms_to_phone(sms_text, sms_to, sms_type, send)
 
 def send_sms_to_phone(sms_text,sms_to=9582148040,sms_type='transactional',send=True):
-    sid = sms_sid
-    key = sms_key
-    url = sms_url
-    if(sms_type=='transactional'):
-        route="4"
-    elif(sms_type=='promotional'):
-        route="1"
-    data = {"sender": "SOCKET","route": route,"country": "91","sms": [{"message": sms_text,"to": [sms_to]}]}
-    headers = {'Content-type': 'application/json', 'authkey': key}
+    if((send)&(server_type!='local')):
+        send_raven_v1("a_new_temp",sms_to,True,{"var1":sms_text[0:28],"var2":sms_text[29:57],"var3":sms_text[58:86],"var4":sms_text[87:115]})
+    return None
+    # sid = sms_sid
+    # key = sms_key
+    # url = sms_url
+    # if(sms_type=='transactional'):
+    #     route="4"
+    # elif(sms_type=='promotional'):
+    #     route="1"
+    # data = {"sender": "SOCKET","route": route,"country": "91","sms": [{"message": sms_text,"to": [sms_to]}]}
+    # headers = {'Content-type': 'application/json', 'authkey': key}
+    # if ((send)&(server_type!='local')):
+    #     try:
+    #         r = requests.post(url, data=json.dumps(data), headers=headers)
+    #         if(r.status_code==200):
+    #             sms_dict = {'sms_text':[sms_text],'sms_type':[sms_type],'sms_to':[sms_to],'sms_status_type':[r.status_code],'sms_json_response':[str(r.json())]}
+    #         else:
+    #             sms_dict = {'sms_text': [sms_text], 'sms_type': [sms_type], 'sms_to': [sms_to],'sms_status_type': [r.status_code], 'sms_json_response': ['{}']}
+    #         new_sms_df = pd.DataFrame(sms_dict)
+    #         engine = connections('prod_db_write')
+    #         new_sms_df.loc[0, 'sms_text'] = sanitise_for_sql({'message': new_sms_df.loc[0, 'sms_text']}).get('message', '')
+    #         new_sms_df.to_sql(name = 'sms_log', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
+    #         return None
+    #     except:
+    #         print('SMS API error',flush=True)
+    #         mailer.send_exception_mail()
+    #         return None
+#
+# def send_sms_to_phone_v2(msg_template_id,sms_to=919582148040,send=True,body_parameters={}):
+#     key = sms_key
+#     url = sms_url_v2
+#     data = {"mobiles" : sms_to,"flow_id" : msg_template_id}
+#     data.update(body_parameters)
+#     headers = {'Content-type': 'application/json', 'authkey': key}
+#     if ((send)&(server_type!='local')):
+#         try:
+#             r = requests.post(url, data=json.dumps(data), headers=headers)
+#             if(r.status_code==200):
+#                 sms_text = sms_converter(template_id,body_parameters)
+#                 sms_dict = {'sms_text':[sms_text],'sms_type':[sms_type],'sms_to':[sms_to],'sms_status_type':[r.status_code],'sms_json_response':[str(r.json())]}
+#             else:
+#                 sms_dict = {'sms_text': [sms_text], 'sms_type': [sms_type], 'sms_to': [sms_to],'sms_status_type': [r.status_code], 'sms_json_response': ['{}']}
+#             new_sms_df = pd.DataFrame(sms_dict)
+#             engine = connections('prod_db_write')
+#             new_sms_df.loc[0, 'sms_text'] = sanitise_for_sql({'message': new_sms_df.loc[0, 'sms_text']}).get('message', '')
+#             new_sms_df.to_sql(name = 'sms_log', con = engine, schema='covidsos', if_exists='append', index = False,index_label=None)
+#             return None
+#         except:
+#             print('SMS API error',flush=True)
+#             mailer.send_exception_mail()
+#             return None
+
+def send_raven_v1(template_name,sms_to=919582148040,send=True,body_parameters={}):
+    key = raven_key
+    url = raven_sms_url
+    data ={"event" : template_name,"user":{"mobile":sms_to}, "data": body_parameters}
+    # data.update(body_parameters)
+    headers = {'Content-type': 'application/json', 'Authorization': key}
     if ((send)&(server_type!='local')):
         try:
             r = requests.post(url, data=json.dumps(data), headers=headers)
             if(r.status_code==200):
-                sms_dict = {'sms_text':[sms_text],'sms_type':[sms_type],'sms_to':[sms_to],'sms_status_type':[r.status_code],'sms_json_response':[str(r.json())]}
+                sms_dict = {'sms_text':["Text sent. Check Raven Logs"],'sms_type':["Transactional"],'sms_to':[sms_to],'sms_status_type':[r.status_code],'sms_json_response':[str(r.json())]}
             else:
-                sms_dict = {'sms_text': [sms_text], 'sms_type': [sms_type], 'sms_to': [sms_to],'sms_status_type': [r.status_code], 'sms_json_response': ['{}']}
+                sms_dict = {'sms_text': ["Failed to send SMS. Check Raven Logs"], 'sms_type': ["Transactional"], 'sms_to': [sms_to],'sms_status_type': [r.status_code], 'sms_json_response': [str(r.json())]}
             new_sms_df = pd.DataFrame(sms_dict)
             engine = connections('prod_db_write')
             new_sms_df.loc[0, 'sms_text'] = sanitise_for_sql({'message': new_sms_df.loc[0, 'sms_text']}).get('message', '')
@@ -390,7 +440,7 @@ def send_otp(otp_to):
     # if server_type=='local':
     #     return 'server_type is local', False
     try:
-        r = requests.post(otp_url, params={"authkey": sms_key, "mobile": f'91{otp_to}'})
+        r = requests.post(otp_url, params={"template_id":otp_template_id,"authkey": sms_key, "mobile": f'91{otp_to}'})
         r = r.json()
     except:
         mailer.send_exception_mail()
@@ -409,7 +459,7 @@ def resend_otp(otp_to):
     # if server_type=='local':
     #     return 'server_type is local', False
     try:
-        r = requests.post(url, params={"authkey": sms_key, "mobile": f'91{otp_to}'})
+        r = requests.post(url, params={"template_id":otp_template_id,"authkey": sms_key, "mobile": f'91{otp_to}'})
         r = r.json()
     except:
         mailer.send_exception_mail()

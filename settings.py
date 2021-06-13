@@ -1,5 +1,5 @@
 import os
-from local_settings import server_type,SECRET_KEY,sms_key,sms_sid,whatsapp_api_url,whatsapp_api_password,auth_code, redis_host, bot_number,namespace,whatsapp_temp_1,gmap_key
+from local_settings import server_type,SECRET_KEY,sms_key,sms_sid,whatsapp_api_url,whatsapp_api_password,auth_code, redis_host, bot_number,namespace,whatsapp_temp_1,gmap_key,raven_key,raven_sms_url
 import numpy as np
 default_r=0.5
 
@@ -13,6 +13,7 @@ buffer_radius = 1/np.sqrt(95*95+110*110)
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
 # SECRET_KEY = os.getenv('SECRET_KEY')
 sms_url = "https://api.msg91.com/api/v2/sendsms"
+sms_url_v2 = "https://api.msg91.com/api/v5/flow/"
 otp_url = "https://api.msg91.com/api/v5/otp"
 EARTH_RADIUS = 6378000
 neighbourhood_radius = 1
