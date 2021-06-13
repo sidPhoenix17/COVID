@@ -171,11 +171,11 @@ def add_volunteer():
         if (y == 'Volunteer already exists. Your information has been updated'):
             # v_sms_text = old_reg_sms
             params_1={"var1":key_word, "var2":url_retriever("a_existing_user_registration")}
-            send_raven_v1("a_existing_user_registration	",sms_to=int(mob_number),send=True,body_parameters=params_1)
+            send_raven_v1("a_existing_user_registration",sms_to=int(mob_number),send=True,body_parameters=params_1)
         else:
             # v_sms_text = new_reg_sms
             params_1 = {"var1": key_word, "var2": url_retriever("a_new_user_registration")}
-            send_raven_v1("a_new_user_registration	", sms_to=int(mob_number), send=True, body_parameters=params_1)
+            send_raven_v1("a_new_user_registration", sms_to=int(mob_number), send=True, body_parameters=params_1)
         # send_sms(v_sms_text, sms_to=int(mob_number), sms_type='transactional', send=True)
     response = {'Response': {}, 'status': x, 'string_response': y}
     return json.dumps(response)
