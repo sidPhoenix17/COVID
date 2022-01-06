@@ -13,7 +13,7 @@ pymysql==0.9.3
 Flask==1.1.1
 Flask-Cors==3.0.9
 pyjwt==1.7.1
-celery==4.4.2
+celery==5.2.2
 redis==3.4.1
 schedule==0.6.0
 pygeocoder==1.2.5
